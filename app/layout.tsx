@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Jost, Oswald } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+// Nittonova typography: Jost for body text, Oswald for display headings.
+const jost = Jost({ subsets: ["latin"], variable: "--font-sans" });
+const oswald = Oswald({ subsets: ["latin"], variable: "--font-display" });
 
 /** Static fallback favicon shipped with the project (app/favicon.ico). */
 const FALLBACK_FAVICON = "/favicon.ico";
@@ -41,7 +43,7 @@ export default function RootLayout({
     return (
         <html
             lang="en"
-            className={cn("h-full", "antialiased", "font-sans", inter.variable)}
+            className={cn("h-full", "antialiased", "font-sans", jost.variable, oswald.variable)}
         >
             <head>
                 <ThemeProvider />
