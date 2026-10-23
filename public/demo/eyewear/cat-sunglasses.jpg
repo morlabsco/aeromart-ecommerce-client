@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a4e" />
+      <stop offset="100%" stop-color="#2d2d6b" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)" />
+  
+    <rect x="0" y="0" width="800" height="1000" fill="url(#bg)" opacity="0.3"/>
+    <circle cx="400" cy="400" r="200" fill="rgba(255,255,255,0.05)" />
+    <text x="400" y="420" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="system-ui" font-size="80" font-weight="bold">SUNGLASSES</text>
+    <text x="400" y="520" text-anchor="middle" fill="rgba(255,255,255,0.15)" font-family="system-ui" font-size="24">Demo placeholder image</text>
+    <rect x="300" y="600" width="200" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+</svg>

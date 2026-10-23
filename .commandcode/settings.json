@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__codebase-memory-mcp__get_architecture",
+      "Shell(git:*)",
+      "Shell(dir:*)",
+      "Shell(powershell -NoProfile -Command \"Select-String -Path 'M:\\Development\\Agency\\eCommerce Demo Projects\\aeromart-ecommerce-server\\.env' -Pattern 'PORT' | Select-Object -First 5\")",
+      "Shell(powershell -NoProfile -Command \"Select-String -Path 'M:\\Development\\Agency\\eCommerce Demo Projects\\aeromart-ecommerce-server\\src\\app.ts' -Pattern 'cors|origin|PORT|listen' | Select-Object -First 20\")",
+      "mcp__codebase-memory-mcp__search_graph",
+      "mcp__codebase-memory-mcp__get_code_snippet",
+      "Shell(npx tsc --noEmit 2 >& 1)",
+      "Shell(Select-Object:*)",
+      "Shell(findstr:*)",
+      "Shell(node -e \"const {z}=require('zod'); const s=z.object({n:z.coerce.number().positive()}); const t=s._output; console.log(JSON.stringify(t)); const r=s.safeParse({n:'5'}); console.log(r.success, r.data);\")",
+      "Shell(node -e \"const {z}=require('zod'); const s=z.object({n:z.coerce.number().positive()}); type t=z.infer<typeof s>; console.log('version check'); const p=require('./node_modules/zod/package.json'); console.log(p.version);\" 2>&1)",
+      "Shell(node -e \"const {z}=require('zod'); const s=z.object({n:z.coerce.number().positive()}); const out=s._output; const input=s._input; console.log('output keys:', Object.keys(out||{})); console.log('input n:', input && input.n);\" 2>&1)",
+      "Shell(npx tsc --noEmit 2>&1)",
+      "Shell(npx eslint components/dashboard lib/services lib/types app/dashboard 2>&1)",
+      "Shell(npm:*)",
+      "Shell(curl -s -o NUL -w %{http_code} http://localhost:5000/api/v1/ 2 >& 1)",
+      "Shell(curl -s -X POST http://localhost:5000/api/v1/auth/login -H Content-Type: application/json -d {\"email\":\"admin@example.com\",\"password\":\"123456\"} 2 >& 1)",
+      "Shell(netstat:*)",
+      "Shell(curl -s http://localhost:5000/api/v1/settings)",
+      "Shell(powershell -Command \"Remove-Item -LiteralPath 'app\\dashboard\\admin\\coupons\\[code]' -Recurse -Force\")",
+      "Shell(node -e \"fetch('http://localhost:3000/').then(r=>r.text()).then(html=>{ const m=html.match(/<h2[^>]*>[^<]*/g); console.log(m ? m.slice(0,8) : 'none') })\")",
+      "Shell(curl -s -o NUL -w \"custprofile:%{http_code}\\n\" -L http://localhost:3000/dashboard/customer/profile)",
+      "Shell(curl -s -o NUL -w \"couponupdate:%{http_code}\\n\" -L http://localhost:3000/dashboard/admin/coupons/update-coupon/xxx)",
+      "Shell(npx tsc --noEmit -p tsconfig.json 2>&1)",
+      "Shell(node scripts/fix-metadata.cjs)",
+      "Shell(powershell -Command \"(Get-Content 'docs\\project-tracking\\backend-usage-guide.md').Count\")",
+      "mcp__codebase-memory-mcp__search_code",
+      "Shell(type:*)",
+      "mcp__codebase-memory-mcp__get_graph_schema"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

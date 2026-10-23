@@ -1,0 +1,37 @@
+// Activity module types, docs/v7-backend-usage-guide.md §16 (audit log).
+
+export type ActivityModule =
+  | "Order"
+  | "Brand"
+  | "Category"
+  | "Product"
+  | "Review"
+  | "User"
+  | "Settings"
+  | "Coupon"
+  | "Payment";
+
+export type ActivityType = "create" | "update" | "delete" | "status" | "preset";
+
+export interface Activity {
+  _id: string;
+  module: ActivityModule;
+  type: ActivityType;
+  message: string;
+  referenceId: string;
+  reference: string;
+  performedBy: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClearActivitiesPayload {
+  clearAll?: boolean;
+  from?: string;
+  to?: string;
+}
+
+export interface ClearActivitiesResponse {
+  deletedCount: number;
+}
