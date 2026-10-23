@@ -1,5 +1,4 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getSession } from "@/lib/get-session";
 import { getSettings } from "@/lib/services/settings";
@@ -32,7 +31,7 @@ export default async function DashboardLayout({
         : session;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="bg-background">
             <SidebarProvider
                 className="mx-auto w-full max-w-[1920px] border-x **:data-[slot=sidebar-container]:relative!"
                 style={
@@ -48,7 +47,6 @@ export default async function DashboardLayout({
                     brand={brand}
                 />
                 <SidebarInset>
-                    <SiteHeader />
                     <div className="flex flex-1 flex-col">
                         <div className="@container/main flex flex-1 flex-col gap-2">
                             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">

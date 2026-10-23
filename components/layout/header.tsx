@@ -3,10 +3,12 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { BadgeCheck, Menu, Search, ShoppingCart, Truck, User, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
 import { useCartStore, useUIStore } from "../../lib/store/app-store"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
+import { formatCurrency } from "../../lib/utils/currency"
+import { cn } from "../../lib/utils"
 import type { SettingsBrand, NavbarLink } from "@/lib/types/backend"
 
 interface HeaderProps {
@@ -23,15 +25,34 @@ const FALLBACK_LINKS = [
   { href: "/contact", label: "Contact" },
 ]
 
+/** Two-line stacked label used by the desktop action groups. */
+const stackedLabel = "text-[11px] leading-tight text-muted-foreground"
+const stackedValue = "text-sm font-bold leading-tight text-foreground"
+
+/**
+ * Nittonova (ECS NOVA) header, built from the cropped reference screenshots
+ * in /public/images/references.
+ *
+ * Desktop: white main bar (logo left, rectangular bordered search with an
+ * orange magnifier button in the center, Support / Account / Cart groups on
+ * the right) above a charcoal category-nav row with white title-case links.
+ * Mobile: plain white bar (hamburger left, horizontally centered logo,
+ * plain search icon and cart in a gray circle with a ringed badge), a
+ * full-screen large-input search overlay, and a left slide-in drawer
+ * (MENU heading, uppercase items with dividers, LOGIN pinned at the bottom).
+ */
 export function Header({ brand, navLinks }: HeaderProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchOpen, setSearchOpen] = useState(false)
   const items = useCartStore((state) => state.items)
+  const subtotal = useCartStore((s) => s.subtotal)
   const setCartOpen = useUIStore((s) => s.setCartOpen)
   const isMobileMenuOpen = useUIStore((s) => s.isMobileMenuOpen)
   const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen)
 
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
+  const cartTotal = formatCurrency(subtotal(), items[0]?.product.currency)
 
   // Fall back to the static theme config when settings aren't available.
   const theme = themes[DEFAULT_NICHE]
@@ -50,155 +71,266 @@ export function Header({ brand, navLinks }: HeaderProps) {
           .map((l) => ({ href: l.url, label: l.label }))
       : FALLBACK_LINKS
 
+  // Lock body scroll and close overlays on Escape while any is open.
+  useEffect(() => {
+    if (!isMobileMenuOpen && !searchOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setMobileMenuOpen(false)
+      setSearchOpen(false)
+    }
+    document.addEventListener("keydown", onKeyDown)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = ""
+    }
+  }, [isMobileMenuOpen, searchOpen, setMobileMenuOpen])
+
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const term = searchTerm.trim()
     router.push(term ? `/products?searchTerm=${encodeURIComponent(term)}` : "/products")
     setSearchTerm("")
+    setSearchOpen(false)
     setMobileMenuOpen(false)
   }
 
-  const searchInputClasses =
-    "w-full border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring/30"
-
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      {/* Utility top bar */}
-      <div className="hidden border-b border-border/60 bg-muted/50 md:block">
-        <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
-          <p className="flex items-center gap-1.5">
-            <BadgeCheck className="h-3.5 w-3.5 text-success" />
-            100% original &amp; premium products
-          </p>
-          <p className="flex items-center gap-1.5">
-            <Truck className="h-3.5 w-3.5 text-brand" />
-            Quick delivery at your doorstep
-          </p>
+    <>
+      <header className="sticky top-0 z-40 w-full bg-background">
+        {/* Main bar: white, logo / search / action groups on desktop,
+            hamburger / centered logo / icons on mobile */}
+        <div className="border-b border-border/60 md:border-b-0">
+          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 md:h-20 sm:px-6 lg:h-[5.25rem] lg:px-8">
+            {/* Hamburger (mobile) */}
+            <button
+              onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+              className="-ml-2 cursor-pointer p-2 text-foreground md:hidden"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+            >
+              <Menu className="h-6 w-6" strokeWidth={1.5} />
+            </button>
+
+            {/* Logo — absolutely centered on mobile, static on desktop */}
+            <Link
+              href="/"
+              title={tagline}
+              className="absolute left-1/2 flex -translate-x-1/2 shrink-0 items-center gap-1.5 md:static md:translate-x-0"
+            >
+              {hasLogo ? (
+                <Image
+                  src={brandLogo}
+                  alt={formattedBrand}
+                  width={40}
+                  height={40}
+                  className="h-9 w-9 object-contain md:h-10 md:w-10"
+                />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground md:h-10 md:w-10">
+                  {formattedBrand.charAt(0)}
+                </span>
+              )}
+              <span className="text-base font-extrabold uppercase tracking-tight text-foreground md:text-xl">
+                {formattedBrand}
+              </span>
+            </Link>
+
+            {/* Search (desktop): bordered rectangle + orange magnifier button */}
+            <form
+              role="search"
+              onSubmit={handleSearch}
+              className="hidden flex-1 justify-center px-4 md:flex lg:px-8"
+            >
+              <div className="flex h-11 w-full max-w-xl overflow-hidden rounded-md border border-input bg-background transition-shadow focus-within:border-ring/50 focus-within:ring-2 focus-within:ring-ring/25">
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search for products..."
+                  aria-label="Search products"
+                  className="h-full min-w-0 flex-1 border-0 bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className="flex w-12 shrink-0 cursor-pointer items-center justify-center bg-brand text-brand-foreground transition-colors hover:bg-brand/90"
+                >
+                  <Search className="h-[18px] w-[18px]" />
+                </button>
+              </div>
+            </form>
+
+            {/* Actions */}
+            <div className="flex items-center gap-0.5 md:gap-5 lg:gap-6">
+              {/* Mobile: plain search icon opens the full-screen overlay */}
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="cursor-pointer p-2 text-foreground md:hidden"
+                aria-label="Search"
+              >
+                <Search className="h-[22px] w-[22px]" strokeWidth={1.5} />
+              </button>
+              {/* Mobile: cart in a gray circle with a ringed badge */}
+              <button
+                onClick={() => setCartOpen(true)}
+                className="relative ml-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-muted md:hidden"
+                aria-label="Open cart"
+              >
+                <ShoppingBag className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-400 px-1 text-[9px] font-semibold text-white ring-2 ring-background">
+                  {cartCount}
+                </span>
+              </button>
+
+              {/* Desktop: Support group */}
+              <Link href="/contact" className="group hidden items-center gap-2 md:flex">
+                <Phone
+                  className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
+                  strokeWidth={1.5}
+                />
+                <span className="flex flex-col">
+                  <span className={stackedLabel}>Support</span>
+                  <span className={cn(stackedValue, "transition-colors group-hover:text-brand")}>Contact Us</span>
+                </span>
+              </Link>
+
+              {/* Desktop: Account group */}
+              <Link href="/login" className="group hidden items-center gap-2 md:flex">
+                <User
+                  className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
+                  strokeWidth={1.5}
+                />
+                <span className="flex flex-col">
+                  <span className={stackedLabel}>Account</span>
+                  <span className={cn(stackedValue, "transition-colors group-hover:text-brand")}>Sign In</span>
+                </span>
+              </Link>
+
+              {/* Desktop: Cart group with live total */}
+              <button
+                onClick={() => setCartOpen(true)}
+                className="group hidden cursor-pointer items-center gap-2 md:flex"
+                aria-label="Open cart"
+              >
+                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <ShoppingBag
+                    className="h-5 w-5 text-foreground transition-colors group-hover:text-brand"
+                    strokeWidth={1.5}
+                  />
+                  <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-background px-0.5 text-[8px] font-bold text-foreground">
+                    {cartCount}
+                  </span>
+                </span>
+                <span className="flex flex-col text-left">
+                  <span className={stackedLabel}>Cart</span>
+                  <span className={cn(stackedValue, "transition-colors group-hover:text-brand")}>{cartTotal}</span>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main bar: logo, search, actions */}
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:h-[4.5rem] lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" title={tagline}>
-          {hasLogo ? (
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-box">
-              <Image
-                src={brandLogo}
-                alt={formattedBrand}
-                width={40}
-                height={40}
-                className="object-contain"
-              />
-            </div>
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-box bg-primary font-display text-base font-semibold uppercase text-primary-foreground">
-              {formattedBrand.charAt(0)}
-            </div>
-          )}
-          <span className="font-display text-xl font-semibold uppercase tracking-tight text-foreground transition-colors hover:text-primary">
-            {formattedBrand}
-          </span>
-        </Link>
+        {/* Category nav (desktop): charcoal bar, white title-case links */}
+        <nav className="hidden bg-header-nav md:block" aria-label="Main navigation">
+          <div className="mx-auto flex h-12 max-w-7xl items-center justify-center gap-8 px-4 sm:px-6 lg:gap-10 lg:px-8">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="py-1 text-sm font-semibold text-white transition-colors hover:text-brand"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </header>
 
-        {/* Search (desktop) */}
-        <form role="search" onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
-          <div className="relative w-full max-w-xl">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Mobile: full-screen search overlay with large light input */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-[70] flex animate-in fade-in flex-col bg-background px-4 py-5 md:hidden">
+          <div className="flex justify-end">
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="cursor-pointer p-2 text-foreground"
+              aria-label="Close search"
+            >
+              <X className="h-6 w-6" strokeWidth={1.5} />
+            </button>
+          </div>
+          <form
+            role="search"
+            onSubmit={handleSearch}
+            className="mx-auto flex w-full max-w-lg flex-col pt-12"
+          >
             <input
+              autoFocus
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for products..."
               aria-label="Search products"
-              className={`h-10 rounded-badge pl-10 pr-[4.5rem] ${searchInputClasses}`}
+              className="w-full border-0 border-b border-input bg-transparent pb-4 text-2xl font-light text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
             />
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1/2 h-7 -translate-y-1/2 cursor-pointer rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Search
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+      )}
 
-        {/* Actions */}
-        <div className="ml-auto flex items-center gap-1.5 md:gap-2">
-          <Link
-            href="/login"
-            aria-label="Account"
-            title="Account"
-            className="hidden rounded-full p-2.5 text-foreground transition-colors hover:bg-muted hover:text-primary md:block"
-          >
-            <User className="h-5 w-5" />
-          </Link>
+      {/* Mobile drawer — left slide-in panel over a scrim */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 md:hidden",
+          isMobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[75%] max-w-xs flex-col bg-card shadow-xl transition-transform duration-300 md:hidden",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+        aria-label="Mobile navigation"
+        aria-hidden={!isMobileMenuOpen}
+        inert={!isMobileMenuOpen}
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
+          <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+            Menu
+          </span>
           <button
-            onClick={() => setCartOpen(true)}
-            className="relative cursor-pointer rounded-full p-2.5 text-foreground transition-colors hover:bg-muted hover:text-primary"
-            aria-label="Open cart"
+            onClick={() => setMobileMenuOpen(false)}
+            className="cursor-pointer rounded-full p-1.5 text-foreground transition-colors hover:bg-muted"
+            aria-label="Close menu"
           >
-            <ShoppingCart className="h-5 w-5" />
-            {cartCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-badge bg-brand px-1 text-[10px] font-semibold text-brand-foreground">
-                {cartCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            className="cursor-pointer rounded-full p-2.5 text-foreground transition-colors hover:bg-muted md:hidden"
-            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <X className="h-5 w-5" />
           </button>
         </div>
-      </div>
-
-      {/* Category nav row (desktop) */}
-      <nav className="hidden border-t border-border/60 md:block" aria-label="Main navigation">
-        <div className="mx-auto flex h-11 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <nav className="flex-1 overflow-y-auto">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="group relative py-1 font-display text-[13px] font-medium uppercase tracking-wider text-foreground/80 transition-colors hover:text-primary"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block border-b border-border/60 px-4 py-4 text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:text-brand"
             >
               {link.label}
-              <span className="absolute inset-x-0 -bottom-0.5 h-0.5 origin-left scale-x-0 bg-brand transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
           ))}
+        </nav>
+        <div className="shrink-0 border-t border-border/60 p-4">
+          <Link
+            href="/login"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
+          >
+            <User className="h-4 w-4" />
+            Login
+          </Link>
         </div>
-      </nav>
-
-      {/* Mobile panel: search + navigation */}
-      {isMobileMenuOpen && (
-        <div className="animate-in fade-in slide-in-from-top-2 border-t border-border bg-background px-4 py-4 md:hidden">
-          <form role="search" onSubmit={handleSearch} className="mb-4">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search for products..."
-                aria-label="Search products"
-                className={`h-11 rounded-md pl-9 pr-3 ${searchInputClasses}`}
-              />
-            </div>
-          </form>
-          <nav aria-label="Mobile navigation" className="flex flex-col">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="border-b border-border/50 py-3 font-display text-sm font-medium uppercase tracking-wider text-foreground/90 transition-colors last:border-0 hover:text-primary"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      )}
-    </header>
+      </aside>
+    </>
   )
 }

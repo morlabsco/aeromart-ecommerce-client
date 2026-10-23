@@ -15,15 +15,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const Page = async () => {
-  const result = await getSettings();
-  const settings = unwrapData(result);
-
-  return (
-    <div>
-      <Register brand={settings?.brand ?? null} />
-    </div>
-  );
-};
+const Page = () => <Register />;
 
 export default Page;

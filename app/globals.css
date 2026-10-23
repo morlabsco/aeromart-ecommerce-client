@@ -49,6 +49,8 @@
   --color-card: var(--card);
   /* Nittonova brand accents */
   --color-brand: var(--brand);
+  --color-header-nav: var(--header-nav);
+  --color-hero-surface: var(--hero-surface);
   --color-brand-foreground: var(--brand-foreground);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
@@ -101,6 +103,8 @@
   --radius-badge: 1.9rem;
   /* Nittonova brand accents */
   --brand: oklch(0.6493 0.2011 33.88); /* #f0512e signature orange */
+  --header-nav: oklch(0.227 0.005 286); /* charcoal category nav bar, #232323 */
+  --hero-surface: oklch(0.9663 0.0176 81.33); /* cream page surface behind hero, #FAF3E7 */
   --brand-foreground: oklch(1 0 0);
   --highlight: oklch(0.6971 0.329 342.55); /* vivid pink */
   --highlight-foreground: oklch(0.9871 0.0106 342.55);
@@ -154,6 +158,8 @@
   --sidebar-accent-foreground: oklch(0.7465 0.0216 264.436);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.6569 0.196 275.75);
+  --header-nav: oklch(0.227 0.005 286);
+  --hero-surface: oklch(0.9663 0.0176 81.33);
 }
 
 @layer base {

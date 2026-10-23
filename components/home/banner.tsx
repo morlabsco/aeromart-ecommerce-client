@@ -1,28 +1,21 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { motion } from "framer-motion"
-
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel"
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
+import { CarouselDots } from "../shared/carousel-dots"
 import type { HeroSlide } from "@/lib/types/backend"
 
-const gradientPresets = [
-  "from-primary to-accent",
-  "from-accent to-primary/80",
-  "from-primary/90 to-accent/70",
-]
-
-function hasImage(slide: { image: string }) {
-  return slide.image && slide.image.length > 0
-}
-
+/**
+ * Nittonova hero banner, built from the cropped reference
+ * (nittonova-home-page-large-device-hero-section.png).
+ *
+ * The reference is a single composed banner image (headline, logo and
+ * products baked into the artwork) shown inset from the page edges with
+ * ~8px rounded corners on a cream surface — no text overlay, no arrows.
+ * Each settings hero slide renders the same way; slides without an image
+ * fall back to a coded cream composition so the section never breaks.
+ * With a single slide there are no indicators, exactly like the reference.
+ */
 export function Banner({ slides }: { slides: HeroSlide[] }) {
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
@@ -41,112 +34,78 @@ export function Banner({ slides }: { slides: HeroSlide[] }) {
   }, [api])
 
   useEffect(() => {
-    if (!api) return
-
+    if (!api || slides.length < 2) return
     const interval = setInterval(() => {
       if (interactedRef.current) return
       if (api.canScrollNext()) api.scrollNext()
       else api.scrollTo(0)
     }, 5000)
-
     return () => clearInterval(interval)
-  }, [api])
+  }, [api, slides.length])
 
-  const handleInteraction = (fn: () => void) => {
-    interactedRef.current = true
-    fn()
-  }
+  if (!slides || slides.length === 0) return null
 
   return (
-    <section className="relative overflow-hidden">
-      <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
-        <CarouselContent className="-ml-0">
-          {slides.map((slide, index) => (
-            <CarouselItem key={index} className="pl-0">
-              <div className="relative h-full flex items-center">
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10" />
-
-                {/* Background - image or theme gradient */}
-                {hasImage(slide) ? (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${slide.image})` }}
-                  />
-                ) : (
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${gradientPresets[index % gradientPresets.length]}`}
-                  />
-                )}
-
-                {/* Content */}
-                <div className="relative z-20 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-32">
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="max-w-2xl"
-                  >
-                    <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-                      {slide.headline}
-                    </h1>
-                    <p className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-zinc-300 max-w-xl leading-relaxed">
-                      {slide.subtext}
-                    </p>
-                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                      <Link
-                        href={slide.ctaLink || "/products"}
-                        className="inline-flex h-10 sm:h-9 items-center justify-center rounded-lg bg-primary text-white hover:bg-red-900 text-sm sm:text-base px-6 sm:px-8 font-medium transition-all outline-none select-none"
-                      >
-                        {slide.ctaText}
-                      </Link>
-                      <Link
-                        href="/about"
-                        className="inline-flex h-10 sm:h-9 items-center justify-center rounded-lg border border-white/20 text-white hover:bg-white/10 text-sm sm:text-base px-6 sm:px-8 font-medium transition-all outline-none select-none"
-                      >
-                        Learn More
-                      </Link>
+    <section aria-label="Featured promotions" className="bg-hero-surface">
+      <div className="relative">
+        <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
+          <CarouselContent className="-ml-0">
+            {slides.map((slide, index) => (
+              <CarouselItem key={index} className="pl-0">
+                <div className="mx-auto w-full max-w-[1400px] px-3 pt-3 sm:px-5 sm:pt-4 lg:px-8 lg:pt-6">
+                  {slide.image && slide.image.length > 0 ? (
+                    /* Composed banner artwork, inset with rounded corners */
+                    <div
+                      role="img"
+                      aria-label={slide.headline || "Promotion banner"}
+                      className="aspect-[16/9] w-full rounded-lg bg-cover bg-center sm:aspect-[16/8] lg:aspect-[14/5]"
+                      style={{ backgroundImage: `url(${slide.image})` }}
+                    />
+                  ) : (
+                    /* Coded fallback for slides without artwork */
+                    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-4 rounded-lg bg-gradient-to-br from-[#EDE5D4] to-[#C4B69E] px-6 text-center sm:aspect-[16/8] lg:aspect-[14/5]">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-2xl font-bold text-brand-foreground">
+                        ★
+                      </span>
+                      {slide.headline && (
+                        <h1 className="max-w-xl text-2xl font-bold uppercase tracking-wide text-foreground sm:text-4xl">
+                          {slide.headline}
+                        </h1>
+                      )}
+                      {slide.subtext && (
+                        <p className="max-w-md text-sm text-foreground/70 sm:text-base">{slide.subtext}</p>
+                      )}
+                      {slide.ctaText && (
+                        <a
+                          href={slide.ctaLink || "/products"}
+                          className="mt-2 inline-flex h-10 items-center rounded-full bg-brand px-8 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand/90"
+                        >
+                          {slide.ctaText}
+                        </a>
+                      )}
                     </div>
-                  </motion.div>
+                  )}
                 </div>
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
-        {/* Previous/Next arrows */}
-        <button
-          onClick={() => handleInteraction(() => api?.scrollPrev())}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center size-9 sm:size-10 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-primary/40 transition-all cursor-pointer"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft className="size-4 sm:size-5" />
-        </button>
-        <button
-          onClick={() => handleInteraction(() => api?.scrollNext())}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center size-9 sm:size-10 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-primary/40 transition-all cursor-pointer"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="size-4 sm:size-5" />
-        </button>
-
-        {/* Dot indicators */}
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleInteraction(() => api?.scrollTo(index))}
-              className={`rounded-full transition-all duration-300 ${
-                index === current
-                  ? "w-6 sm:w-8 h-1.5 sm:h-2 bg-white"
-                  : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/40 hover:bg-white/60"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      </Carousel>
+        {/* Dots only when rotating multiple banners; single-slide stays clean
+            like the reference (shared CarouselDots — same style as
+            testimonials). */}
+        <CarouselDots
+          count={slides.length}
+          current={current}
+          onSelect={(index) => {
+            interactedRef.current = true
+            api?.scrollTo(index)
+          }}
+          className="absolute bottom-0.5 left-1/2 z-30 -translate-x-1/2 lg:bottom-1.5"
+        />
+      </div>
+      {/* Cream breathing room below the banner before the next section */}
+      <div className="h-3 sm:h-4 lg:h-6" />
     </section>
   )
 }

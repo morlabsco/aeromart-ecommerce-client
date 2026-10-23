@@ -5,26 +5,16 @@ import {
     Briefcase,
     Camera,
     Globe,
+    Mail,
+    MapPin,
+    Phone,
     Send,
     ThumbsUp,
     Users,
     Video,
 } from "lucide-react"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
-import type { SettingsBrand, SettingsFooter } from "@/lib/types/backend"
-
-const FALLBACK_LINKS = [
-  { href: "/products", label: "Products" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-  { href: "/dashboard", label: "Dashboard" },
-]
-
-const PAYMENT_LOGOS = [
-  { src: "/images/bkash-pay-logo.png", alt: "bKash", className: "h-6" },
-  { src: "/images/sslcommerz-pay-types-logo.png", alt: "SSLCommerz", className: "h-6" },
-  { src: "/images/stripe-pay-logo.png", alt: "Stripe", className: "h-6" },
-]
+import type { SettingsBrand, SettingsContact, SettingsFooter } from "@/lib/types/backend"
 
 /** Maps a social platform name to the closest available lucide icon. */
 const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -53,11 +43,23 @@ function platformIcon(platform: string) {
 interface FooterProps {
   /** Brand from the settings singleton (server-fetched). */
   brand?: SettingsBrand | null
-  /** Footer section from the settings singleton (server-fetched). */
+  /** Footer section from the settings singleton. */
   footer?: SettingsFooter | null
+  /** Contact section from the settings singleton, powers "Get in Touch". */
+  contact?: SettingsContact | null
+  /** Top categories (max 5) for the Categories column. */
+  categories?: { name: string; slug: string }[]
 }
 
-export function Footer({ brand, footer }: FooterProps) {
+/**
+ * Nittonova footer, built from the cropped reference
+ * (nittonova-home-page-large-device-footer.png): white footer with a warm
+ * top border, four columns — brand block (logo, description, socials),
+ * two settings link columns with uppercase letterspaced headings, and a
+ * "Get In Touch" column of gray icon tiles — above a light bottom bar with
+ * the copyright and a letterspaced "Secure Payments" note.
+ */
+export function Footer({ brand, footer, contact, categories }: FooterProps) {
   const theme = themes[DEFAULT_NICHE]
 
   const brandName = brand?.name || theme.brand
@@ -67,136 +69,161 @@ export function Footer({ brand, footer }: FooterProps) {
   const hasLogo = brandLogo.length > 0
 
   const description = footer?.description || theme.footer.description
-  const copyrightText = footer?.copyrightText || `© ${new Date().getFullYear()} ${brandName}. All rights reserved.`
+  const copyrightText =
+    footer?.copyrightText || `© ${new Date().getFullYear()} ${brandName}. All rights reserved.`
 
-  const socialLinks = footer?.socialLinks?.filter(
-    (s) => s.platform && s.url
-  ) ?? []
+  const socialLinks = footer?.socialLinks?.filter((s) => s.platform && s.url) ?? []
 
-  // Footer columns from settings (each column has a title + links).
-  const columns = footer?.columns?.length
-    ? footer.columns.filter((c) => c.title && c.links?.length > 0)
-    : [
-        {
-          title: "Quick Links",
-          links: FALLBACK_LINKS.map((l) => ({ label: l.label, url: l.href })),
-        },
-      ]
+  // Footer link columns: Quick Links (first settings column + the refund
+  // policy) and a Categories column built from the live category list.
+  const quickLinks = footer?.columns?.[0]?.links?.filter((l) => l.label && l.url) ?? [
+    { label: "Products", url: "/products" },
+    { label: "Contact", url: "/contact" },
+  ]
+  const columns = [
+    {
+      title: footer?.columns?.[0]?.title ?? "Quick Links",
+      links: [...quickLinks, { label: "Refund Policy", url: "/refund-policy" }],
+    },
+    ...((categories ?? []).length > 0
+      ? [
+          {
+            title: "Categories",
+            links: categories!.slice(0, 5).map((c) => ({
+              label: c.name,
+              url: `/products?category=${c.slug}`,
+            })),
+          },
+        ]
+      : []),
+  ]
+
+  // "Get In Touch" rows — only fields the settings actually provide.
+  const contactRows = [
+    contact?.address && { icon: MapPin, label: "Location", value: contact.address },
+    contact?.phone && { icon: Phone, label: "Phone", value: contact.phone },
+    contact?.email && { icon: Mail, label: "Email", value: contact.email },
+  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string }[]
+
+  const columnHeading = "text-sm font-bold uppercase tracking-widest text-foreground"
+  const columnLink =
+    "inline-block text-[15px] font-medium text-muted-foreground transition-all duration-300 hover:translate-x-1 hover:text-brand"
 
   return (
-    <footer className="border-t bg-zinc-50 dark:bg-zinc-950">
+    <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+          {/* Brand block */}
+          <div>
+            <div className="flex items-center gap-2">
               {hasLogo ? (
-                <div className="flex items-center justify-center h-9 w-9 rounded-lg text-primary-foreground overflow-hidden">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg">
                   <Image
                     src={brandLogo}
                     alt={formattedBrand}
-                    width={36}
-                    height={36}
+                    width={40}
+                    height={40}
                     className="object-contain"
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground">
                   {formattedBrand.charAt(0)}
                 </div>
               )}
-              <span className="text-base font-bold">{formattedBrand}</span>
-            </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md">
-              {description}
-            </p>
-
-            {/* Payment logos */}
-            <div className="mt-6 flex items-center gap-3">
-              <span className="text-xs text-zinc-500 dark:text-zinc-500">
-                We accept:
+              <span className="text-lg font-extrabold uppercase tracking-tight text-foreground">
+                {formattedBrand}
               </span>
-              <div className="flex items-center gap-2">
-                {PAYMENT_LOGOS.map((logo) => (
-                  <div
-                    key={logo.alt}
-                    className="flex h-9 items-center justify-center rounded-md border bg-white px-2 dark:bg-zinc-900"
-                    title={logo.alt}
-                  >
-                    <Image
-                      src={logo.src}
-                      alt={logo.alt}
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className={`w-auto object-contain ${logo.className}`}
-                    />
-                  </div>
-                ))}
-              </div>
             </div>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{description}</p>
 
-            {/* Social links */}
             {socialLinks.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold mb-3">Follow Us</h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  {socialLinks.map((social) => {
-                    const Icon = platformIcon(social.platform)
-                    return (
-                      <a
-                        key={social.platform}
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={social.platform}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium text-zinc-500 transition-colors hover:bg-primary hover:text-white dark:text-zinc-400 dark:hover:bg-primary dark:hover:text-white"
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {platformLabel(social.platform)}
-                      </a>
-                    )
-                  })}
-                </div>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                {socialLinks.map((social) => {
+                  const Icon = platformIcon(social.platform)
+                  return (
+                    <a
+                      key={social.platform}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={platformLabel(social.platform)}
+                      aria-label={platformLabel(social.platform)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
+                    >
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  )
+                })}
               </div>
             )}
           </div>
 
-          {/* Footer columns from settings */}
+          {/* Link columns from settings */}
           {columns.map((col) => (
-            <div key={col.title}>
-              <h3 className="text-sm font-semibold mb-4">{col.title}</h3>
-              <ul className="space-y-3">
+            <nav key={col.title} aria-label={col.title}>
+              <h3 className={columnHeading}>{col.title}</h3>
+              <ul className="mt-6 space-y-3.5">
                 {col.links.map((link, i) => (
                   <li key={`${col.title}-${i}`}>
-                    <Link
-                      href={link.url}
-                      className="text-sm text-zinc-600 hover:text-primary dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                    >
+                    <Link href={link.url} className={columnLink}>
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
-        </div>
 
-        <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-zinc-500 dark:text-zinc-500">
-            {copyrightText}
-          </p>
-          <div className="flex gap-4">
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              Built by{" "}
+          {/* Get in touch */}
+          {contactRows.length > 0 && (
+            <div>
+              <h3 className={columnHeading}>Get In Touch</h3>
+              <ul className="mt-6 space-y-4">
+                {contactRows.map((row) => {
+                  const Icon = row.icon
+                  return (
+                    <li key={row.label} className="group flex cursor-pointer items-center gap-3">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card">
+                        <Icon className="h-5 w-5 text-foreground transition-colors duration-300 group-hover:text-brand" strokeWidth={1.5} />
+                      </span>
+                      <span>
+                        <span className="block text-xs uppercase tracking-wide text-muted-foreground">
+                          {row.label}
+                        </span>
+                        <span className="block max-w-[180px] text-[15px] font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-brand">
+                          {row.value}
+                        </span>
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="border-t border-border/60 bg-muted/40">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+          <p>
+            {copyrightText}{" "}
+            <span className="text-zinc-400">
+              · Built by{" "}
               <a
                 href="https://morlabs.co"
                 target="_blank"
-                className="hover:text-primary hover:underline"
+                rel="noopener noreferrer"
+                className="font-semibold text-brand hover:underline"
               >
                 Morlabs
               </a>
             </span>
-          </div>
+          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Secure Payments
+          </p>
         </div>
       </div>
     </footer>

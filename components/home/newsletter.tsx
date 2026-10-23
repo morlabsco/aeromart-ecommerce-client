@@ -1,13 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, ArrowRight, Check } from "lucide-react"
-import { motion } from "framer-motion"
 import { toast } from "sonner"
-import { fadeUp, viewportOnce } from "../shared/reveal"
 
+/**
+ * Newsletter strip, restyled for the Nittonova theme — every color flows
+ * from the centralized tokens: cream panel on the page background, white
+ * icon circle with a brand-orange glyph, bold heading with the signature
+ * orange dash, and a pill email input with an orange subscribe button.
+ */
 export function Newsletter({ heading }: { heading?: string }) {
   const [email, setEmail] = useState("")
   const [submitted, setSubmitted] = useState(false)
@@ -22,56 +25,48 @@ export function Newsletter({ heading }: { heading?: string }) {
   }
 
   return (
-    <section className="bg-primary/80 text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={viewportOnce}
-          className="max-w-2xl mx-auto text-center"
-        >
-          <div className="inline-flex items-center justify-center size-12 rounded-full bg-primary-foreground/10 mb-6">
-            <Mail className="size-5" />
-          </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+    <section aria-label="Newsletter" className="bg-background py-8 sm:py-10 lg:py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-border/40 bg-hero-surface px-6 py-10 text-center sm:px-10 lg:py-12">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card shadow-sm">
+            <Mail className="h-6 w-6 text-brand" strokeWidth={1.75} />
+          </span>
+          <h2 className="mt-5 text-[26px] font-bold tracking-tight text-foreground sm:text-3xl">
             {heading || "Stay in the loop"}
           </h2>
-          <p className="mt-3 text-primary-foreground/80 text-lg">
+          <span className="mx-auto mt-2 block h-1 w-12 rounded-full bg-brand" aria-hidden="true" />
+          <p className="mx-auto mt-4 max-w-xl text-[15px] text-muted-foreground">
             Subscribe for early access to new collections, exclusive offers, and style inspiration.
           </p>
           <form
             onSubmit={handleSubmit}
-            className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row"
           >
             <Input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 flex-1 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:border-primary-foreground/40 focus-visible:ring-primary-foreground/20"
+              className="h-12 flex-1 rounded-full border-border bg-card text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-ring/25"
               required
             />
-            <Button
+            <button
               type="submit"
-              size="lg"
-              className="h-12 px-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90 cursor-pointer"
+              className="inline-flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-brand px-8 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90"
             >
               {submitted ? (
                 <>
-                  <Check className="size-4 mr-1.5" /> Subscribed
+                  <Check className="size-4" /> Subscribed
                 </>
               ) : (
                 <>
-                  Subscribe <ArrowRight className="size-4 ml-1.5" />
+                  Subscribe <ArrowRight className="size-4" />
                 </>
               )}
-            </Button>
+            </button>
           </form>
-          <p className="mt-4 text-xs text-primary-foreground/60">
-            No spam, ever. Unsubscribe anytime.
-          </p>
-        </motion.div>
+          <p className="mt-4 text-xs text-muted-foreground/70">No spam, ever. Unsubscribe anytime.</p>
+        </div>
       </div>
     </section>
   )

@@ -6,10 +6,8 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { toStorefrontProduct } from "@/lib/utils/product-adapter";
 import { Categories } from "../../components/home/categories"
+import { CategoryShelves } from "../../components/home/category-shelves"
 import { FeaturedProducts } from "../../components/home/featured-products"
-import { NewArrivals } from "../../components/home/new-arrivals"
-import { OfferSection } from "../../components/home/offer-section"
-import { BrandStory } from "../../components/home/brand-story"
 import { Testimonials } from "../../components/home/testimonials"
 import { Newsletter } from "../../components/home/newsletter"
 import { FeaturesBar } from "../../components/home/features-bar"
@@ -53,16 +51,10 @@ async function HomeData() {
   return (
     <main>
       <Banner slides={settings?.hero.slides ?? []} />
-      <FeaturesBar />
       <Categories categories={categories} />
       <FeaturedProducts products={products} />
-      <NewArrivals products={products} />
-      <OfferSection
-        offer={settings?.limitedOffer ?? { enabled: false, badge: "", title: "", subtitle: "", ctaText: "", ctaLink: "", image: "", endsAt: "" }}
-      />
-      {settings && (
-        <BrandStory brand={settings.brand} about={settings.about} />
-      )}
+      <CategoryShelves categories={categories} products={products} />
+      <FeaturesBar />
       {settings && (
         <Testimonials
           heading={settings.testimonials.heading}
@@ -73,7 +65,7 @@ async function HomeData() {
         <Newsletter heading={settings.footer.newsletter.heading} />
       )}
     </main>
-  )
+  );
 }
 
 export default function HomePage() {
@@ -81,5 +73,5 @@ export default function HomePage() {
     <Suspense fallback={<HomeSkeleton />}>
       <HomeData />
     </Suspense>
-  )
+  );
 }

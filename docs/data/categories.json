@@ -1,0 +1,92 @@
+[
+  {
+    "id": "cat_001",
+    "name": "Massager",
+    "slug": "massager",
+    "url": "https://nittonova.com/category/massager",
+    "image_url": "https://nittonova.com/storage/categories/1783842371_6a534643ce3cb.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_002",
+    "name": "Kithcen Accessories",
+    "slug": "kithcen-accessories",
+    "url": "https://nittonova.com/category/kithcen-accessories",
+    "image_url": "https://nittonova.com/storage/categories/1783841991_6a5344c752bde.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_003",
+    "name": "Gadget",
+    "slug": "gadget",
+    "url": "https://nittonova.com/category/gadget",
+    "image_url": "https://nittonova.com/storage/categories/1788453188_6a99a1447768a.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_004",
+    "name": "Speakers",
+    "slug": "speakers",
+    "url": "https://nittonova.com/category/speakers",
+    "image_url": "https://nittonova.com/storage/categories/1783782272_6a525b80bb237.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_005",
+    "name": "TWS & Headphones",
+    "slug": "tws-headphones",
+    "url": "https://nittonova.com/category/tws-headphones",
+    "image_url": "https://nittonova.com/storage/categories/1783841691_6a53439b77435.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_006",
+    "name": "Smart Watch",
+    "slug": "smart-watch",
+    "url": "https://nittonova.com/category/smart-watch",
+    "image_url": "https://nittonova.com/storage/categories/1783840934_6a5340a684517.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_007",
+    "name": "Oral Care",
+    "slug": "oral-care",
+    "url": "https://nittonova.com/category/oral-care",
+    "image_url": "https://nittonova.com/storage/categories/1784319451_6a5a8ddbdf540.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_008",
+    "name": "Rechargeable Fan",
+    "slug": "rechargeable-fan",
+    "url": "https://nittonova.com/category/rechargeable-fan",
+    "image_url": "https://nittonova.com/storage/categories/1783842117_6a5345453fb9e.webp",
+    "has_image": true,
+    "is_active": true
+  },
+  {
+    "id": "cat_009",
+    "name": "Trimmer",
+    "slug": "trimmer",
+    "url": "https://nittonova.com/category/trimmer",
+    "image_url": null,
+    "has_image": false,
+    "is_active": true
+  },
+  {
+    "id": "cat_010",
+    "name": "Women’s Care",
+    "slug": "womens-care",
+    "url": "https://nittonova.com/category/womens-care",
+    "image_url": null,
+    "has_image": false,
+    "is_active": true
+  }
+]

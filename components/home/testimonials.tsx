@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { fadeUp, staggerContainer, viewportOnce } from "../shared/reveal"
+import { CarouselDots } from "../shared/carousel-dots"
 import type { TestimonialItem } from "@/lib/types/backend"
 
 export function Testimonials({
@@ -111,21 +112,13 @@ export function Testimonials({
         </Carousel>
       </motion.div>
 
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-2 mt-6">
-        {items.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => api?.scrollTo(index)}
-            className={`rounded-full transition-all duration-300 ${
-              index === current
-                ? "w-6 h-2 bg-primary"
-                : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-            }`}
-            aria-label={`Go to testimonial ${index + 1}`}
-          />
-        ))}
-      </div>
+      {/* Dots — same shared style as the hero banner */}
+      <CarouselDots
+        count={items.length}
+        current={current}
+        onSelect={(index) => api?.scrollTo(index)}
+        className="mt-4 justify-center"
+      />
     </section>
   )
 }
