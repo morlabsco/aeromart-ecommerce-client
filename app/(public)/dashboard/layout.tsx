@@ -31,7 +31,7 @@ export default async function DashboardLayout({
         : session;
 
     return (
-        <div className="bg-background">
+        <div className="bg-hero-surface">
             <SidebarProvider
                 className="mx-auto w-full max-w-[1920px] border-x **:data-[slot=sidebar-container]:relative!"
                 style={
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
                     session={sessionWithPhoto}
                     brand={brand}
                 />
-                <SidebarInset>
+                <SidebarInset className="bg-transparent">
                     <div className="flex flex-1 flex-col">
                         <div className="@container/main flex flex-1 flex-col gap-2">
                             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">

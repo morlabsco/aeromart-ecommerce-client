@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 async function CustomerOverviewContent() {
     const [profileResult, ordersResult, settingsResult] = await Promise.all([
         getMyProfile(),
-        getMyOrders({ limit: 5, sort: "-createdAt" }),
+        getMyOrders({ limit: 100, sort: "-createdAt" }),
         getSettings(),
     ]);
 

@@ -119,7 +119,7 @@ export function Categories({ categories: serverCategories }: { categories?: Cate
       <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-5 lg:px-8">
         {fits ? (
           // Few tiles: centered, nothing to scroll.
-          <ul ref={listRef} className="flex list-none justify-center gap-2">
+          <ul ref={listRef} className="flex list-none justify-center gap-4">
             {categories.map((cat) => (
               <li key={cat.slug}>
                 <CategoryTile cat={cat} />
@@ -132,9 +132,9 @@ export function Categories({ categories: serverCategories }: { categories?: Cate
             opts={{ align: "start", loop: true, dragFree: true }}
             className="w-full"
           >
-            <CarouselContent className="-ml-2">
+            <CarouselContent className="-ml-">
               {categories.map((cat) => (
-                <CarouselItem key={cat.slug} className="basis-auto pl-2">
+                <CarouselItem key={cat.slug} className="basis-auto pl-4">
                   <CategoryTile cat={cat} />
                 </CarouselItem>
               ))}

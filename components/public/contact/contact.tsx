@@ -1,36 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  Send,
-  MessageCircle,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { Clock, Mail, MapPin, Phone, Send } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { themes, DEFAULT_NICHE } from "@/lib/theme.config";
-import type {
-  SettingsBrand,
-  SettingsContact,
-} from "@/lib/types/backend";
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
-  email: z.email("Enter a valid email address."),
-  subject: z.string().optional(),
-  message: z.string().min(10, "Message must be at least 10 characters."),
-});
-
-type ContactFormValues = z.infer<typeof contactSchema>;
+import { cn } from "@/lib/utils";
+import type { SettingsBrand, SettingsContact } from "@/lib/types/backend";
 
 const FALLBACK_CONTACT: SettingsContact = {
   address: "123 Commerce Street, Dhaka",
@@ -41,297 +18,239 @@ const FALLBACK_CONTACT: SettingsContact = {
   social: { twitter: "", instagram: "", facebook: "" },
 };
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.email("Enter a valid email address."),
+  subject: z.string().optional(),
+  message: z.string().min(10, "Message must be at least 10 characters."),
+});
 
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-};
+type ContactFormValues = z.infer<typeof contactSchema>;
 
-export default function Contact({
-  contact,
-  brand,
-}: {
-  contact?: SettingsContact | null;
-  brand?: SettingsBrand | null;
-}) {
-  const theme = themes[DEFAULT_NICHE];
+const fieldClass = (hasError?: boolean) =>
+  cn(
+    "h-11 w-full rounded-lg border bg-background px-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground/60",
+    hasError
+      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+      : "border-input focus:border-brand/50 focus:ring-2 focus:ring-ring/25"
+  );
+
+/**
+ * Contact page in the Nittonova tone: cream surface, a "Get in Touch" card
+ * with icon-tile rows and a white form card. Submitting composes an email
+ * to the store's support address (no backend endpoint exists for messages).
+ */
+export default function Contact({ contact, brand }: { contact: SettingsContact | null; brand: SettingsBrand | null }) {
   const data = contact ?? FALLBACK_CONTACT;
-  const brandName = brand?.name || theme.brand;
+  const brandName = brand?.name ?? "us";
 
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [form, setForm] = useState<ContactFormValues>({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: { name: "", email: "", subject: "", message: "" },
   });
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof ContactFormValues, string>>
-  >({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = contactSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Partial<
-        Record<keyof ContactFormValues, string>
-      > = {};
-      for (const issue of result.error.issues) {
-        const key = issue.path[0] as keyof ContactFormValues;
-        fieldErrors[key] = issue.message;
-      }
-      setErrors(fieldErrors);
-      toast.error("Please fix the highlighted fields.");
-      return;
-    }
-    setErrors({});
+  const rows = [
+    data.address && { icon: MapPin, label: "Location", value: data.address },
+    data.phone && { icon: Phone, label: "Phone", value: data.phone, href: `tel:${data.phone.replace(/\s/g, "")}` },
+    data.email && { icon: Mail, label: "Email", value: data.email, href: `mailto:${data.email}` },
+    data.hours && { icon: Clock, label: "Hours", value: data.hours },
+  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string; href?: string }[];
+
+  const socials = Object.entries(data.social ?? {})
+    .filter(([, url]) => url)
+    .map(([platform, url]) => ({ platform, url }));
+
+  const onSubmit = handleSubmit((values) => {
+    if (!data.email) return;
     setSending(true);
-    // Simulate sending to the backend (no contact endpoint yet).
-    await new Promise((r) => setTimeout(r, 800));
+    const subject = encodeURIComponent(values.subject || `Message from ${values.name}`);
+    const body = encodeURIComponent(`${values.message}\n\n— ${values.name} (${values.email})`);
+    window.location.href = `mailto:${data.email}?subject=${subject}&body=${body}`;
+    toast.success("Opening your email app…");
     setSending(false);
-    setSent(true);
-    toast.success("Message sent! We'll get back to you soon.");
-  };
-
-  const contactItems = [
-    {
-      icon: MapPin,
-      label: "Our Address",
-      value: data.address,
-      href: data.mapEmbedUrl
-        ? data.mapEmbedUrl
-        : `https://maps.google.com/?q=${encodeURIComponent(data.address)}`,
-    },
-    { icon: Phone, label: "Call Us", value: data.phone, href: `tel:${data.phone}` },
-    { icon: Mail, label: "Email Us", value: data.email, href: `mailto:${data.email}` },
-    { icon: Clock, label: "Opening Hours", value: data.hours },
-  ];
+    reset();
+  });
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Decorative background blobs */}
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+    <div className="bg-hero-surface">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        {/* Heading */}
+        <div className="max-w-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">Contact</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            We&apos;d love to hear from you
+          </h1>
+          <span className="mt-4 block h-1 w-14 rounded-full bg-brand" aria-hidden="true" />
+          <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
+            Questions about an order, a product, or anything else? The {brandName} team is one
+            message away.
+          </p>
+        </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        {/* Header */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="text-center max-w-2xl mx-auto mb-14 lg:mb-20"
-        >
-          <motion.span
-            variants={fadeUp}
-            className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            Contact Us
-          </motion.span>
-          <motion.h1
-            variants={fadeUp}
-            className="mt-5 text-4xl lg:text-5xl font-bold tracking-tight"
-          >
-            Let&apos;s <span className="text-primary">Talk</span>
-          </motion.h1>
-          <motion.p
-            variants={fadeUp}
-            className="mt-4 text-lg text-muted-foreground"
-          >
-            Have a question or need help with an order? We&apos;d love to hear
-            from {brandName}.
-          </motion.p>
-        </motion.div>
+        <div className="mt-10 grid gap-6 lg:grid-cols-5">
+          {/* Get in touch */}
+          <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-8 lg:col-span-2">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Get in Touch</h2>
+            <ul className="mt-6 space-y-5">
+              {rows.map((row) => {
+                const Icon = row.icon;
+                const content = (
+                  <>
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card">
+                      <Icon className="size-5 text-foreground transition-colors duration-300 group-hover:text-brand" strokeWidth={1.5} />
+                    </span>
+                    <span>
+                      <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {row.label}
+                      </span>
+                      <span className="block max-w-[200px] text-[15px] font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-brand">
+                        {row.value}
+                      </span>
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={row.label}>
+                    {row.href ? (
+                      <a href={row.href} className="group flex cursor-pointer items-center gap-3">
+                        {content}
+                      </a>
+                    ) : (
+                      <div className="group flex items-center gap-3">{content}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
 
-        <div className="grid lg:grid-cols-5 gap-10 lg:gap-14">
-          {/* Contact info */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="lg:col-span-2 space-y-4"
-          >
-            {contactItems.map((item) => {
-              const Icon = item.icon;
-              const Inner = (
-                <div className="group flex items-start gap-4 rounded-2xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-lg">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">{item.label}</p>
-                    <p className="mt-1 break-words text-sm text-muted-foreground">
-                      {item.value}
-                    </p>
-                  </div>
-                </div>
-              );
-              return (
-                <motion.div key={item.label} variants={fadeUp}>
-                  {item.href ? (
+            {socials.length > 0 && (
+              <div className="mt-8 border-t border-border/60 pt-6">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Follow us</p>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {socials.map((social) => (
                     <a
-                      href={item.href}
-                      target={item.href.startsWith("http") ? "_blank" : undefined}
+                      key={social.platform}
+                      href={social.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="block"
+                      className="flex h-9 items-center rounded-full border border-border px-4 text-xs font-semibold capitalize text-muted-foreground transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
                     >
-                      {Inner}
+                      {social.platform}
                     </a>
-                  ) : (
-                    Inner
-                  )}
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data.mapEmbedUrl ? (
+              <a
+                href={data.mapEmbedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 flex h-11 items-center justify-center gap-2 rounded-lg bg-header-nav text-sm font-bold text-white transition-opacity hover:opacity-90"
+              >
+                <MapPin className="size-4" /> Find us on the map
+              </a>
+            ) : null}
+          </div>
 
           {/* Form */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            className="lg:col-span-3"
-          >
-            <div className="relative rounded-3xl border bg-card p-6 sm:p-10 shadow-xl">
-              {/* Gradient border accent */}
-              <div className="absolute inset-x-10 -top-px h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-
-              {sent ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                  >
-                    <CheckCircle2 className="h-10 w-10" />
-                  </motion.div>
-                  <h3 className="mt-6 text-2xl font-bold">Message Sent!</h3>
-                  <p className="mt-2 max-w-sm text-muted-foreground">
-                    Thanks for reaching out to {brandName}. Our team will get
-                    back to you within 24 hours.
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-8"
-                    onClick={() => {
-                      setSent(false);
-                      setForm({ name: "", email: "", subject: "", message: "" });
-                    }}
-                  >
-                    Send another message
-                  </Button>
+          <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-8 lg:col-span-3">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Send a Message</h2>
+            <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-name" className="ml-0.5 block text-xs font-semibold text-foreground">
+                    Your name
+                  </label>
+                  <input
+                    id="contact-name"
+                    {...register("name")}
+                    placeholder="John Doe"
+                    autoComplete="name"
+                    className={fieldClass(!!errors.name)}
+                  />
+                  {errors.name && <p className="text-[11px] font-medium text-destructive">{errors.name.message}</p>}
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} noValidate className="space-y-6">
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Name
-                      </label>
-                      <Input
-                        id="name"
-                        value={form.name}
-                        onChange={(e) =>
-                          setForm({ ...form, name: e.target.value })
-                        }
-                        placeholder="Your name"
-                        className={errors.name ? "border-red-500" : ""}
-                      />
-                      {errors.name && (
-                        <p className="text-xs text-red-500">{errors.name}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium">
-                        Email
-                      </label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={form.email}
-                        onChange={(e) =>
-                          setForm({ ...form, email: e.target.value })
-                        }
-                        placeholder="you@example.com"
-                        className={errors.email ? "border-red-500" : ""}
-                      />
-                      {errors.email && (
-                        <p className="text-xs text-red-500">{errors.email}</p>
-                      )}
-                    </div>
-                  </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="contact-email" className="ml-0.5 block text-xs font-semibold text-foreground">
+                    Email
+                  </label>
+                  <input
+                    id="contact-email"
+                    {...register("email")}
+                    placeholder="name@example.com"
+                    inputMode="email"
+                    autoComplete="email"
+                    className={fieldClass(!!errors.email)}
+                  />
+                  {errors.email && <p className="text-[11px] font-medium text-destructive">{errors.email.message}</p>}
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="subject" className="text-sm font-medium">
-                      Subject <span className="text-muted-foreground">(Optional)</span>
-                    </label>
-                    <Input
-                      id="subject"
-                      value={form.subject ?? ""}
-                      onChange={(e) =>
-                        setForm({ ...form, subject: e.target.value })
-                      }
-                      placeholder="How can we help?"
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <label htmlFor="contact-subject" className="ml-0.5 block text-xs font-semibold text-foreground">
+                  Subject <span className="font-normal text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  id="contact-subject"
+                  {...register("subject")}
+                  placeholder="How can we help?"
+                  className={fieldClass()}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="message" className="text-sm font-medium">
-                      Message
-                    </label>
-                    <Textarea
-                      id="message"
-                      rows={5}
-                      value={form.message}
-                      onChange={(e) =>
-                        setForm({ ...form, message: e.target.value })
-                      }
-                      placeholder="Tell us a bit more about your question..."
-                      className={errors.message ? "border-red-500" : ""}
-                    />
-                    {errors.message && (
-                      <p className="text-xs text-red-500">{errors.message}</p>
-                    )}
-                  </div>
+              <div className="space-y-1.5">
+                <label htmlFor="contact-message" className="ml-0.5 block text-xs font-semibold text-foreground">
+                  Message
+                </label>
+                <textarea
+                  id="contact-message"
+                  {...register("message")}
+                  placeholder="Tell us a little more…"
+                  rows={5}
+                  className={cn(fieldClass(!!errors.message), "h-auto resize-none py-3")}
+                />
+                {errors.message && (
+                  <p className="text-[11px] font-medium text-destructive">{errors.message.message}</p>
+                )}
+              </div>
 
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs text-muted-foreground hidden sm:block">
-                      We typically reply within 24 hours.
-                    </p>
-                    <Button
-                      type="submit"
-                      disabled={sending}
-                      className="w-full sm:w-auto px-8"
-                    >
-                      {sending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </motion.div>
+              <button
+                type="submit"
+                disabled={sending}
+                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60 sm:w-auto sm:px-10"
+              >
+                <Send className="size-4" />
+                Send Message
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
+
+        {/* Map embed */}
+        {data.mapEmbedUrl ? (
+          <div className="mt-6 overflow-hidden rounded-2xl shadow-sm">
+            <iframe
+              src={data.mapEmbedUrl}
+              title="Store location map"
+              className="h-72 w-full border-0 sm:h-96"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        ) : (
+          <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border/70 px-6 py-8 text-sm text-muted-foreground">
+            <MapPin className="size-4" /> Map coming soon
+          </div>
+        )}
+      </section>
     </div>
   );
 }

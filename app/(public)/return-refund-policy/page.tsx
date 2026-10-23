@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Refund & Return Policy",
+  title: "Return & Refund Policy",
   description:
     "Our refund and return policy — how returns work, eligibility, timelines, and how to request a refund.",
 };
@@ -44,7 +44,7 @@ export default function RefundPolicyPage() {
       <div className="mx-auto max-w-3xl">
         <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-10">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Refund &amp; Return Policy
+            Return &amp; Refund Policy
           </h1>
           <span className="mt-2 block h-1 w-12 rounded-full bg-brand" aria-hidden="true" />
           <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">

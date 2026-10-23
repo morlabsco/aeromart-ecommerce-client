@@ -83,7 +83,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
   const columns = [
     {
       title: footer?.columns?.[0]?.title ?? "Quick Links",
-      links: [...quickLinks, { label: "Refund Policy", url: "/refund-policy" }],
+      links: [...quickLinks, { label: "Return & Refund Policy", url: "/return-refund-policy" }],
     },
     ...((categories ?? []).length > 0
       ? [

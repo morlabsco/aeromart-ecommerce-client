@@ -1,279 +1,129 @@
-"use client";
+import Image from "next/image"
+import Link from "next/link"
+import { ArrowRight, HeartHandshake, Package, RefreshCcw, ShieldCheck, Target, Truck } from "lucide-react"
+import { themes, DEFAULT_NICHE } from "@/lib/theme.config"
+import type { SettingsAbout, SettingsBrand } from "@/lib/types/backend"
 
-import { motion } from "framer-motion";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  Sparkles,
-  Shield,
-  HeartHandshake,
-  ArrowRight,
-  Store,
-} from "lucide-react";
-import { themes, DEFAULT_NICHE } from "@/lib/theme.config";
-import { ThemedImage } from "@/components/shared/themed-image";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { SettingsAbout, SettingsBrand } from "@/lib/types/backend";
+const theme = themes[DEFAULT_NICHE]
 
-const FALLBACK_ABOUT: SettingsAbout = {
-  story:
-    "We started with a simple belief: premium products should be accessible to everyone. What began as a small passion project has grown into a brand loved by thousands.",
-  mission:
-    "Our mission is to deliver thoughtfully crafted, high-quality products that make everyday life a little more beautiful , backed by honest service and lasting value.",
-  image: "",
-  stats: [
-    { label: "Happy Customers", value: "10K+" },
-    { label: "Products", value: "250+" },
-    { label: "Years", value: "5+" },
-  ],
-};
+const VALUES = [
+  { icon: ShieldCheck, title: "Original Products", text: "Every item is sourced genuinely — 100% original & premium." },
+  { icon: Truck, title: "Fast Delivery", text: "Quick delivery at your doorstep, every single time." },
+  { icon: RefreshCcw, title: "Easy Return", text: "A hassle-free return policy, no questions asked." },
+  { icon: HeartHandshake, title: "Honest Service", text: "Real people, real help — before and after you buy." },
+]
 
-const values = [
-  {
-    icon: Sparkles,
-    title: "Quality First",
-    description:
-      "Every product is crafted from premium materials and rigorously tested for durability and comfort.",
-  },
-  {
-    icon: Shield,
-    title: "Sustainable Practices",
-    description:
-      "We're committed to ethical sourcing and sustainable manufacturing every step of the way.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Customer Obsessed",
-    description:
-      "Your satisfaction drives everything we do. We design with you in mind.",
-  },
-];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-};
-
-export default function About({
-  about,
-  brand,
-}: {
-  about?: SettingsAbout | null;
-  brand?: SettingsBrand | null;
-}) {
-  const theme = themes[DEFAULT_NICHE];
-  const data = about ?? FALLBACK_ABOUT;
-  const brandName = brand?.name || theme.brand;
-  const image = data.image || theme.about.image;
+/**
+ * About page, designed in the Nittonova tone: cream surface, white rounded
+ * cards, charcoal icon squares, orange accents and the signature dash —
+ * an editorial "story" layout rather than a generic marketing grid.
+ */
+export default function About({ about, brand }: { about: SettingsAbout | null; brand: SettingsBrand | null }) {
+  const brandName = brand?.name || theme.brand
+  const story = about?.story || "We started with one simple belief — everyday products should feel a little less ordinary."
+  const mission = about?.mission || "Our mission is to deliver thoughtfully curated, high-quality products that make everyday life a little more beautiful."
+  const image = about?.image || theme.about.image
+  const stats = about?.stats?.length ? about.stats : [{ label: "Happy Customers", value: "10k+" }, { label: "Products Curated", value: "1,200+" }, { label: "Cities Served", value: "64" }]
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Decorative background blobs */}
-      <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 -left-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        {/* Header */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="text-center max-w-2xl mx-auto mb-16 lg:mb-24"
-        >
-          <motion.span
-            variants={fadeUp}
-            className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary"
-          >
-            <Store className="h-3.5 w-3.5" />
-            About Us
-          </motion.span>
-          <motion.h1
-            variants={fadeUp}
-            className="mt-5 text-4xl lg:text-5xl font-bold tracking-tight"
-          >
-            Our <span className="text-primary">Story</span>
-          </motion.h1>
-          <motion.p
-            variants={fadeUp}
-            className="mt-4 text-lg text-muted-foreground"
-          >
-            The people, purpose and passion behind {brandName}.
-          </motion.p>
-        </motion.div>
-
-        {/* Story + image */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-20 lg:mb-28"
-        >
-          <motion.div variants={fadeUp}>
-            <div className="flex items-center gap-2 text-primary mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wider">
-                Who we are
-              </span>
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-              Crafted with care, <br className="hidden sm:block" />
-              built on <span className="text-primary">trust</span>.
-            </h2>
-            <div className="mt-6 space-y-4 text-muted-foreground leading-relaxed">
-              <p>{data.story}</p>
-              <p>{data.mission}</p>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              {data.stats.length > 0 &&
-                data.stats.map((stat) => (
-                  <motion.div
-                    key={stat.label}
-                    variants={fadeUp}
-                    className="rounded-2xl border bg-card p-4 text-center"
-                  >
-                    <p className="text-2xl lg:text-3xl font-bold text-primary">
-                      {stat.value}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {stat.label}
-                    </p>
-                  </motion.div>
-                ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            variants={fadeUp}
-            className="relative"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border shadow-xl">
-              <ThemedImage
-                src={image}
-                alt={`About ${brandName}`}
-                fallbackText={brandName}
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-              />
-            </div>
-            {/* Floating accent card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="absolute -bottom-6 -left-4 sm:-left-8 rounded-2xl border bg-card px-6 py-4 shadow-xl"
-            >
-              <div className="flex items-center gap-3">
-                {brand?.logo || theme.logo ? (
-                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-primary/10 p-1.5">
-                    <Image
-                      src={brand?.logo || theme.logo}
-                      alt={brandName}
-                      width={44}
-                      height={44}
-                      className="object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <Store className="h-5 w-5" />
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-bold">{brandName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Premium since day one
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-
-        {/* Values */}
-        <div className="mb-20 lg:mb-24">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight">
-              Our <span className="text-primary">Values</span>
-            </h2>
-            <p className="mt-3 text-lg text-muted-foreground">
-              What drives us every day
+    <div className="bg-hero-surface">
+      {/* Story */}
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">Our Story</p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+              The people behind {brandName}
+            </h1>
+            <span className="mt-4 block h-1 w-14 rounded-full bg-brand" aria-hidden="true" />
+            <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+              {story}
             </p>
-          </motion.div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {values.map((v) => {
-              const Icon = v.icon;
-              return (
-                <motion.div
-                  key={v.title}
-                  variants={fadeUp}
-                  className="group rounded-2xl border bg-card p-8 text-center transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl"
-                >
-                  <div className="mx-auto inline-flex p-3.5 rounded-2xl bg-primary/10 text-primary mb-5 transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{v.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {v.description}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-
-        {/* CTA */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-80px" }}
-          className="relative overflow-hidden rounded-3xl border bg-card p-10 lg:p-14 text-center shadow-xl"
-        >
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-          <h2 className="relative text-3xl lg:text-4xl font-bold tracking-tight">
-            Ready to explore {brandName}?
-          </h2>
-          <p className="relative mx-auto mt-3 max-w-xl text-muted-foreground">
-            Browse our curated collection and discover products made to last.
-          </p>
-          <div className="relative mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" render={<Link href="/products" />}>
-              Shop Now <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+              {mission}
+            </p>
             <Link
-              href="/contact"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" })
-              )}
+              href="/products"
+              className="mt-8 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90"
             >
-              Contact Us
+              Shop the collection <ArrowRight className="size-4" />
             </Link>
           </div>
-        </motion.div>
-      </div>
+
+          <div className="relative">
+            <div className="overflow-hidden rounded-2xl shadow-sm">
+              <Image
+                src={image}
+                alt={brandName}
+                width={880}
+                height={660}
+                className="h-auto w-full object-cover"
+              />
+            </div>
+            {/* Floating stat chip */}
+            <div className="absolute -bottom-5 left-5 flex items-center gap-3 rounded-2xl bg-header-nav px-5 py-4 shadow-lg">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-brand text-brand-foreground">
+                <Package className="size-5" strokeWidth={1.75} />
+              </span>
+              <div>
+                <p className="text-lg font-extrabold leading-none text-white">{stats[0]?.value}</p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                  {stats[0]?.label}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats band */}
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label} className="rounded-2xl bg-header-nav p-5 text-center sm:p-6">
+              <p className="text-2xl font-extrabold text-brand sm:text-3xl">{stat.value}</p>
+              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Mission + values */}
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8 lg:pb-24">
+        <div className="grid gap-6 lg:grid-cols-5">
+          <div className="flex flex-col justify-center rounded-2xl bg-card p-7 shadow-sm sm:p-9 lg:col-span-2">
+            <span className="flex size-12 items-center justify-center rounded-xl bg-header-nav text-white">
+              <Target className="size-5" strokeWidth={1.75} />
+            </span>
+            <h2 className="mt-5 text-xl font-bold text-foreground sm:text-2xl">What drives us</h2>
+            <span className="mt-3 block h-1 w-10 rounded-full bg-brand" aria-hidden="true" />
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+              {mission}
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:col-span-3">
+            {VALUES.map((value) => {
+              const Icon = value.icon
+              return (
+                <div
+                  key={value.title}
+                  className="group rounded-2xl bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:p-6"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-header-nav text-white transition-colors duration-300 group-hover:bg-brand">
+                    <Icon className="size-5" strokeWidth={1.75} />
+                  </span>
+                  <h3 className="mt-4 text-sm font-bold uppercase tracking-wide text-foreground">
+                    {value.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{value.text}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
     </div>
-  );
+  )
 }

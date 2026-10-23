@@ -22,34 +22,28 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
     getAllCategories({ limit: 5 }),
   ]);
   const settings = unwrapData(settingsResult);
-  const groups = settings?.navbar?.groups;
 
   const categories = unwrapList(categoriesResult)
     .slice(0, 5)
     .map((c) => ({ name: c.name, slug: c.slug }));
 
-  // Public nav: core routes, the top 3 categories, and the refund policy.
-  // Role links (Dashboard / Logout) follow for signed-in users; the auth
-  // group's Login link is intentionally dropped from the header.
+  // Public nav: core routes, the top 3 categories, and the return & refund
+  // policy. Signed-in user links live in the header account menu instead.
   const links: NavbarLink[] = [
     link("Home", "/"),
     link("Products", "/products"),
     ...categories.slice(0, 3).map((c) => link(c.name, `/products?category=${c.slug}`)),
-    link("Refund Policy", "/refund-policy"),
-    ...(session.isAuthenticated
-      ? session.isAdmin
-        ? groups?.admin ?? []
-        : groups?.customer ?? []
-      : []),
+    link("Return & Refund Policy", "/return-refund-policy"),
   ].filter((l) => l?.label && l?.url);
 
   const brand: SettingsBrand | null = settings?.brand ?? null;
   const footer: SettingsFooter | null = settings?.footer ?? null;
   const contact: SettingsContact | null = settings?.contact ?? null;
+  const user = session.isAuthenticated ? session.user ?? null : null;
 
   return (
     <div>
-      <Header brand={brand} navLinks={links} />
+      <Header brand={brand} navLinks={links} user={user} />
       {children}
       <Footer brand={brand} footer={footer} contact={contact} categories={categories} />
       <CartSidebar />

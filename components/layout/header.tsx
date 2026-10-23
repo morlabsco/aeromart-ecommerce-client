@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
+import { ChevronDown, LayoutDashboard, LogOut, Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
 import { useCartStore, useUIStore } from "../../lib/store/app-store"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -16,6 +16,8 @@ interface HeaderProps {
   brand?: SettingsBrand | null
   /** Public navbar links from settings. */
   navLinks?: NavbarLink[]
+  /** Signed-in user from the session; powers the account menu. */
+  user?: { name?: string | null; email?: string | null; role?: string | null } | null
 }
 
 const FALLBACK_LINKS = [
@@ -41,7 +43,7 @@ const stackedValue = "text-sm font-bold leading-tight text-foreground"
  * full-screen large-input search overlay, and a left slide-in drawer
  * (MENU heading, uppercase items with dividers, LOGIN pinned at the bottom).
  */
-export function Header({ brand, navLinks }: HeaderProps) {
+export function Header({ brand, navLinks, user }: HeaderProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
@@ -196,17 +198,86 @@ export function Header({ brand, navLinks }: HeaderProps) {
                 </span>
               </Link>
 
-              {/* Desktop: Account group */}
-              <Link href="/login" className="group hidden items-center gap-2 md:flex">
-                <User
-                  className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
-                  strokeWidth={1.5}
-                />
-                <span className="flex flex-col">
-                  <span className={stackedLabel}>Account</span>
-                  <span className={cn(stackedValue, "transition-colors group-hover:text-brand")}>Sign In</span>
-                </span>
-              </Link>
+              {/* Desktop: Account menu — opens on hover, focusable for
+                  keyboard users. Logged out shows Login/Register buttons;
+                  logged in shows the user, RBAC links, and Logout. */}
+              <div className="group relative hidden md:block">
+                <Link href="/login" className="flex items-center gap-2">
+                  <User
+                    className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
+                    strokeWidth={1.5}
+                  />
+                  <span className="flex flex-col">
+                    <span className={stackedLabel}>Account</span>
+                    <span className={cn(stackedValue, "transition-colors group-hover:text-brand")}>
+                      {user ? user.name ?? "Account" : "Sign In"}
+                    </span>
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-hover:rotate-180" />
+                </Link>
+
+                <div className="invisible absolute right-0 top-full z-50 translate-y-2 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  <div className="w-60 rounded-xl border border-border/60 bg-card p-2 shadow-xl">
+                    {!user ? (
+                      <div className="space-y-2 p-1">
+                        <Link
+                          href="/login"
+                          className="flex h-10 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90"
+                        >
+                          Login
+                        </Link>
+                        <Link
+                          href="/register"
+                          className="flex h-10 items-center justify-center rounded-lg border-[1.5px] border-brand text-sm font-bold text-brand transition-colors hover:bg-brand hover:text-brand-foreground"
+                        >
+                          Register
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="px-3 py-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Signed in as
+                          </p>
+                          <p className="mt-0.5 truncate text-sm font-bold text-foreground">
+                            {user.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                        <div className="my-1 h-px bg-border/60" />
+                        {(user.role === "admin"
+                          ? [
+                              { label: "Dashboard", href: "/dashboard/admin" },
+                              { label: "Orders", href: "/dashboard/admin/orders" },
+                              { label: "Products", href: "/dashboard/admin/products" },
+                            ]
+                          : [
+                              { label: "Dashboard", href: "/dashboard/customer" },
+                              { label: "My Orders", href: "/dashboard/customer/orders" },
+                              { label: "My Reviews", href: "/dashboard/customer/reviews" },
+                            ]
+                        ).map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-brand"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                        <div className="my-1 h-px bg-border/60" />
+                        <Link
+                          href="/logout"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive hover:text-white"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Logout
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               {/* Desktop: Cart group with live total */}
               <button
@@ -320,15 +391,46 @@ export function Header({ brand, navLinks }: HeaderProps) {
             </Link>
           ))}
         </nav>
-        <div className="shrink-0 border-t border-border/60 p-4">
-          <Link
-            href="/login"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
-          >
-            <User className="h-4 w-4" />
-            Login
-          </Link>
+        <div className="shrink-0 space-y-1 border-t border-border/60 p-4">
+          {user ? (
+            <>
+              <Link
+                href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+              <Link
+                href="/logout"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-destructive transition-colors hover:opacity-80"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
+              >
+                <User className="h-4 w-4" />
+                Login
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
+              >
+                <User className="h-4 w-4" />
+                Register
+              </Link>
+            </>
+          )}
         </div>
       </aside>
     </>
