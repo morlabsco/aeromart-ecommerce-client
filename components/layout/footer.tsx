@@ -64,8 +64,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
 
   const brandName = brand?.name || theme.brand
   const brandLogo = brand?.logo || theme.logo
-  const formattedBrand =
-    brandName.charAt(0).toUpperCase() + brandName.slice(1).toLowerCase()
+  // Brand name renders exactly as the admin typed it — no forced casing.
   const hasLogo = brandLogo.length > 0
 
   const description = footer?.description || theme.footer.description
@@ -99,11 +98,18 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
   ]
 
   // "Get In Touch" rows — only fields the settings actually provide.
+  // Location opens Google Maps; phone/email use tel:/mailto: links.
   const contactRows = [
-    contact?.address && { icon: MapPin, label: "Location", value: contact.address },
-    contact?.phone && { icon: Phone, label: "Phone", value: contact.phone },
-    contact?.email && { icon: Mail, label: "Email", value: contact.email },
-  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string }[]
+    contact?.address && {
+      icon: MapPin,
+      label: "Location",
+      value: contact.address,
+      href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`,
+      external: true,
+    },
+    contact?.phone && { icon: Phone, label: "Phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
+    contact?.email && { icon: Mail, label: "Email", value: contact.email, href: `mailto:${contact.email}` },
+  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string; href?: string; external?: boolean }[]
 
   const columnHeading = "text-sm font-bold uppercase tracking-widest text-foreground"
   const columnLink =
@@ -116,24 +122,38 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
           {/* Brand block */}
           <div>
             <div className="flex items-center gap-2">
-              {hasLogo ? (
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg">
-                  <Image
-                    src={brandLogo}
-                    alt={formattedBrand}
-                    width={40}
-                    height={40}
-                    className="object-contain"
-                  />
-                </div>
+              {brand?.logoOnly && hasLogo ? (
+                /* Logo-only mode: natural aspect, uncropped */
+                <Image
+                  src={brandLogo}
+                  alt={brandName}
+                  width={0}
+                  height={0}
+                  sizes="220px"
+                  className="h-10 w-auto max-w-[200px] object-contain sm:h-11"
+                />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground">
-                  {formattedBrand.charAt(0)}
-                </div>
+                <>
+                  {hasLogo ? (
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg">
+                      <Image
+                        src={brandLogo}
+                        alt={brandName}
+                        width={40}
+                        height={40}
+                        className="object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground">
+                      {brandName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="text-lg font-extrabold tracking-tight text-foreground">
+                    {brandName}
+                  </span>
+                </>
               )}
-              <span className="text-lg font-extrabold uppercase tracking-tight text-foreground">
-                {formattedBrand}
-              </span>
             </div>
             <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{description}</p>
 
@@ -182,19 +202,27 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
               <ul className="mt-6 space-y-4">
                 {contactRows.map((row) => {
                   const Icon = row.icon
+                  const RowTag = (row.href ? "a" : "div") as "a"
                   return (
-                    <li key={row.label} className="group flex cursor-pointer items-center gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card">
-                        <Icon className="h-5 w-5 text-foreground transition-colors duration-300 group-hover:text-brand" strokeWidth={1.5} />
-                      </span>
-                      <span>
-                        <span className="block text-xs uppercase tracking-wide text-muted-foreground">
-                          {row.label}
+                    <li key={row.label}>
+                      <RowTag
+                        href={row.href}
+                        target={row.external ? "_blank" : undefined}
+                        rel={row.external ? "noopener noreferrer" : undefined}
+                        className="group flex cursor-pointer items-center gap-3"
+                      >
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card">
+                          <Icon className="h-5 w-5 text-foreground transition-colors duration-300 group-hover:text-brand" strokeWidth={1.5} />
                         </span>
-                        <span className="block max-w-[180px] text-[15px] font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-brand">
-                          {row.value}
+                        <span>
+                          <span className="block text-xs uppercase tracking-wide text-muted-foreground">
+                            {row.label}
+                          </span>
+                          <span className="block max-w-[180px] text-[15px] font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-brand">
+                            {row.value}
+                          </span>
                         </span>
-                      </span>
+                      </RowTag>
                     </li>
                   )
                 })}

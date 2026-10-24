@@ -15,6 +15,8 @@ export interface SettingsBrand {
   nicheLabel: string;
   logo: string;
   favicon: string;
+  /** When true, show only the logo (natural aspect, uncropped) — no name text. */
+  logoOnly?: boolean;
   /** Active store currency code, e.g. "usd" (single string, per backend §15.2). */
   currency?: string;
   /** Delivery options used by order creation to resolve the charge. */

@@ -165,6 +165,7 @@ export function BrandEditor({
     const [nicheLabel, setNicheLabel] = useState(brand.nicheLabel);
     const [logo, setLogo] = useState(brand.logo);
     const [favicon, setFavicon] = useState(brand.favicon);
+    const [logoOnly, setLogoOnly] = useState(brand.logoOnly ?? false);
 
     return (
         <SectionCard title="Brand Identity" description="Store name, tagline, logo and niche.">
@@ -202,6 +203,16 @@ export function BrandEditor({
                 <UrlInput label="Logo URL" value={logo} onChange={setLogo} />
                 <UrlInput label="Favicon URL" value={favicon} onChange={setFavicon} />
             </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/40 px-4 py-3.5">
+                <div>
+                    <p className="text-sm font-semibold text-foreground">Logo as brand name</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        Show only the logo image (natural size, uncropped) instead of logo + name —
+                        ideal for landscape wordmark images.
+                    </p>
+                </div>
+                <Switch checked={logoOnly} onCheckedChange={setLogoOnly} />
+            </div>
             <SaveButton
                 onSave={() =>
                     onSave({
@@ -212,6 +223,7 @@ export function BrandEditor({
                         nicheLabel,
                         logo,
                         favicon,
+                        logoOnly,
                     })
                 }
                 saving={saving}

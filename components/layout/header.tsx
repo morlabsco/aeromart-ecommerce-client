@@ -62,8 +62,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
   const brandLogo = brand?.logo || theme.logo
   const tagline = brand?.tagline || theme.tagline
 
-  const formattedBrand =
-    brandName.charAt(0).toUpperCase() + brandName.slice(1).toLowerCase()
+  // Render the brand name exactly as the admin typed it — no forced casing.
   const hasLogo = brandLogo.length > 0
 
   const links =
@@ -121,22 +120,36 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               title={tagline}
               className="absolute left-1/2 flex -translate-x-1/2 shrink-0 items-center gap-1.5 md:static md:translate-x-0"
             >
-              {hasLogo ? (
+              {brand?.logoOnly && hasLogo ? (
+                /* Logo-only mode: the artwork at its natural aspect, uncropped */
                 <Image
                   src={brandLogo}
-                  alt={formattedBrand}
-                  width={40}
-                  height={40}
-                  className="h-9 w-9 object-contain md:h-10 md:w-10"
+                  alt={brandName}
+                  width={0}
+                  height={0}
+                  sizes="200px"
+                  className="h-9 w-auto max-w-[170px] object-contain sm:h-10 md:h-11 md:max-w-[200px]"
                 />
               ) : (
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground md:h-10 md:w-10">
-                  {formattedBrand.charAt(0)}
-                </span>
+                <>
+                  {hasLogo ? (
+                    <Image
+                      src={brandLogo}
+                      alt={brandName}
+                      width={40}
+                      height={40}
+                      className="h-9 w-9 object-contain md:h-10 md:w-10"
+                    />
+                  ) : (
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground md:h-10 md:w-10">
+                      {brandName.charAt(0)}
+                    </span>
+                  )}
+                  <span className="text-base font-extrabold tracking-tight text-foreground md:text-xl">
+                    {brandName}
+                  </span>
+                </>
               )}
-              <span className="text-base font-extrabold uppercase tracking-tight text-foreground md:text-xl">
-                {formattedBrand}
-              </span>
             </Link>
 
             {/* Search (desktop): bordered rectangle + orange magnifier button */}

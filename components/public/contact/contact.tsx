@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PageHero } from "@/components/shared/page-hero";
 import type { SettingsBrand, SettingsContact } from "@/lib/types/backend";
 
 const FALLBACK_CONTACT: SettingsContact = {
@@ -55,12 +56,16 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
     defaultValues: { name: "", email: "", subject: "", message: "" },
   });
 
+  const mapsUrl = data.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.address)}`
+    : "";
+
   const rows = [
-    data.address && { icon: MapPin, label: "Location", value: data.address },
+    data.address && { icon: MapPin, label: "Location", value: data.address, href: mapsUrl, external: true },
     data.phone && { icon: Phone, label: "Phone", value: data.phone, href: `tel:${data.phone.replace(/\s/g, "")}` },
     data.email && { icon: Mail, label: "Email", value: data.email, href: `mailto:${data.email}` },
     data.hours && { icon: Clock, label: "Hours", value: data.hours },
-  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string; href?: string }[];
+  ].filter(Boolean) as { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string; href?: string; external?: boolean }[];
 
   const socials = Object.entries(data.social ?? {})
     .filter(([, url]) => url)
@@ -79,21 +84,13 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
 
   return (
     <div className="bg-hero-surface">
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        {/* Heading */}
-        <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">Contact</p>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            We&apos;d love to hear from you
-          </h1>
-          <span className="mt-4 block h-1 w-14 rounded-full bg-brand" aria-hidden="true" />
-          <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
-            Questions about an order, a product, or anything else? The {brandName} team is one
-            message away.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 lg:grid-cols-5">
+      <PageHero
+        eyebrow="Contact"
+        title="We'd love to hear from you"
+        subtitle={`Questions about an order, a product, or anything else? The ${brandName} team is one message away.`}
+      />
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-5">
           {/* Get in touch */}
           <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-8 lg:col-span-2">
             <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Get in Touch</h2>
@@ -118,7 +115,12 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                 return (
                   <li key={row.label}>
                     {row.href ? (
-                      <a href={row.href} className="group flex cursor-pointer items-center gap-3">
+                      <a
+                        href={row.href}
+                        target={row.external ? "_blank" : undefined}
+                        rel={row.external ? "noopener noreferrer" : undefined}
+                        className="group flex cursor-pointer items-center gap-3"
+                      >
                         {content}
                       </a>
                     ) : (
@@ -234,7 +236,7 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
           </div>
         </div>
 
-        {/* Map embed */}
+        {/* Map embed — or a designed directions panel when not configured */}
         {data.mapEmbedUrl ? (
           <div className="mt-6 overflow-hidden rounded-2xl shadow-sm">
             <iframe
@@ -246,8 +248,33 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
             />
           </div>
         ) : (
-          <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border/70 px-6 py-8 text-sm text-muted-foreground">
-            <MapPin className="size-4" /> Map coming soon
+          <div className="relative mt-6 overflow-hidden rounded-[1.75rem] bg-header-nav px-6 py-10 sm:px-10">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-brand/20 blur-3xl" />
+            <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <span className="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-brand p-3.5 text-brand-foreground">
+                  <MapPin className="size-6" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-white/50">
+                    Visit our store
+                  </p>
+                  <p className="mt-1 max-w-sm text-[15px] font-semibold leading-snug text-white">
+                    {data.address}
+                  </p>
+                </div>
+              </div>
+              {mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-brand-foreground transition-transform duration-300 hover:scale-[1.03]"
+                >
+                  <MapPin className="size-4" /> Open in Google Maps
+                </a>
+              )}
+            </div>
           </div>
         )}
       </section>

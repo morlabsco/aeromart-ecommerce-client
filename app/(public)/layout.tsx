@@ -33,6 +33,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
     link("Home", "/"),
     link("Products", "/products"),
     ...categories.slice(0, 3).map((c) => link(c.name, `/products?category=${c.slug}`)),
+    link("Track Order", "/track-order"),
     link("Return & Refund Policy", "/return-refund-policy"),
   ].filter((l) => l?.label && l?.url);
 

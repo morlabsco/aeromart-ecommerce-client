@@ -191,3 +191,13 @@
     display: none;
   }
 }
+
+/* Indeterminate loading bar used on the track-order search panel. */
+@keyframes shimmer-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(310%);
+  }
+}
