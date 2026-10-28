@@ -8,7 +8,7 @@
 // Working space: oklch (l 0-1, c 0-0.4, h 0-360). Helpers round to 3
 // decimals for stability, matching the CSS the storefront consumes.
 
-import { converter, parse, wcagContrast, wcagLuminance } from "culori";
+import { converter, parse, wcagLuminance } from "culori";
 import type { SettingsColorSet } from "@/lib/types/backend";
 
 const toOklch = converter("oklch");
@@ -37,30 +37,20 @@ function formatOklch({ l, c, h, alpha }: Oklch): string {
     return `oklch(${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(3)}${alphaPart})`;
 }
 
-/** WCAG contrast ratio between two CSS colors. */
-function contrast(a: string, b: string): number {
-    try {
-        return wcagContrast(a, b);
-    } catch {
-        return 1;
-    }
-}
-
 /**
- * Picks a readable foreground for a given background: dark text when the
- * background is light, light text when the background is dark. Chooses the
- * side with the higher contrast ratio against pure black/white.
+ * Picks a readable foreground for a given background: light text by default
+ * (buttons/chips on a brand color read as white-on-color by convention), and
+ * dark text only when the background is genuinely light. A raw
+ * black-vs-white contrast race picks near-black for mid-tone brand colors,
+ * which renders as black text inside primary buttons and checkboxes.
  */
 function readableOn(background: string): string {
     const parsed = toOklchColor(background);
     if (!parsed) return background;
 
-    const dark = formatOklch({ ...parsed, l: 0.14, c: 0.03 });
-    const light = formatOklch({ ...parsed, l: 0.97, c: 0.01 });
-
-    return contrast(dark, background) >= contrast(light, background)
-        ? dark
-        : light;
+    return parsed.l > 0.72
+        ? formatOklch({ ...parsed, l: 0.14, c: 0.03 })
+        : formatOklch({ ...parsed, l: 0.97, c: 0.01 });
 }
 
 /**

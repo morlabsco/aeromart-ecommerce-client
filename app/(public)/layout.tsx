@@ -47,7 +47,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
       <Header brand={brand} navLinks={links} user={user} />
       {children}
       <Footer brand={brand} footer={footer} contact={contact} categories={categories} />
-      <CartSidebar />
+      <CartSidebar currency={brand?.currency} />
       <ChatWidget contact={contact} />
     </div>
   );

@@ -27,7 +27,12 @@ function lineUnitPrice(item: CartItem): number {
   return getOfferPrice(item.product.price, item.product.offerPrice) ?? item.product.price
 }
 
-export function CartSidebar() {
+export function CartSidebar({
+  /** Live store currency from the brand settings — preferred for display. */
+  currency,
+}: {
+  currency?: string | null
+} = {}) {
   const items = useCartStore((state) => state.items)
   const removeItem = useCartStore((s) => s.removeItem)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
@@ -154,7 +159,7 @@ export function CartSidebar() {
                         <p className="mt-1 text-sm font-extrabold text-brand">
                           {formatCurrency(
                             lineUnitPrice(item),
-                            item.product.currency
+                            currency ?? item.product.currency
                           )}
                         </p>
 
@@ -181,7 +186,7 @@ export function CartSidebar() {
                           <span className="text-sm font-bold tabular-nums text-foreground">
                             {formatCurrency(
                               lineUnitPrice(item) * item.quantity,
-                              item.product.currency
+                              currency ?? item.product.currency
                             )}
                           </span>
                           <button
@@ -205,7 +210,7 @@ export function CartSidebar() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-lg font-extrabold text-brand tabular-nums">
-                    {formatCurrency(subtotal(), items[0]?.product.currency)}
+                    {formatCurrency(subtotal(), currency ?? items[0]?.product.currency)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">

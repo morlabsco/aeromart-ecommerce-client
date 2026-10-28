@@ -2,7 +2,7 @@
 //
 // Products carry a currency code from the backend (usd, bdt, eur, gbp, inr,
 // aed, aud, cad ...). This helper renders amounts consistently: USD uses "$",
-// BDT uses the "BDT" label, others use their symbol or code.
+// BDT uses the taka sign "৳", others use their symbol or code.
 import type { StorefrontOfferPrice } from "@/lib/types";
 
 /** Returns the effective sale price when an offer is active, else null. */
@@ -34,15 +34,14 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   eur: "€",
   gbp: "£",
   inr: "₹",
+  bdt: "৳",
   aed: "AED ",
   aud: "A$",
   cad: "C$",
 };
 
-/** Currencies rendered with their code label instead of a symbol. */
-const CODE_LABEL_CURRENCIES: Record<string, string> = {
-  bdt: "BDT",
-};
+/** Currencies rendered with their code label after the amount instead of a symbol. */
+const CODE_LABEL_CURRENCIES: Record<string, string> = {};
 
 /** Returns the display symbol/label for a currency code (lowercased). */
 export function currencySymbol(currency: string | undefined | null): string {

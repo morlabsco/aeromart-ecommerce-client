@@ -2,12 +2,13 @@
 
 import { Suspense, useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
-    Search,
     LayoutGrid,
     List,
     SlidersHorizontal,
     X,
     SearchX,
+    ChevronDown,
+    Check,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "../../../components/shared/reveal";
@@ -21,33 +22,29 @@ import { Input } from "../../../components/ui/input";
 import { Slider } from "../../../components/ui/slider";
 import { Label } from "../../../components/ui/label";
 import { Checkbox } from "../../../components/ui/checkbox";
-import {
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectContent,
-    SelectItem,
-} from "@/components/ui/select";
 import { Pagination } from "../../../components/ui/pagination";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/lib/types";
-import type { Category, Brand } from "@/lib/types/backend";
-import { formatCurrency, currencySymbol } from "@/lib/utils/currency";
+import type { Product } from "../../../lib/types";
+import type { Category, Brand } from "../../../lib/types/backend";
+import { formatCurrency } from "../../../lib/utils/currency";
 
 /* ---------------------------------------------------------------------------
- * Nittonova Shop page (from the cropped products-page references): breadcrumb
- * + "Shop (N)" heading, charcoal sort box + grid/list toggle, FILTER sidebar
- * (pill search, icon category list, brands, price, stock) and a product grid
- * of the shared ProductCard with pagination above and below the grid.
+ * Nittonova Shop page: centered breadcrumb + "All Products (N)" heading, a
+ * toolbar with a left Filters trigger (opens a left slide-in drawer with
+ * categories / brands / colors / price / stock), a custom brand Sort menu
+ * (no browser select) and the grid/list view toggle, then the product grid
+ * with pagination below it only.
  * ------------------------------------------------------------------------- */
 
 const ITEMS_PER_PAGE = 12;
 
 const SORT_OPTIONS = [
-    { value: "newest", label: "Featured" },
+    { value: "newest", label: "Latest" },
+    { value: "oldest", label: "Oldest" },
     { value: "price-asc", label: "Price: Low to High" },
     { value: "price-desc", label: "Price: High to Low" },
-    { value: "rating", label: "Top Rated" },
+    { value: "name-asc", label: "Name: A to Z" },
+    { value: "name-desc", label: "Name: Z to A" },
 ] as const;
 
 function SkeletonGrid() {
@@ -95,6 +92,92 @@ function ViewToggle({
         <div className="flex overflow-hidden rounded-lg border border-border shadow-xs">
             {btn("grid", LayoutGrid, "Grid view")}
             {btn("list", List, "List view")}
+        </div>
+    );
+}
+
+/**
+ * Custom sort menu — brand-owned, no browser select. Transparent trigger
+ * with primary-colored label (matching the Filters trigger), menu drops in
+ * below the button with a check on the active option.
+ */
+function SortMenu({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const onPointerDown = (e: PointerEvent) => {
+            if (ref.current?.contains(e.target as Node)) return;
+            setOpen(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("pointerdown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+        return () => {
+            document.removeEventListener("pointerdown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+        };
+    }, [open]);
+
+    const label =
+        SORT_OPTIONS.find((o) => o.value === value)?.label ?? "Latest";
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-label="Sort products"
+                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-brand transition-colors hover:bg-brand/10"
+            >
+                Sort by: {label}
+                <ChevronDown
+                    className={cn(
+                        "size-4 transition-transform duration-200",
+                        open && "rotate-180",
+                    )}
+                />
+            </button>
+            {open && (
+                <div
+                    role="listbox"
+                    aria-label="Sort options"
+                    className="absolute right-0 top-full z-40 mt-2 w-60 animate-in fade-in slide-in-from-top-1 overflow-hidden rounded-xl border border-border/60 bg-card py-1.5 shadow-xl"
+                >
+                    {SORT_OPTIONS.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            role="option"
+                            aria-selected={option.value === value}
+                            onClick={() => {
+                                onChange(option.value);
+                                setOpen(false);
+                            }}
+                            className={cn(
+                                "flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors",
+                                option.value === value
+                                    ? "font-bold text-brand"
+                                    : "text-foreground hover:bg-muted hover:text-brand",
+                            )}
+                        >
+                            {option.label}
+                            {option.value === value && <Check className="size-4" />}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -180,49 +263,18 @@ function ProductsPageContent({
         searchTerm: "",
         category: "all",
         brand: "all",
+        color: "all",
         sort: "newest",
         minPrice: "",
         maxPrice: "",
         inStock: "",
         page: "1",
     });
-    const [showFilters, setShowFilters] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const [view, setView] = useState<"grid" | "list">("grid");
 
     // Header search used to push ?searchTerm=; keep it working alongside ?search=.
     const searchParam = params.search || params.searchTerm || "";
-
-    // Local, uncontrolled search input for lag-free typing. Commits to the URL
-    // params only after the user pauses (debounced), so keystrokes never push
-    // a router navigation.
-    const [searchDraft, setSearchDraft] = useState(searchParam);
-    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    useEffect(() => {
-        setSearchDraft(searchParam);
-    }, [searchParam]);
-
-    const handleSearchChange = useCallback(
-        (value: string) => {
-            setSearchDraft(value);
-            if (searchDebounceRef.current) {
-                clearTimeout(searchDebounceRef.current);
-            }
-            searchDebounceRef.current = setTimeout(() => {
-                setParams({ search: value, searchTerm: "", page: "1" });
-            }, 350);
-        },
-        [setParams],
-    );
-
-    // Clear the debounce on unmount.
-    useEffect(() => {
-        return () => {
-            if (searchDebounceRef.current) {
-                clearTimeout(searchDebounceRef.current);
-            }
-        };
-    }, []);
 
     // Category links anywhere in the app use the slug; older links used the
     // name. Resolve whichever arrived to a canonical category name.
@@ -271,6 +323,21 @@ function ProductsPageContent({
         [priceBounds, setParams],
     );
 
+    // Colors present across the catalog (colorOptions is the backend's single
+    // source of truth for colors). Hidden when no product declares any.
+    const availableColors = useMemo(() => {
+        const byName = new Map<string, string>();
+        for (const p of products) {
+            for (const c of p.colorOptions ?? []) {
+                if (!c.name || byName.has(c.name)) continue;
+                byName.set(c.name, c.hex || "");
+            }
+        }
+        return [...byName.entries()]
+            .map(([name, hex]) => ({ name, hex }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [products]);
+
     const filtered = useMemo(() => {
         let result = products.filter((p) => p.isActive);
 
@@ -291,6 +358,12 @@ function ProductsPageContent({
             result = result.filter((p) => p.brand === params.brand);
         }
 
+        if (params.color !== "all" && params.color) {
+            result = result.filter((p) =>
+                p.colorOptions?.some((c) => c.name === params.color),
+            );
+        }
+
         // Price range filter
         const minP = Number(params.minPrice) || 0;
         const maxP = Number(params.maxPrice) || Infinity;
@@ -302,14 +375,24 @@ function ProductsPageContent({
         }
 
         switch (params.sort) {
+            case "oldest":
+                result.sort(
+                    (a, b) =>
+                        new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime(),
+                );
+                break;
             case "price-asc":
                 result.sort((a, b) => a.price - b.price);
                 break;
             case "price-desc":
                 result.sort((a, b) => b.price - a.price);
                 break;
-            case "rating":
-                result.sort((a, b) => b.rating - a.rating);
+            case "name-asc":
+                result.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case "name-desc":
+                result.sort((a, b) => b.title.localeCompare(a.title));
                 break;
             case "newest":
             default:
@@ -327,6 +410,7 @@ function ProductsPageContent({
         searchParam,
         activeCategoryName,
         params.brand,
+        params.color,
         params.sort,
         params.minPrice,
         params.maxPrice,
@@ -343,11 +427,15 @@ function ProductsPageContent({
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE,
     );
+    const rangeStart =
+        paginated.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+    const rangeEnd = (currentPage - 1) * ITEMS_PER_PAGE + paginated.length;
 
     const hasActiveFilters =
         Boolean(searchParam) ||
         activeCategoryName !== "all" ||
         params.brand !== "all" ||
+        (params.color !== "all" && Boolean(params.color)) ||
         Boolean(params.minPrice) ||
         Boolean(params.maxPrice) ||
         params.inStock === "true";
@@ -358,213 +446,31 @@ function ProductsPageContent({
             searchTerm: "",
             category: "all",
             brand: "all",
+            color: "all",
             minPrice: "",
             maxPrice: "",
             inStock: "",
             page: "1",
         });
 
-    const currencyLabel = products[0]?.currency
-        ? currencySymbol(products[0].currency)
-        : "$";
-
-    const sortLabel =
-        SORT_OPTIONS.find((o) => o.value === params.sort)?.label ?? "Featured";
-
     const goToPage = (p: number) => {
         setParams({ page: String(p) });
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    /* ------------------------------ filter panel ------------------------------ */
-
-    const filterPanel = (
-        <div className="space-y-7">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
-                Filter
-            </p>
-
-            {/* Pill search with the orange magnifier button */}
-            <form
-                className="flex items-center gap-1 rounded-full border border-border bg-card p-1 pl-4"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    setParams({ search: searchDraft, searchTerm: "", page: "1" });
-                }}
-            >
-                <Search className="size-4 shrink-0 text-muted-foreground/60" />
-                <input
-                    value={searchDraft}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    placeholder="Search"
-                    aria-label="Search products"
-                    className="h-9 w-full min-w-0 bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
-                />
-                <Button
-                    type="submit"
-                    variant="brand"
-                    size="icon-sm"
-                    aria-label="Search"
-                    className="shrink-0 rounded-full"
-                >
-                    <Search className="size-4" />
-                </Button>
-            </form>
-
-            {/* Category — icon rows like the reference sidebar */}
-            <div>
-                <h3 className="text-sm font-bold text-foreground">Category</h3>
-                <ul className="mt-3 space-y-1">
-                    <li>
-                        <button
-                            type="button"
-                            onClick={() => setParams({ category: "all", page: "1" })}
-                            className={cn(
-                                "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                                activeCategoryName === "all"
-                                    ? "font-bold text-brand"
-                                    : "text-muted-foreground hover:text-brand",
-                            )}
-                        >
-                            All
-                        </button>
-                    </li>
-                    {categories.map((cat) => (
-                        <li key={cat._id}>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setParams({ category: cat.slug, page: "1" })
-                                }
-                                className={cn(
-                                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
-                                    activeCategoryName === cat.name
-                                        ? "font-bold text-brand"
-                                        : "text-muted-foreground hover:text-brand",
-                                )}
-                            >
-                                <span
-                                    role="img"
-                                    aria-hidden="true"
-                                    className={cn(
-                                        "h-5 w-5 shrink-0 rounded-sm bg-contain bg-center bg-no-repeat",
-                                        !cat.icon && "bg-muted",
-                                    )}
-                                    style={
-                                        cat.icon
-                                            ? { backgroundImage: `url(${cat.icon})` }
-                                            : undefined
-                                    }
-                                />
-                                {cat.name}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-
-            {/* Brand */}
-            {brands.length > 0 && (
-                <div>
-                    <h3 className="text-sm font-bold text-foreground">Brand</h3>
-                    <ul className="mt-3 space-y-1">
-                        <li>
-                            <button
-                                type="button"
-                                onClick={() => setParams({ brand: "all", page: "1" })}
-                                className={cn(
-                                    "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
-                                    params.brand === "all"
-                                        ? "font-bold text-brand"
-                                        : "text-muted-foreground hover:text-brand",
-                                )}
-                            >
-                                All
-                            </button>
-                        </li>
-                        {brands.map((b) => (
-                            <li key={b._id}>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setParams({ brand: b.name, page: "1" })
-                                    }
-                                    className={cn(
-                                        "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
-                                        params.brand === b.name
-                                            ? "font-bold text-brand"
-                                            : "text-muted-foreground hover:text-brand",
-                                    )}
-                                >
-                                    {b.name}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* Price */}
-            <div>
-                <h3 className="text-sm font-bold text-foreground">Price</h3>
-                <div className="mt-4 space-y-3">
-                    <Slider
-                        value={sliderValue}
-                        min={priceBounds.min}
-                        max={priceBounds.max}
-                        onValueChange={(value) => {
-                            const [min, max] = value as number[];
-                            setSliderValue([min, max]);
-                        }}
-                        onValueCommitted={(value) => {
-                            const [min, max] = value as number[];
-                            commitSlider([min, max]);
-                        }}
-                    />
-                    <div className="flex items-center gap-2">
-                        <Input
-                            type="number"
-                            placeholder={`${currencyLabel}${priceBounds.min}`}
-                            value={params.minPrice}
-                            onChange={(e) =>
-                                setParams({ minPrice: e.target.value, page: "1" })
-                            }
-                            className="h-9 text-xs"
-                            aria-label="Minimum price"
-                        />
-                        <span className="text-xs text-muted-foreground">—</span>
-                        <Input
-                            type="number"
-                            placeholder={`${currencyLabel}${priceBounds.max}`}
-                            value={params.maxPrice}
-                            onChange={(e) =>
-                                setParams({ maxPrice: e.target.value, page: "1" })
-                            }
-                            className="h-9 text-xs"
-                            aria-label="Maximum price"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Stock */}
-            <Label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
-                <Checkbox
-                    checked={params.inStock === "true"}
-                    onCheckedChange={(checked: boolean) =>
-                        setParams({ inStock: checked ? "true" : "", page: "1" })
-                    }
-                />
-                In Stock Only
-            </Label>
-
-            {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    <X className="h-3.5 w-3.5" /> Clear filters
-                </Button>
-            )}
-        </div>
-    );
+    // Lock body scroll and close on Escape while the filter drawer is open.
+    useEffect(() => {
+        if (!filtersOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setFiltersOpen(false);
+        };
+        document.addEventListener("keydown", onKeyDown);
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+            document.body.style.overflow = "";
+        };
+    }, [filtersOpen]);
 
     /* ------------------------------- empty state ------------------------------- */
 
@@ -593,50 +499,6 @@ function ProductsPageContent({
         </div>
     );
 
-    /* --------------------------------- toolbar -------------------------------- */
-
-    const toolbar = (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-                {filtered.length} item{filtered.length === 1 ? "" : "s"} are found
-            </p>
-            <div className="flex items-center gap-3">
-                <Select
-                    value={params.sort}
-                    onValueChange={(value) =>
-                        setParams({ sort: value ?? "newest", page: "1" })
-                    }
-                >
-                    <SelectTrigger
-                        aria-label="Sort products"
-                        className="h-10 w-full border-header-nav bg-header-nav text-header-nav-foreground shadow-none hover:bg-header-nav/90 sm:w-52"
-                    >
-                        <SelectValue>
-                            <span className="font-semibold">
-                                Sort by: {sortLabel}
-                            </span>
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {SORT_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <ViewToggle view={view} onChange={setView} />
-                <Button
-                    variant="brand"
-                    className="sm:hidden"
-                    onClick={() => setShowFilters(true)}
-                >
-                    <SlidersHorizontal className="h-4 w-4" /> Filters
-                </Button>
-            </div>
-        </div>
-    );
-
     /* ---------------------------------- page ---------------------------------- */
 
     return (
@@ -649,10 +511,10 @@ function ProductsPageContent({
                 />
             )}
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-                {/* Breadcrumb */}
+                {/* Breadcrumb + heading — centered */}
                 <nav
                     aria-label="Breadcrumb"
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
                 >
                     <a href="/" className="inline-block transition-colors hover:text-brand">
                         Home
@@ -664,7 +526,7 @@ function ProductsPageContent({
                                 href="/products"
                                 className="inline-block transition-colors hover:text-brand"
                             >
-                                Shop
+                                Products
                             </a>
                             <span aria-hidden="true">/</span>
                             <span className="font-semibold text-foreground">
@@ -672,105 +534,338 @@ function ProductsPageContent({
                             </span>
                         </>
                     ) : (
-                        <span className="font-semibold text-foreground">Shop</span>
+                        <span className="font-semibold text-foreground">Products</span>
                     )}
                 </nav>
 
-                {/* Title */}
                 <motion.h1
                     variants={fadeUp}
                     initial="hidden"
                     animate="show"
-                    className="mt-3 text-3xl font-bold uppercase tracking-tight text-foreground lg:text-4xl"
+                    className="mt-3 text-center text-3xl font-bold uppercase tracking-tight text-foreground lg:text-4xl"
                 >
-                    Shop{" "}
+                    All Products{" "}
                     <span className="font-bold text-muted-foreground">
                         ({filtered.length})
                     </span>
                 </motion.h1>
 
-                <div className="mt-6">{toolbar}</div>
-
-                <div className="mt-2 flex gap-8">
-                    {/* Desktop sidebar */}
-                    <aside className="hidden w-60 shrink-0 sm:block">
-                        <div className="sticky top-24 pb-6">{filterPanel}</div>
-                    </aside>
-
-                    {/* Mobile filter bottom sheet */}
-                    {showFilters && (
-                        <div className="fixed inset-0 z-50 sm:hidden">
-                            <div
-                                className="absolute inset-0 bg-scrim/50 backdrop-blur-sm"
-                                onClick={() => setShowFilters(false)}
+                {/* Toolbar: Filters (left) · result count (center) · sort + view (right) */}
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button
+                        type="button"
+                        onClick={() => setFiltersOpen(true)}
+                        aria-label="Open filters"
+                        className="flex h-10 w-fit cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-bold text-brand transition-colors hover:bg-brand/10"
+                    >
+                        <SlidersHorizontal className="size-4" />
+                        Filters
+                        {hasActiveFilters && (
+                            <span
+                                className="ml-0.5 size-2 rounded-full bg-brand"
+                                aria-hidden="true"
                             />
-                            <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-hero-surface p-5 shadow-2xl">
-                                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted-foreground/30" />
-                                <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="font-bold">Filters</h2>
+                        )}
+                    </button>
+                    <p className="text-sm text-muted-foreground sm:flex-1 sm:text-center">
+                        Showing {rangeStart}–{rangeEnd} of {filtered.length}{" "}
+                        product{filtered.length === 1 ? "" : "s"}
+                    </p>
+                    <div className="flex items-center gap-3 sm:justify-end">
+                        <SortMenu
+                            value={params.sort}
+                            onChange={(value) =>
+                                setParams({ sort: value, page: "1" })
+                            }
+                        />
+                        <ViewToggle view={view} onChange={setView} />
+                    </div>
+                </div>
+
+                {/* Filter drawer — left slide-in panel over a scrim */}
+                <div
+                    className={cn(
+                        "fixed inset-0 z-50 bg-scrim/50 transition-opacity duration-300",
+                        filtersOpen
+                            ? "opacity-100"
+                            : "pointer-events-none opacity-0",
+                    )}
+                    onClick={() => setFiltersOpen(false)}
+                    aria-hidden="true"
+                />
+                <aside
+                    className={cn(
+                        "fixed inset-y-0 left-0 z-50 flex w-[85%] max-w-sm flex-col bg-card shadow-xl transition-transform duration-300",
+                        filtersOpen ? "translate-x-0" : "-translate-x-full",
+                    )}
+                    aria-label="Product filters"
+                    aria-hidden={!filtersOpen}
+                    inert={!filtersOpen}
+                >
+                    <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-5">
+                        <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+                            Filters
+                        </span>
+                        <button
+                            onClick={() => setFiltersOpen(false)}
+                            className="cursor-pointer rounded-full p-1.5 text-foreground transition-colors hover:bg-muted"
+                            aria-label="Close filters"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 space-y-7 overflow-y-auto p-5">
+                        {/* Category */}
+                        <div>
+                            <h3 className="text-sm font-bold text-foreground">Category</h3>
+                            <ul className="mt-3 space-y-1">
+                                <li>
                                     <button
-                                        onClick={() => setShowFilters(false)}
-                                        className="cursor-pointer rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                        aria-label="Close filters"
+                                        type="button"
+                                        onClick={() => setParams({ category: "all", page: "1" })}
+                                        className={cn(
+                                            "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                                            activeCategoryName === "all"
+                                                ? "font-bold text-brand"
+                                                : "text-muted-foreground hover:text-brand",
+                                        )}
                                     >
-                                        <X className="h-5 w-5" />
+                                        All Categories
                                     </button>
+                                </li>
+                                {categories.map((cat) => (
+                                    <li key={cat._id}>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setParams({ category: cat.slug, page: "1" })
+                                            }
+                                            className={cn(
+                                                "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                                                activeCategoryName === cat.name
+                                                    ? "font-bold text-brand"
+                                                    : "text-muted-foreground hover:text-brand",
+                                            )}
+                                        >
+                                            <span
+                                                role="img"
+                                                aria-hidden="true"
+                                                className={cn(
+                                                    "h-5 w-5 shrink-0 rounded-sm bg-contain bg-center bg-no-repeat",
+                                                    !cat.icon && "bg-muted",
+                                                )}
+                                                style={
+                                                    cat.icon
+                                                        ? { backgroundImage: `url(${cat.icon})` }
+                                                        : undefined
+                                                }
+                                            />
+                                            {cat.name}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Brand */}
+                        {brands.length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground">Brand</h3>
+                                <ul className="mt-3 space-y-1">
+                                    <li>
+                                        <button
+                                            type="button"
+                                            onClick={() => setParams({ brand: "all", page: "1" })}
+                                            className={cn(
+                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                params.brand === "all"
+                                                    ? "font-bold text-brand"
+                                                    : "text-muted-foreground hover:text-brand",
+                                            )}
+                                        >
+                                            All Brands
+                                        </button>
+                                    </li>
+                                    {brands.map((b) => (
+                                        <li key={b._id}>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setParams({ brand: b.name, page: "1" })
+                                                }
+                                                className={cn(
+                                                    "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                    params.brand === b.name
+                                                        ? "font-bold text-brand"
+                                                        : "text-muted-foreground hover:text-brand",
+                                                )}
+                                            >
+                                                {b.name}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Color */}
+                        {availableColors.length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground">Color</h3>
+                                <ul className="mt-3 space-y-1">
+                                    <li>
+                                        <button
+                                            type="button"
+                                            onClick={() => setParams({ color: "all", page: "1" })}
+                                            className={cn(
+                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                params.color === "all" || !params.color
+                                                    ? "font-bold text-brand"
+                                                    : "text-muted-foreground hover:text-brand",
+                                            )}
+                                        >
+                                            All Colors
+                                        </button>
+                                    </li>
+                                    {availableColors.map((c) => (
+                                        <li key={c.name}>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setParams({ color: c.name, page: "1" })
+                                                }
+                                                className={cn(
+                                                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                                                    params.color === c.name
+                                                        ? "font-bold text-brand"
+                                                        : "text-muted-foreground hover:text-brand",
+                                                )}
+                                            >
+                                                <span
+                                                    role="img"
+                                                    aria-hidden="true"
+                                                    className={cn(
+                                                        "size-4 shrink-0 rounded-full border border-border",
+                                                        !c.hex && "bg-muted",
+                                                    )}
+                                                    style={
+                                                        c.hex
+                                                            ? { backgroundColor: c.hex }
+                                                            : undefined
+                                                    }
+                                                />
+                                                {c.name}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Price */}
+                        <div>
+                            <h3 className="text-sm font-bold text-foreground">Price</h3>
+                            <div className="mt-4 space-y-3">
+                                <Slider
+                                    value={sliderValue}
+                                    min={priceBounds.min}
+                                    max={priceBounds.max}
+                                    onValueChange={(value) => {
+                                        const [min, max] = value as number[];
+                                        setSliderValue([min, max]);
+                                    }}
+                                    onValueCommitted={(value) => {
+                                        const [min, max] = value as number[];
+                                        commitSlider([min, max]);
+                                    }}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        placeholder="Min"
+                                        value={params.minPrice}
+                                        onChange={(e) =>
+                                            setParams({ minPrice: e.target.value, page: "1" })
+                                        }
+                                        className="h-9 text-xs"
+                                        aria-label="Minimum price"
+                                    />
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                    <Input
+                                        type="number"
+                                        placeholder="Max"
+                                        value={params.maxPrice}
+                                        onChange={(e) =>
+                                            setParams({ maxPrice: e.target.value, page: "1" })
+                                        }
+                                        className="h-9 text-xs"
+                                        aria-label="Maximum price"
+                                    />
                                 </div>
-                                {filterPanel}
-                                <Button
-                                    variant="brand"
-                                    size="xl"
-                                    className="mt-6 w-full"
-                                    onClick={() => setShowFilters(false)}
-                                >
-                                    Show {filtered.length} results
-                                </Button>
                             </div>
                         </div>
-                    )}
 
-                    <motion.div
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="show"
-                        key={`${activeCategoryName}-${params.brand}-${params.page}-${view}`}
-                        className="min-w-0 flex-1"
-                    >
-                        {paginated.length === 0 ? (
-                            emptyState
-                        ) : (
-                            <>
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={goToPage}
-                                />
-                                {view === "grid" ? (
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4">
-                                        {paginated.map((product) => (
-                                            <motion.div key={product.id} variants={fadeUp}>
-                                                <ProductCard product={product} />
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {paginated.map((product) => (
-                                            <motion.div key={product.id} variants={fadeUp}>
-                                                <ProductListRow product={product} />
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={goToPage}
-                                />
-                            </>
-                        )}
-                    </motion.div>
-                </div>
+                        {/* Stock */}
+                        <Label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+                            <Checkbox
+                                checked={params.inStock === "true"}
+                                onCheckedChange={(checked: boolean) =>
+                                    setParams({ inStock: checked ? "true" : "", page: "1" })
+                                }
+                            />
+                            In Stock Only
+                        </Label>
+                    </div>
+
+                    {/* Big charcoal clear button */}
+                    <div className="shrink-0 border-t border-border/60 p-4">
+                        <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="h-12 w-full cursor-pointer rounded-lg bg-header-nav text-sm font-bold uppercase tracking-wide text-header-nav-foreground transition-colors hover:bg-header-nav/90"
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+                </aside>
+
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="show"
+                    key={`${activeCategoryName}-${params.brand}-${params.color}-${params.page}-${view}`}
+                    className="mt-2"
+                >
+                    {paginated.length === 0 ? (
+                        emptyState
+                    ) : (
+                        <>
+                            {view === "grid" ? (
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4">
+                                    {paginated.map((product) => (
+                                        <motion.div key={product.id} variants={fadeUp}>
+                                            <ProductCard product={product} />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {paginated.map((product) => (
+                                        <motion.div key={product.id} variants={fadeUp}>
+                                            <ProductListRow product={product} />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={goToPage}
+                            />
+                        </>
+                    )}
+                </motion.div>
             </div>
         </div>
     );

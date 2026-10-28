@@ -248,13 +248,15 @@ export default function Checkout() {
   const [couponCode, setCouponCode] = useState("")
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null)
   const [couponBusy, setCouponBusy] = useState(false)
+  const [brandCurrency, setBrandCurrency] = useState<string | null>(null)
 
-  // Load delivery options from the store's brand settings (active ones only).
+  // Load delivery options + the live display currency from the brand settings.
   useEffect(() => {
     let cancelled = false
     getSettings().then((result) => {
       if (cancelled) return
       const settings = isErrorResult(result) ? null : result.data
+      setBrandCurrency(settings?.brand?.currency ?? null)
       const choices = toDeliveryChoices(settings?.brand?.deliveryOptions)
       if (choices.length === 0) return
       setDeliveryOptions(choices)
@@ -326,7 +328,7 @@ export default function Checkout() {
       }
       const coupon = result.data
       if (subtotal() < coupon.minOrderAmount) {
-        toast.error(`Minimum order amount for this coupon is ${formatCurrency(coupon.minOrderAmount, items[0]?.product.currency)}`)
+        toast.error(`Minimum order amount for this coupon is ${formatCurrency(coupon.minOrderAmount, currency)}`)
         return
       }
       setAppliedCoupon(coupon)
@@ -430,7 +432,7 @@ export default function Checkout() {
       if (paymentMethod === "stripe") {
         const res = await stripeInit(orderId, {
           amount: finalAmount,
-          currency: items[0]?.product.currency ?? "usd",
+          currency: currency ?? "usd",
         })
         if (isErrorResult(res)) { toast.error(res.message); return }
         gatewayUrl = res.data.gatewayUrl
@@ -494,7 +496,9 @@ export default function Checkout() {
     )
   }
 
-  const currency = items[0]?.product.currency
+  // Prefer the live brand currency from settings — cart item snapshots can
+  // carry a currency stamped before the admin switched the store currency.
+  const currency = brandCurrency ?? items[0]?.product.currency
 
   const field = (
     id: keyof typeof form,
@@ -556,7 +560,7 @@ export default function Checkout() {
               </p>
             </div>
             <span className="text-xs font-bold tabular-nums text-foreground">
-              {formatCurrency(lineUnitPrice(item) * item.quantity, item.product.currency)}
+              {formatCurrency(lineUnitPrice(item) * item.quantity, currency)}
             </span>
           </div>
         ))}
@@ -734,7 +738,7 @@ export default function Checkout() {
                         </p>
                       )}
                       <p className="mt-1 text-sm font-extrabold text-brand">
-                        {formatCurrency(lineUnitPrice(item), item.product.currency)}
+                        {formatCurrency(lineUnitPrice(item), currency)}
                       </p>
 
                       <div className="mt-2 flex items-center justify-between gap-2">

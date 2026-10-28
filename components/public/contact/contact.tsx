@@ -168,7 +168,7 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                   <Input
                     id="contact-name"
                     {...register("name")}
-                    placeholder="John Doe"
+                    placeholder="Rahim Uddin"
                     autoComplete="name"
                     aria-invalid={!!errors.name}
                   />
@@ -181,7 +181,7 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                   <Input
                     id="contact-email"
                     {...register("email")}
-                    placeholder="name@example.com"
+                    placeholder="rahimuddin@example.com"
                     inputMode="email"
                     autoComplete="email"
                     aria-invalid={!!errors.email}

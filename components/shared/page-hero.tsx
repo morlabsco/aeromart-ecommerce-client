@@ -43,7 +43,7 @@ export function PageHero({ eyebrow, title, subtitle, align = "center", children 
             : "max-w-7xl py-16 text-left sm:py-20 lg:py-24"
         )}
       >
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">{eyebrow}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-header-nav-foreground">{eyebrow}</p>
         <h1
           className={cn(
             "mt-4 text-3xl font-bold tracking-tight text-header-nav-foreground sm:text-4xl",

@@ -28,7 +28,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
 
   return (
     <nav
-      className="flex items-center justify-center gap-1.5 py-6"
+      className="flex flex-wrap items-center justify-center gap-1.5 py-6"
       aria-label="Pagination"
     >
       <button
@@ -36,13 +36,14 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         disabled={currentPage <= 1}
         aria-label="Previous page"
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-sm transition-colors cursor-pointer",
+          "flex h-9 cursor-pointer items-center gap-1 rounded-lg border bg-card px-3 text-sm font-semibold transition-colors",
           currentPage <= 1
-            ? "border-border/60 text-muted-foreground/40 cursor-not-allowed"
+            ? "cursor-not-allowed border-border/60 text-muted-foreground/40"
             : "border-border text-muted-foreground hover:border-brand hover:text-brand",
         )}
       >
         <ChevronLeft className="h-4 w-4" />
+        Previous
       </button>
 
       {pages.map((p, i) =>
@@ -75,12 +76,13 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         disabled={currentPage >= totalPages}
         aria-label="Next page"
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-sm transition-colors cursor-pointer",
+          "flex h-9 cursor-pointer items-center gap-1 rounded-lg border bg-card px-3 text-sm font-semibold transition-colors",
           currentPage >= totalPages
-            ? "border-border/60 text-muted-foreground/40 cursor-not-allowed"
+            ? "cursor-not-allowed border-border/60 text-muted-foreground/40"
             : "border-border text-muted-foreground hover:border-brand hover:text-brand",
         )}
       >
+        Next
         <ChevronRight className="h-4 w-4" />
       </button>
     </nav>

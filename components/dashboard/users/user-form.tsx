@@ -82,7 +82,7 @@ export function CreateUserForm() {
                             <Label htmlFor="name">Name</Label>
                             <Input
                                 id="name"
-                                placeholder="John Doe"
+                                placeholder="Rahim Uddin"
                                 {...register("name")}
                                 aria-invalid={!!errors.name}
                             />
@@ -98,7 +98,7 @@ export function CreateUserForm() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="name@example.com"
+                                placeholder="rahimuddin@example.com"
                                 {...register("email")}
                                 aria-invalid={!!errors.email}
                             />

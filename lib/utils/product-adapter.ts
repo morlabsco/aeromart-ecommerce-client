@@ -4,13 +4,14 @@ import type { Product as ApiProduct } from "@/lib/types/backend";
 import type { Product, VariantSku } from "@/lib/types";
 
 /**
- * Map a backend product into the storefront shape. The backend attaches the
- * store currency to each product at create time, but when the field is missing
- * (e.g. older data), fall back to the brand currency passed by the page.
+ * Map a backend product into the storefront shape. The live brand currency
+ * from the settings singleton is the display source of truth — a product's
+ * own `currency` was stamped at create time and can be stale after the admin
+ * switches the store currency (e.g. usd → bdt), so it is only a fallback.
  */
 export function toStorefrontProduct(
   product: ApiProduct,
-  brandCurrency = "usd"
+  brandCurrency?: string
 ): Product {
     const sortedImages = [...(product.imageUrls ?? [])].sort(
         (a, b) => a.order - b.order
@@ -42,7 +43,7 @@ export function toStorefrontProduct(
         description: product.description,
         fullDescription: product.description,
         price: product.price,
-        currency: product.currency || brandCurrency,
+        currency: brandCurrency || product.currency || "usd",
         offerPrice: product.offerPrice,
         category: product.category?.name ?? "",
         brand: product.brand?.name ?? "",

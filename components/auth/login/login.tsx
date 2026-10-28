@@ -97,7 +97,7 @@ function LoginInner() {
             <Input
               id="login-email"
               {...register("email")}
-              placeholder="name@example.com"
+              placeholder="rahimuddin@example.com"
               inputMode="email"
               autoComplete="email"
               className="pl-10"

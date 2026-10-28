@@ -68,7 +68,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getAllProducts({ limit: 200 });
-  const products = unwrapList(result).map((p) => toStorefrontProduct(p, "usd"));
+  const products = unwrapList(result).map((p) => toStorefrontProduct(p));
   const product = products.find((p) => p.slug === slug);
 
   if (!product) {

@@ -716,7 +716,7 @@ export function CreateOrderForm({
                                     <Label htmlFor="recipientName">Recipient Name</Label>
                                     <Input
                                         id="recipientName"
-                                        placeholder="John Doe"
+                                        placeholder="Rahim Uddin"
                                         {...register("recipientName")}
                                         aria-invalid={!!errors.recipientName}
                                     />

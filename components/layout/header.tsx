@@ -2,13 +2,13 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ChevronDown, LayoutDashboard, LogOut, Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
 import { useCartStore, useUIStore } from "../../lib/store/app-store"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
 import { formatCurrency } from "../../lib/utils/currency"
 import { cn } from "../../lib/utils"
+import { SearchBox } from "./search-box"
 import type { SettingsBrand, NavbarLink } from "@/lib/types/backend"
 
 interface HeaderProps {
@@ -44,8 +44,6 @@ const stackedValue = "text-sm font-bold leading-tight text-foreground"
  * (MENU heading, uppercase items with dividers, LOGIN pinned at the bottom).
  */
 export function Header({ brand, navLinks, user }: HeaderProps) {
-  const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
   const items = useCartStore((state) => state.items)
   const subtotal = useCartStore((s) => s.subtotal)
@@ -54,7 +52,8 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
   const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen)
 
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
-  const cartTotal = formatCurrency(subtotal(), items[0]?.product.currency)
+  // Prefer the live brand currency from settings over the product snapshot.
+  const cartTotal = formatCurrency(subtotal(), brand?.currency ?? items[0]?.product.currency)
 
   // Fall back to the static theme config when settings aren't available.
   const theme = themes[DEFAULT_NICHE]
@@ -72,9 +71,11 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
           .map((l) => ({ href: l.url, label: l.label }))
       : FALLBACK_LINKS
 
-  // Lock body scroll and close overlays on Escape while any is open.
+  // Lock body scroll and close the drawer on Escape while it is open. The
+  // search panel is a dropdown, not a modal — the page stays scrollable and
+  // the SearchBox closes itself on Escape / outside taps.
   useEffect(() => {
-    if (!isMobileMenuOpen && !searchOpen) return
+    if (!isMobileMenuOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setMobileMenuOpen(false)
@@ -86,16 +87,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
       document.removeEventListener("keydown", onKeyDown)
       document.body.style.overflow = ""
     }
-  }, [isMobileMenuOpen, searchOpen, setMobileMenuOpen])
-
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const term = searchTerm.trim()
-    router.push(term ? `/products?search=${encodeURIComponent(term)}` : "/products")
-    setSearchTerm("")
-    setSearchOpen(false)
-    setMobileMenuOpen(false)
-  }
+  }, [isMobileMenuOpen, setMobileMenuOpen])
 
   return (
     <>
@@ -152,38 +144,20 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               )}
             </Link>
 
-            {/* Search (desktop): bordered rectangle + orange magnifier button */}
-            <form
-              role="search"
-              onSubmit={handleSearch}
-              className="hidden flex-1 justify-center px-4 md:flex lg:px-8"
-            >
-              <div className="flex h-11 w-full max-w-xl overflow-hidden rounded-md border border-input bg-background transition-shadow focus-within:border-ring/50 focus-within:ring-2 focus-within:ring-ring/25">
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search for products..."
-                  aria-label="Search products"
-                  className="h-full min-w-0 flex-1 border-0 bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className="flex w-12 shrink-0 cursor-pointer items-center justify-center bg-brand text-brand-foreground transition-colors hover:bg-brand/90"
-                >
-                  <Search className="h-[18px] w-[18px]" />
-                </button>
-              </div>
-            </form>
+            {/* Search (desktop): bordered rectangle + orange magnifier button,
+                with live product suggestions as you type */}
+            <div className="hidden flex-1 justify-center px-4 md:flex lg:px-8">
+              <SearchBox currency={brand?.currency} className="w-full max-w-xl" />
+            </div>
 
             {/* Actions */}
             <div className="flex items-center gap-0.5 md:gap-5 lg:gap-6">
-              {/* Mobile: plain search icon opens the full-screen overlay */}
+              {/* Mobile: search icon toggles the dropdown search panel */}
               <button
-                onClick={() => setSearchOpen(true)}
+                onClick={() => setSearchOpen((v) => !v)}
                 className="cursor-pointer p-2 text-foreground md:hidden"
                 aria-label="Search"
+                aria-expanded={searchOpen}
               >
                 <Search className="h-[22px] w-[22px]" strokeWidth={1.5} />
               </button>
@@ -330,37 +304,21 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
             ))}
           </div>
         </nav>
-      </header>
 
-      {/* Mobile: full-screen search overlay with large light input */}
-      {searchOpen && (
-        <div className="fixed inset-0 z-[70] flex animate-in fade-in flex-col bg-background px-4 py-5 md:hidden">
-          <div className="flex justify-end">
-            <button
-              onClick={() => setSearchOpen(false)}
-              className="cursor-pointer p-2 text-foreground"
-              aria-label="Close search"
-            >
-              <X className="h-6 w-6" strokeWidth={1.5} />
-            </button>
+        {/* Mobile: search panel — the same concept search as desktop
+            (input + live suggestions), dropping in under the header bar */}
+        {searchOpen && (
+          <div className="absolute inset-x-0 top-full z-50 animate-in fade-in slide-in-from-top-2 border-b border-border/60 bg-background shadow-lg md:hidden">
+            <div className="px-4 py-3">
+              <SearchBox
+                autoFocus
+                currency={brand?.currency}
+                onClose={() => setSearchOpen(false)}
+              />
+            </div>
           </div>
-          <form
-            role="search"
-            onSubmit={handleSearch}
-            className="mx-auto flex w-full max-w-lg flex-col pt-12"
-          >
-            <input
-              autoFocus
-              type="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search for products..."
-              aria-label="Search products"
-              className="w-full border-0 border-b border-input bg-transparent pb-4 text-2xl font-light text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
-            />
-          </form>
-        </div>
-      )}
+        )}
+      </header>
 
       {/* Mobile drawer — left slide-in panel over a scrim */}
       <div

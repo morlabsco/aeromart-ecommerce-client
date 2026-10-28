@@ -121,7 +121,7 @@ function RegisterInner() {
             <Input
               id="register-name"
               {...register("name")}
-              placeholder="John Doe"
+              placeholder="Rahim Uddin"
               autoComplete="name"
               className="pl-10"
               aria-invalid={!!errors.name}
@@ -141,7 +141,7 @@ function RegisterInner() {
             <Input
               id="register-email"
               {...register("email")}
-              placeholder="name@example.com"
+              placeholder="rahimuddin@example.com"
               inputMode="email"
               autoComplete="email"
               className="pl-10"
