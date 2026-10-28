@@ -186,6 +186,8 @@ function SortMenu({
 function ProductListRow({ product }: { product: Product }) {
     const addToCart = useAddToCart();
     const { displayPrice, referencePrice, discountPercent } = getProductPricing(product);
+    // Plain products only — variant products carry stock on their SKUs.
+    const isOutOfStock = !product.hasVariants && (product.stock ?? 0) <= 0;
 
     return (
         <div className="group flex gap-4 rounded-xl bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:gap-6 sm:p-5">
@@ -205,6 +207,11 @@ function ProductListRow({ product }: { product: Product }) {
                 {discountPercent && (
                     <span className="absolute left-1.5 top-1.5 rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold text-brand-foreground">
                         -{discountPercent}%
+                    </span>
+                )}
+                {isOutOfStock && (
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-scrim/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-scrim-foreground backdrop-blur-[2px]">
+                        Out of Stock
                     </span>
                 )}
                 {!product.isActive && (
@@ -232,8 +239,12 @@ function ProductListRow({ product }: { product: Product }) {
                     )}
                 </div>
                 <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
-                    <Button variant="brandOutline" onClick={(e) => addToCart(product, e)}>
-                        Add to Cart
+                    <Button
+                        variant="brandOutline"
+                        onClick={(e) => addToCart(product, e)}
+                        disabled={isOutOfStock}
+                    >
+                        {isOutOfStock ? "Out of Stock" : "Add to Cart"}
                     </Button>
                     <a
                         href={`/products/${product.slug}`}

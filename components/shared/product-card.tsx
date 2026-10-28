@@ -39,6 +39,10 @@ export function ProductCard({ product }: { product: Product }) {
   const addToCart = useAddToCart()
   const { displayPrice, referencePrice, discountPercent } = getProductPricing(product)
 
+  // Stock-out state for plain products. Variant products route stock through
+  // their SKUs, so the card never claims "Out of Stock" for those.
+  const isOutOfStock = !product.hasVariants && (product.stock ?? 0) <= 0
+
   return (
     <div className="group relative flex h-full flex-col rounded-xl bg-card p-3 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg sm:p-4">
       <Link
@@ -61,8 +65,13 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {(discountPercent || product.featured) && (
+        {(isOutOfStock || discountPercent || product.featured) && (
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
+            {isOutOfStock && (
+              <span className="rounded-full bg-scrim/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-scrim-foreground backdrop-blur-[2px]">
+                Out of Stock
+              </span>
+            )}
             {product.featured && (
               <span className="rounded-full bg-header-nav px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-header-nav-foreground">
                 Trending
@@ -105,10 +114,11 @@ export function ProductCard({ product }: { product: Product }) {
         <Button
           variant="brandOutline"
           onClick={(e) => addToCart(product, e)}
+          disabled={isOutOfStock}
           className="mt-3 h-10 w-full"
         >
           <ShoppingBag className="h-4 w-4" />
-          Add to Cart
+          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
         </Button>
       </div>
     </div>

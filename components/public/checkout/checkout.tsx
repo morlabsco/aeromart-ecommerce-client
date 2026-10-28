@@ -18,6 +18,9 @@ import {
   MapPin,
   Package,
   Lock,
+  Copy,
+  Wallet,
+  Landmark,
 } from "lucide-react"
 import { useCartStore } from "../../../lib/store/app-store"
 import { ThemedImage } from "../../../components/shared/themed-image"
@@ -25,12 +28,20 @@ import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "../../../lib/utils"
 import { toast } from "sonner"
 import { createOrder } from "@/lib/services/order"
 import { getCouponByCode } from "@/lib/services/coupon"
 import { getSettings } from "../../../lib/services/settings"
-import { stripeInit, sslCommerzInit, bkashInit } from "@/lib/services/payment"
+import { stripeInit } from "@/lib/services/payment"
+import { BD_DISTRICTS } from "../../../lib/data/bd-districts"
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone"
 import { formatCurrency, getOfferPrice } from "../../../lib/utils/currency"
 import type { CartItem } from "../../../lib/types"
@@ -44,7 +55,21 @@ import { isErrorResult } from "../../../lib/utils/result"
  * PLACE ORDER. Two steps kept: Review (editable cart) → Details.
  * ------------------------------------------------------------------------- */
 
-type PaymentOption = PaymentMethod | "stripe" | "sslcommerz" | "bkash"
+type PaymentOption = PaymentMethod | "stripe" | "bkash-manual" | "bank-manual"
+
+/**
+ * Manual payment destinations (docs/data/payment-info.md). Shown to the
+ * customer with copy buttons; the payment references they submit are stored
+ * on the order's notes for admin verification.
+ */
+const BKASH_NUMBER = "+8801823803467"
+const BANK_DETAILS = [
+  { label: "Bank", value: "Prime Bank PLC" },
+  { label: "Account Name", value: "MD JUBAYER AHMED" },
+  { label: "Account No", value: "3115212035625" },
+  { label: "Branch", value: "IBB, Amberkhana Branch, Sylhet" },
+  { label: "Routing No", value: "170910046" },
+] as const
 
 interface DeliveryChoice {
   id: string
@@ -136,6 +161,43 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
       {children}
     </h3>
+  )
+}
+
+/** One copyable manual-payment detail row: label, value, copy button. */
+function CopyRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(`${label} copied`)
+    } catch {
+      toast.error("Couldn't copy — please copy it manually.")
+    }
+  }
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2",
+        highlight ? "border-brand/40 bg-brand/5" : "border-border bg-card"
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className={cn("truncate text-sm font-bold tabular-nums", highlight ? "text-brand" : "text-foreground")}>
+          {value}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={`Copy ${label}`}
+        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+      >
+        <Copy className="size-3.5" />
+      </button>
+    </div>
   )
 }
 
@@ -235,11 +297,15 @@ export default function Checkout() {
     email: "",
     phone: "",
     address: "",
-    address2: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "United States",
+    district: "",
+    notes: "",
+  })
+  // References the customer submits for manual payments (bKash / bank) so
+  // the admin can verify and mark the order paid.
+  const [manualPayment, setManualPayment] = useState({
+    bkashSender: "",
+    bkashTrxId: "",
+    bankRef: "",
   })
   const [paymentMethod, setPaymentMethod] = useState<PaymentOption>("COD")
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryChoice[]>(FALLBACK_DELIVERY_OPTIONS)
@@ -346,16 +412,23 @@ export default function Checkout() {
   const validate = () => {
     const errs: Record<string, string> = {}
     if (!form.name.trim()) errs.name = "Name is required"
-    if (!form.email.trim()) errs.email = "Email is required"
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Invalid email format"
+    // Email is optional — only validate the format when provided.
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errs.email = "Invalid email format"
     if (!form.phone.trim()) errs.phone = "Phone is required"
     else if (!PHONE_REGEX.test(form.phone)) errs.phone = PHONE_ERROR_MESSAGE
     // Delivery address is only required when shipping (not store pickup).
     if (!isPickup) {
       if (!form.address.trim()) errs.address = "Address is required"
-      if (!form.city.trim()) errs.city = "City is required"
-      if (!form.state.trim()) errs.state = "State is required"
-      if (!form.zip.trim()) errs.zip = "ZIP code is required"
+      if (!form.district.trim()) errs.district = "Please select your district"
+    }
+    // Manual payments need their verification references.
+    if (paymentMethod === "bkash-manual") {
+      if (!manualPayment.bkashSender.trim()) errs.bkashSender = "Your bKash sender number is required"
+      if (!manualPayment.bkashTrxId.trim()) errs.bkashTrxId = "The bKash Transaction ID is required"
+    }
+    if (paymentMethod === "bank-manual" && !manualPayment.bankRef.trim()) {
+      errs.bankRef = "The NPSB transaction reference number is required"
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -382,14 +455,9 @@ export default function Checkout() {
 
     const shippingAddress = isPickup
       ? "Store Pickup"
-      : [
-          form.address,
-          form.address2,
-          form.city,
-          form.state,
-          form.zip,
-          form.country,
-        ].filter(Boolean).join(", ")
+      : [form.address.trim(), form.district.trim(), "Bangladesh"]
+          .filter(Boolean)
+          .join(", ")
 
     const finalAmount = finalTotal
     const orderItems = items.map((i) => ({
@@ -397,6 +465,20 @@ export default function Checkout() {
       quantity: i.quantity,
       ...(i.variantSku ? { variant: { sku: i.variantSku } } : {}),
     }))
+
+    // The order's `notes` carry the customer's special instructions plus the
+    // manual-payment references the admin needs to verify the payment.
+    const notesParts: string[] = []
+    if (form.notes.trim()) notesParts.push(`Note: ${form.notes.trim()}`)
+    if (paymentMethod === "bkash-manual") {
+      notesParts.push(
+        `bKash (manual) — Sender: ${manualPayment.bkashSender.trim()}, TrxID: ${manualPayment.bkashTrxId.trim()}`
+      )
+    }
+    if (paymentMethod === "bank-manual") {
+      notesParts.push(`Bank (manual) — NPSB Ref: ${manualPayment.bankRef.trim()}`)
+    }
+    const notes = notesParts.length > 0 ? notesParts.join(" | ") : undefined
 
     setPlacing(true)
     try {
@@ -408,6 +490,7 @@ export default function Checkout() {
         recipientName: form.name,
         phoneNo: form.phone,
         shippingAddress,
+        notes,
         paymentMethod: paymentMethod === "COD" ? "COD" : "Online",
       })
 
@@ -417,55 +500,30 @@ export default function Checkout() {
       }
 
       const orderId = orderResult.data._id
+      const friendlyOrderId = orderResult.data.orderId ?? orderId
 
-      // 2. COD → done, go home.
-      if (paymentMethod === "COD") {
+      // 2. COD and manual payments → no gateway, land on the order success
+      //    page with the shareable order id.
+      if (paymentMethod === "COD" || paymentMethod === "bkash-manual" || paymentMethod === "bank-manual") {
         clearCart()
-        toast.success("Order placed successfully! Payment on delivery.")
-        router.push("/")
+        toast.success(
+          paymentMethod === "COD"
+            ? "Order placed successfully! Payment on delivery."
+            : "Order placed! We will confirm your payment shortly."
+        )
+        router.push(`/order/success?orderId=${encodeURIComponent(friendlyOrderId)}`)
         return
       }
 
-      // 3. Online gateways → initiate and redirect to the gateway.
-      let gatewayUrl: string | null = null
+      // 3. Stripe → initiate and redirect to the hosted checkout page.
+      const res = await stripeInit(orderId, {
+        amount: finalAmount,
+        currency: currency ?? "usd",
+      })
+      if (isErrorResult(res)) { toast.error(res.message); return }
 
-      if (paymentMethod === "stripe") {
-        const res = await stripeInit(orderId, {
-          amount: finalAmount,
-          currency: currency ?? "usd",
-        })
-        if (isErrorResult(res)) { toast.error(res.message); return }
-        gatewayUrl = res.data.gatewayUrl
-      } else if (paymentMethod === "sslcommerz") {
-        const res = await sslCommerzInit(orderId, {
-          total_amount: finalAmount,
-          cus_name: form.name,
-          cus_email: form.email,
-          cus_phone: form.phone,
-          cus_add1: form.address,
-          cus_city: form.city,
-          cus_state: form.state,
-          cus_postcode: form.zip,
-          cus_country: form.country,
-          ship_name: form.name,
-          ship_add1: form.address,
-          ship_city: form.city,
-          ship_state: form.state,
-          ship_postcode: form.zip,
-          ship_country: form.country,
-        })
-        if (isErrorResult(res)) { toast.error(res.message); return }
-        gatewayUrl = res.data.gatewayUrl
-      } else if (paymentMethod === "bkash") {
-        const res = await bkashInit(orderId, { amount: finalAmount, customerNumber: form.phone })
-        if (isErrorResult(res)) { toast.error(res.message); return }
-        gatewayUrl = res.data.gatewayUrl
-      }
-
-      if (gatewayUrl) {
-        clearCart()
-        window.location.href = gatewayUrl
-      }
+      clearCart()
+      window.location.href = res.data.gatewayUrl
     } catch (err) {
       console.error(err)
       toast.error("Failed to place order. Please try again.")
@@ -504,7 +562,8 @@ export default function Checkout() {
     id: keyof typeof form,
     label: string,
     optional = false,
-    type = "text"
+    type = "text",
+    placeholder?: string
   ) => (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-xs font-semibold text-foreground">
@@ -515,6 +574,7 @@ export default function Checkout() {
         id={id}
         type={type}
         value={form[id]}
+        placeholder={placeholder}
         onChange={(e) => setForm({ ...form, [id]: e.target.value })}
         aria-invalid={!!errors[id]}
       />
@@ -522,9 +582,35 @@ export default function Checkout() {
     </div>
   )
 
+  /** Manual-payment reference input (bKash sender / TrxID, NPSB ref). */
+  const manualField = (
+    id: keyof typeof manualPayment,
+    label: string,
+    placeholder: string,
+    type = "text"
+  ) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-semibold text-foreground">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        value={manualPayment[id]}
+        placeholder={placeholder}
+        onChange={(e) =>
+          setManualPayment({ ...manualPayment, [id]: e.target.value })
+        }
+        aria-invalid={!!errors[id]}
+        className="bg-card"
+      />
+      {errors[id] && <p className="text-xs text-destructive">{errors[id]}</p>}
+    </div>
+  )
+
   /* ── Order summary card (shared by both steps) ── */
   const summaryCard = (
-    <div className="sticky top-24 space-y-4 rounded-2xl bg-card p-6 shadow-sm">
+    <div className="sticky top-20 space-y-4 rounded-2xl bg-card p-6 shadow-sm md:top-[9.5rem] lg:top-[9.75rem]">
       <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
         Order Summary
       </h3>
@@ -658,7 +744,7 @@ export default function Checkout() {
           <span className="font-semibold text-foreground">Checkout</span>
         </nav>
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-3xl font-bold uppercase tracking-tight text-foreground lg:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
             Checkout{" "}
             <span className="font-bold text-muted-foreground">({itemCount()})</span>
           </h1>
@@ -810,9 +896,9 @@ export default function Checkout() {
               <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
                 <SectionTitle>01 · Customer Information</SectionTitle>
                 <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
-                  <div className="sm:col-span-2">{field("name", "Full Name")}</div>
-                  {field("email", "Email", false, "email")}
-                  {field("phone", "Phone")}
+                  {field("name", "Customer Name", false, "text", "Your Full Name")}
+                  {field("phone", "Mobile Number", false, "tel", "01XXXXXXXXX")}
+                  {field("email", "Email", true, "email", "rahimuddin@example.com")}
                 </div>
               </section>
 
@@ -821,13 +907,48 @@ export default function Checkout() {
                 <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
                   <SectionTitle>02 · Delivery Address</SectionTitle>
                   <div className="space-y-5">
-                    {field("address", "Address Line 1")}
-                    {field("address2", "Address Line 2", true)}
-                    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-3">
-                      {field("city", "City")}
-                      {field("state", "State")}
-                      {field("zip", "ZIP Code")}
+                    {field(
+                      "address",
+                      "Address",
+                      false,
+                      "text",
+                      "Road No. / Apartment / House No. / Street / Area / Ward"
+                    )}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-foreground">
+                        District
+                      </Label>
+                      <Select
+                        value={form.district || undefined}
+                        onValueChange={(value) =>
+                          setForm({ ...form, district: String(value ?? "") })
+                        }
+                      >
+                        <SelectTrigger
+                          aria-label="District"
+                          className={cn(errors.district && "border-destructive")}
+                        >
+                          <SelectValue placeholder="Select your district" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {BD_DISTRICTS.map((district) => (
+                            <SelectItem key={district} value={district}>
+                              {district}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.district && (
+                        <p className="text-xs text-destructive">{errors.district}</p>
+                      )}
                     </div>
+                    {field(
+                      "notes",
+                      "Special Notes",
+                      true,
+                      "text",
+                      "Any delivery instruction we should know about…"
+                    )}
                   </div>
                 </section>
               )}
@@ -934,53 +1055,125 @@ export default function Checkout() {
                       </p>
                     </div>
                   </Label>
-                  {(
-                    [
-                      {
-                        value: "stripe",
-                        logo: "/images/stripe-pay-logo.png",
-                        alt: "Stripe",
-                        title: "Stripe",
-                        desc: "Pay securely with a card.",
-                      },
-                      {
-                        value: "sslcommerz",
-                        logo: "/images/sslcommerz-pay-logo.png",
-                        alt: "SSLCommerz",
-                        title: "SSLCommerz",
-                        desc: "Bangladesh online payment gateway.",
-                      },
-                      {
-                        value: "bkash",
-                        logo: "/images/bkash-pay-logo.png",
-                        alt: "bKash",
-                        title: "bKash",
-                        desc: "Bangladesh mobile wallet.",
-                      },
-                    ] as const
-                  ).map((method) => (
-                    <Label
-                      key={method.value}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5"
-                    >
-                      <RadioGroupItem value={method.value} />
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={method.logo}
-                          alt={method.alt}
-                          width={0}
-                          height={0}
-                          sizes="100vw"
-                          className="h-6 w-auto object-contain"
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{method.title}</p>
-                          <p className="text-xs text-muted-foreground">{method.desc}</p>
-                        </div>
+                  {/* Stripe — hosted card checkout (gateway redirect + invoice flow) */}
+                  <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
+                    <RadioGroupItem value="stripe" />
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src="/images/stripe-pay-logo.png"
+                        alt="Stripe"
+                        width={0}
+                        height={0}
+                        sizes="100vw"
+                        className="h-6 w-auto object-contain"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-foreground">Stripe</p>
+                        <p className="text-xs text-muted-foreground">Pay securely with your card.</p>
                       </div>
-                    </Label>
-                  ))}
+                    </div>
+                  </Label>
+
+                  {/* bKash — manual send-money with reference verification */}
+                  <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
+                    <RadioGroupItem value="bkash-manual" />
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-header-nav">
+                        <Wallet className="size-4 text-header-nav-foreground" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">
+                          bKash{" "}
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            (Manual)
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Send Money from your bKash app, then submit the Transaction ID.
+                        </p>
+                      </div>
+                    </div>
+                  </Label>
+
+                  {/* Bank — manual NPSB transfer with reference verification */}
+                  <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
+                    <RadioGroupItem value="bank-manual" />
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-header-nav">
+                        <Landmark className="size-4 text-header-nav-foreground" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">
+                          Bank Transfer{" "}
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            (Manual)
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          NPSB transfer to our account, then submit the reference number.
+                        </p>
+                      </div>
+                    </div>
+                  </Label>
                 </RadioGroup>
+
+                {/* Manual payment details for the selected method — copyable
+                    destination info + the references we verify against */}
+                {paymentMethod === "bkash-manual" && (
+                  <div className="space-y-4 rounded-xl border border-brand/30 bg-brand/5 p-4 sm:p-5">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Send the total{" "}
+                      <span className="font-bold text-foreground">
+                        {formatCurrency(finalTotal, currency)}
+                      </span>{" "}
+                      to this bKash number using <span className="font-semibold text-foreground">Send Money</span>,
+                      then enter your sender number and the Transaction ID below. We confirm your
+                      order as soon as the payment is verified.
+                    </p>
+                    <CopyRow label="bKash Number" value={BKASH_NUMBER} highlight />
+                    <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                      {manualField(
+                        "bkashSender",
+                        "Your bKash Number",
+                        "01XXXXXXXXX",
+                        "tel"
+                      )}
+                      {manualField(
+                        "bkashTrxId",
+                        "Transaction ID",
+                        "e.g. 9F3KX2PQ"
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === "bank-manual" && (
+                  <div className="space-y-4 rounded-xl border border-brand/30 bg-brand/5 p-4 sm:p-5">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Transfer the total{" "}
+                      <span className="font-bold text-foreground">
+                        {formatCurrency(finalTotal, currency)}
+                      </span>{" "}
+                      to this account through NPSB / BEFTN, then enter the transaction
+                      reference number below so we can verify and confirm your order.
+                    </p>
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      {BANK_DETAILS.map((detail) => (
+                        <CopyRow
+                          key={detail.label}
+                          label={detail.label}
+                          value={detail.value}
+                          highlight={detail.label === "Account No"}
+                        />
+                      ))}
+                    </div>
+                    {manualField(
+                      "bankRef",
+                      "NPSB Transaction Reference No",
+                      "Reference number from your bank"
+                    )}
+                  </div>
+                )}
               </section>
             </div>
 

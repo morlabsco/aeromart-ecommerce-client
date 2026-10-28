@@ -271,6 +271,12 @@ export default function ProductDetails({
   // Stock of the resolved SKU (or base stock) to cap the quantity.
   const maxStock = selectedSku?.stock ?? product.stock ?? Infinity
 
+  // Stock-out is definitive only once stock is resolved: plain products with
+  // no base stock, or variant products once a SKU is chosen. Variant products
+  // before selection still let the customer pick an in-stock combination.
+  const isOutOfStock =
+    maxStock <= 0 && (axes.length === 0 || Boolean(selectedSku))
+
   // Reset gallery index when the selected SKU changes its image set.
   useEffect(() => {
     setSelectedImage(0)
@@ -466,6 +472,11 @@ export default function ProductDetails({
                   -{discount}% OFF
                 </span>
               )}
+              {isOutOfStock && (
+                <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-destructive">
+                  Out of Stock
+                </span>
+              )}
             </div>
 
             {/* Spec bullets */}
@@ -605,19 +616,22 @@ export default function ProductDetails({
                 size="xl"
                 className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px]"
                 onClick={handleAddToCart}
+                disabled={isOutOfStock}
               >
                 <ShoppingBag className="size-5" />
-                Add to Cart
+                {isOutOfStock ? "Out of Stock" : "Add to Cart"}
               </Button>
-              <Button
-                variant="brand"
-                size="xl"
-                className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px] animate-wiggle motion-reduce:animate-none"
-                onClick={handleBuyNow}
-              >
-                <Zap className="size-5" />
-                Buy Now
-              </Button>
+              {!isOutOfStock && (
+                <Button
+                  variant="brand"
+                  size="xl"
+                  className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px] animate-wiggle motion-reduce:animate-none"
+                  onClick={handleBuyNow}
+                >
+                  <Zap className="size-5" />
+                  Buy Now
+                </Button>
+              )}
             </div>
 
             {/* ── Quick contact row (settings-driven, hidden without a phone) ── */}

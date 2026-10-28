@@ -145,16 +145,16 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
       >
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-header-nav-foreground/5 p-1.5 ring-1 ring-header-nav-foreground/15 backdrop-blur"
+          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-header-nav-foreground/10 p-1.5 ring-1 ring-header-nav-foreground/30 backdrop-blur"
         >
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-header-nav-foreground/40" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-header-nav-foreground/60" />
             <input
               value={orderId}
               onChange={(e) => setOrderId(e.target.value.toUpperCase())}
               placeholder="ENTER ORDER ID"
               aria-label="Order ID"
-              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/40 focus:outline-none"
+              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/60 focus:outline-none"
             />
           </div>
           <button
@@ -340,10 +340,13 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
                     return (
                       <li key={step.status} className={cn("flex-1", index < STEP_META.length - 1 && "relative pr-2")}>
                         {index < STEP_META.length - 1 && (
+                          /* Connector runs icon-center to icon-center so the
+                             rail reads as ONE bar stretching left → right
+                             across the whole card (icons sit on top, z-10). */
                           <span
                             aria-hidden="true"
                             className={cn(
-                              "absolute left-11 right-1 top-[22px] h-0.5 rounded-full",
+                              "absolute -right-[30px] left-[22px] top-[22px] h-0.5 rounded-full",
                               isPast ? "bg-brand" : "bg-border"
                             )}
                           />

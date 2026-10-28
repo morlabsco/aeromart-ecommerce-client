@@ -52,7 +52,7 @@ export function Banner({ slides }: { slides: HeroSlide[] }) {
           <CarouselContent className="-ml-0">
             {slides.map((slide, index) => (
               <CarouselItem key={index} className="pl-0">
-                <div className="mx-auto w-full max-w-[1400px] px-3 pt-3 sm:px-5 sm:pt-4 lg:px-8 lg:pt-6">
+                <div className="mx-auto w-full max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-6">
                   {slide.image && slide.image.length > 0 ? (
                     /* Composed banner artwork, inset with rounded corners */
                     <div

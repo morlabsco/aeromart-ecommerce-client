@@ -115,8 +115,8 @@ export function Categories({ categories: serverCategories }: { categories?: Cate
       onMouseLeave={() => (hoveredRef.current = false)}
       onPointerDown={() => (interactedRef.current = true)}
     >
-      {/* Same max-width and gutters as the hero banner above it */}
-      <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-5 lg:px-8">
+      {/* Same max-width and gutters as the header and every other section */}
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {fits ? (
           // Few tiles: centered, nothing to scroll.
           <ul ref={listRef} className="flex list-none justify-center gap-4 py-4">
