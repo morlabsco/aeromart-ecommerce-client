@@ -272,18 +272,18 @@ export function ProductImageUploader({
                                 className="h-full w-full object-cover pointer-events-none"
                             />
                             {index === 0 && (
-                                <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                <span className="absolute bottom-1 left-1 rounded bg-scrim/60 px-1.5 py-0.5 text-[10px] font-semibold text-scrim-foreground">
                                     Cover
                                 </span>
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                            <div className="absolute top-1 left-1 rounded bg-black/50 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                            <div className="absolute top-1 left-1 rounded bg-scrim/50 p-1 text-scrim-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
                                 <GripVertical className="h-3.5 w-3.5" />
                             </div>
                             <button
                                 type="button"
                                 onClick={() => removeImage(index)}
-                                className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                className="absolute top-1 right-1 rounded-full bg-scrim/60 p-1 text-scrim-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                 aria-label={
                                     item.file
                                         ? `Remove ${item.file.name}`

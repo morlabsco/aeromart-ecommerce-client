@@ -38,6 +38,8 @@ export interface Product {
   rating: number
   reviewCount: number
   createdAt: string
+  /** Short spec bullets shown on cards and the details buy box. */
+  keyFeatures?: string[]
 }
 
 export interface Variant {

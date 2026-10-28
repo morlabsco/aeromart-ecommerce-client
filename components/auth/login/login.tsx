@@ -8,10 +8,11 @@ import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { login } from "@/lib/services/auth";
 import { isErrorResult } from "@/lib/utils/result";
-import { AuthShell, authFieldClass, authLabelClass } from "../auth-shell";
+import { AuthShell, authLabelClass } from "../auth-shell";
 
 const loginSchema = z.object({
   email: z
@@ -93,13 +94,14 @@ function LoginInner() {
           </label>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-            <input
+            <Input
               id="login-email"
               {...register("email")}
               placeholder="name@example.com"
               inputMode="email"
               autoComplete="email"
-              className={authFieldClass(!!errors.email)}
+              className="pl-10"
+              aria-invalid={!!errors.email}
             />
           </div>
           {errors.email && (
@@ -121,13 +123,14 @@ function LoginInner() {
           </div>
           <div className="relative">
             <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-            <input
+            <Input
               id="login-password"
               {...register("password")}
               placeholder="••••••••"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              className={cn(authFieldClass(!!errors.password), "pr-11")}
+              className="pr-11 pl-10"
+              aria-invalid={!!errors.password}
             />
             <button
               type="button"
@@ -143,11 +146,7 @@ function LoginInner() {
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60"
-        >
+        <Button type="submit" variant="brand" size="xl" className="w-full" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -159,7 +158,7 @@ function LoginInner() {
               Sign In
             </>
           )}
-        </button>
+        </Button>
 
         <p className="text-center text-sm">
           <span className="text-muted-foreground">New here? </span>

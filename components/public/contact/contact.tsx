@@ -6,7 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/shared/page-hero";
 import type { SettingsBrand, SettingsContact } from "@/lib/types/backend";
 
@@ -27,14 +29,6 @@ const contactSchema = z.object({
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
-
-const fieldClass = (hasError?: boolean) =>
-  cn(
-    "h-11 w-full rounded-lg border bg-background px-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground/60",
-    hasError
-      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-      : "border-input focus:border-brand/50 focus:ring-2 focus:ring-ring/25"
-  );
 
 /**
  * Contact page in the Nittonova tone: cream surface, a "Get in Touch" card
@@ -155,7 +149,7 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                 href={data.mapEmbedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 flex h-11 items-center justify-center gap-2 rounded-lg bg-header-nav text-sm font-bold text-white transition-opacity hover:opacity-90"
+                className="mt-8 flex h-11 items-center justify-center gap-2 rounded-lg bg-header-nav text-sm font-bold text-header-nav-foreground transition-opacity hover:opacity-90"
               >
                 <MapPin className="size-4" /> Find us on the map
               </a>
@@ -171,12 +165,12 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                   <label htmlFor="contact-name" className="ml-0.5 block text-xs font-semibold text-foreground">
                     Your name
                   </label>
-                  <input
+                  <Input
                     id="contact-name"
                     {...register("name")}
                     placeholder="John Doe"
                     autoComplete="name"
-                    className={fieldClass(!!errors.name)}
+                    aria-invalid={!!errors.name}
                   />
                   {errors.name && <p className="text-[11px] font-medium text-destructive">{errors.name.message}</p>}
                 </div>
@@ -184,13 +178,13 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                   <label htmlFor="contact-email" className="ml-0.5 block text-xs font-semibold text-foreground">
                     Email
                   </label>
-                  <input
+                  <Input
                     id="contact-email"
                     {...register("email")}
                     placeholder="name@example.com"
                     inputMode="email"
                     autoComplete="email"
-                    className={fieldClass(!!errors.email)}
+                    aria-invalid={!!errors.email}
                   />
                   {errors.email && <p className="text-[11px] font-medium text-destructive">{errors.email.message}</p>}
                 </div>
@@ -200,11 +194,10 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                 <label htmlFor="contact-subject" className="ml-0.5 block text-xs font-semibold text-foreground">
                   Subject <span className="font-normal text-muted-foreground">(optional)</span>
                 </label>
-                <input
+                <Input
                   id="contact-subject"
                   {...register("subject")}
                   placeholder="How can we help?"
-                  className={fieldClass()}
                 />
               </div>
 
@@ -212,26 +205,29 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                 <label htmlFor="contact-message" className="ml-0.5 block text-xs font-semibold text-foreground">
                   Message
                 </label>
-                <textarea
+                <Textarea
                   id="contact-message"
                   {...register("message")}
                   placeholder="Tell us a little more…"
                   rows={5}
-                  className={cn(fieldClass(!!errors.message), "h-auto resize-none py-3")}
+                  className="resize-none"
+                  aria-invalid={!!errors.message}
                 />
                 {errors.message && (
                   <p className="text-[11px] font-medium text-destructive">{errors.message.message}</p>
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="brand"
+                size="xl"
+                className="w-full sm:w-auto sm:px-10"
                 disabled={sending}
-                className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60 sm:w-auto sm:px-10"
               >
                 <Send className="size-4" />
                 Send Message
-              </button>
+              </Button>
             </form>
           </div>
         </div>
@@ -256,10 +252,10 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                   <MapPin className="size-6" />
                 </span>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-white/50">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-header-nav-foreground/50">
                     Visit our store
                   </p>
-                  <p className="mt-1 max-w-sm text-[15px] font-semibold leading-snug text-white">
+                  <p className="mt-1 max-w-sm text-[15px] font-semibold leading-snug text-header-nav-foreground">
                     {data.address}
                   </p>
                 </div>

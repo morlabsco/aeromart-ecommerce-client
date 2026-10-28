@@ -23,7 +23,7 @@ function CategoryTile({ cat }: { cat: CategoryItem }) {
         <span
           role="img"
           aria-label={cat.name}
-          className="relative flex-1 rounded-xl bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.03]"
+          className="relative flex-1 rounded-xl bg-contain bg-center bg-no-repeat transition-transform duration-300 group-hover:scale-[1.03]"
           style={{ backgroundImage: `url(${cat.image})` }}
         />
       ) : (
@@ -119,7 +119,7 @@ export function Categories({ categories: serverCategories }: { categories?: Cate
       <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-5 lg:px-8">
         {fits ? (
           // Few tiles: centered, nothing to scroll.
-          <ul ref={listRef} className="flex list-none justify-center gap-4">
+          <ul ref={listRef} className="flex list-none justify-center gap-4 py-4">
             {categories.map((cat) => (
               <li key={cat.slug}>
                 <CategoryTile cat={cat} />
@@ -132,7 +132,10 @@ export function Categories({ categories: serverCategories }: { categories?: Cate
             opts={{ align: "start", loop: true, dragFree: true }}
             className="w-full"
           >
-            <CarouselContent className="-ml-">
+            {/* py on the viewport gives the hover lift + shadow room inside
+                the overflow-hidden clip box (clipping happens at the padding
+                edge, so the animation stays fully visible). */}
+            <CarouselContent viewportClassName="py-4">
               {categories.map((cat) => (
                 <CarouselItem key={cat.slug} className="basis-auto pl-4">
                   <CategoryTile cat={cat} />

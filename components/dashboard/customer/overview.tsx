@@ -83,7 +83,7 @@ export function CustomerOverview({ profile, orders, brandCurrency = "usd" }: Cus
                             key={stat.label}
                             className="rounded-2xl bg-card p-4 shadow-sm sm:p-5"
                         >
-                            <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-header-nav text-white">
+                            <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-header-nav text-header-nav-foreground">
                                 <Icon className="size-5" strokeWidth={1.75} />
                             </span>
                             <p className="text-2xl font-extrabold tabular-nums text-foreground sm:text-3xl">

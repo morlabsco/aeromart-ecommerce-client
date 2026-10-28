@@ -78,6 +78,10 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
 
     const [logoPreview, setLogoPreview] = useState<FilePreview | null>(null);
     const [faviconPreview, setFaviconPreview] = useState<FilePreview | null>(null);
+    const [logoOnly, setLogoOnly] = useState(brand.logoOnly ?? false);
+
+    /** A logo exists — saved, or picked and waiting in this save. */
+    const hasAnyLogo = Boolean(brand.logo) || Boolean(logoPreview);
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);
 
@@ -141,6 +145,7 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
                     description,
                     niche,
                     nicheLabel,
+                    logoOnly,
                     currency: currency.trim(),
                     deliveryOptions: cleanDelivery,
                 },
@@ -435,6 +440,30 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
                             onChange={handleLogoSelect}
                         />
                     </div>
+                </div>
+
+                {/* Logo-only display — header/footer show just the logo, no name */}
+                <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+                    <div>
+                        <Label className="text-xs font-medium">Show logo only</Label>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            Replaces the logo + brand name in the storefront header and
+                            footer with just the logo at its natural size — ideal for
+                            wide wordmark images.
+                        </p>
+                        {!hasAnyLogo && (
+                            <p className="mt-1 text-[11px] font-medium text-warning">
+                                Upload a logo first — until then the storefront shows the
+                                brand name.
+                            </p>
+                        )}
+                    </div>
+                    <Switch
+                        checked={logoOnly}
+                        onCheckedChange={setLogoOnly}
+                        disabled={!hasAnyLogo && !logoOnly}
+                        aria-label="Show logo only"
+                    />
                 </div>
 
                 {/* Favicon upload with preview */}

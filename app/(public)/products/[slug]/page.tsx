@@ -99,8 +99,9 @@ async function ProductDetailsData({ slug }: { slug: string }) {
       getSession(),
       getSettings(),
     ]);
-  const brandCurrency =
-    unwrapData(settingsResult)?.brand?.currency ?? "usd";
+  const settings = unwrapData(settingsResult);
+  const brandCurrency = settings?.brand?.currency ?? "usd";
+  const contactPhone = settings?.contact?.phone ?? null;
   const products = unwrapList(productsResult).map((p) =>
     toStorefrontProduct(p, brandCurrency)
   );
@@ -126,6 +127,7 @@ async function ProductDetailsData({ slug }: { slug: string }) {
         reviews={reviews as Review[]}
         canReview={session.isAuthenticated && session.user?.role === "customer"}
         productId={product.id}
+        contactPhone={contactPhone}
       />
     </div>
   );

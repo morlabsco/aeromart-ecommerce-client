@@ -177,7 +177,7 @@ export function PresetButton() {
                             disabled={isPending}
                             className={
                                 action === "reset"
-                                    ? "bg-red-400 text-white hover:bg-destructive/90"
+                                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     : undefined
                             }
                         >

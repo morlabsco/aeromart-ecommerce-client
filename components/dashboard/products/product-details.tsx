@@ -45,7 +45,7 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
                     transformOrigin: `${origin.x}% ${origin.y}%`,
                 }}
             />
-            <span className="absolute bottom-2 right-2 rounded-md bg-black/50 px-2 py-1 text-[10px] text-white flex items-center gap-1 pointer-events-none">
+            <span className="absolute bottom-2 right-2 rounded-md bg-scrim/50 px-2 py-1 text-[10px] text-scrim-foreground flex items-center gap-1 pointer-events-none">
                 <Maximize2 className="h-3 w-3" />
                 Hover to zoom
             </span>

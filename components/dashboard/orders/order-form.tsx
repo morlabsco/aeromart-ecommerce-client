@@ -480,11 +480,11 @@ export function CreateOrderForm({
                                     </div>
 
                                     {hasOfferOnLine(line) && (
-                                        <div className="flex items-center gap-2 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 px-3 py-1.5">
-                                            <span className="text-[10px] font-bold uppercase tracking-wide text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/40 rounded px-1.5 py-0.5">
+                                        <div className="flex items-center gap-2 rounded-md bg-success/10 border border-success/30 px-3 py-1.5">
+                                            <span className="text-[10px] font-bold uppercase tracking-wide text-success bg-success/20 rounded px-1.5 py-0.5">
                                                 Offer
                                             </span>
-                                            <p className="text-xs text-green-700 dark:text-green-400">
+                                            <p className="text-xs text-success">
                                                 {formatCurrency(
                                                     baseUnitPrice(line),
                                                     brandCurrency
@@ -930,12 +930,12 @@ export function CreateOrderForm({
                                                 </SelectContent>
                                             </Select>
                                             {selectedCoupon && (
-                                                <div className="flex items-center justify-between rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 px-3 py-1.5">
-                                                    <p className="text-xs text-green-700 dark:text-green-400">
+                                                <div className="flex items-center justify-between rounded-md bg-success/10 border border-success/30 px-3 py-1.5">
+                                                    <p className="text-xs text-success">
                                                         Coupon discount (
                                                         {selectedCoupon.code})
                                                     </p>
-                                                    <p className="text-xs font-semibold text-green-700 dark:text-green-400 tabular-nums">
+                                                    <p className="text-xs font-semibold text-success tabular-nums">
                                                         −
                                                         {formatCurrency(
                                                             couponDiscount,
@@ -957,12 +957,12 @@ export function CreateOrderForm({
                                             }
                                         />
                                         {selectedCoupon && (
-                                            <div className="flex items-center justify-between rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 px-3 py-1.5">
-                                                <p className="text-xs text-green-700 dark:text-green-400">
+                                            <div className="flex items-center justify-between rounded-md bg-success/10 border border-success/30 px-3 py-1.5">
+                                                <p className="text-xs text-success">
                                                     Coupon discount (
                                                     {selectedCoupon.code})
                                                 </p>
-                                                <p className="text-xs font-semibold text-green-700 dark:text-green-400 tabular-nums">
+                                                <p className="text-xs font-semibold text-success tabular-nums">
                                                     −
                                                     {formatCurrency(
                                                         couponDiscount,
@@ -994,7 +994,7 @@ export function CreateOrderForm({
                                     </span>
                                 </div>
                                 {offerDiscount > 0 && (
-                                    <div className="flex items-center justify-between text-sm text-green-700 dark:text-green-400">
+                                    <div className="flex items-center justify-between text-sm text-success">
                                         <span>Offer discount</span>
                                         <span className="font-medium tabular-nums">
                                             −
@@ -1006,7 +1006,7 @@ export function CreateOrderForm({
                                     </div>
                                 )}
                                 {couponDiscount > 0 && (
-                                    <div className="flex items-center justify-between text-sm text-green-700 dark:text-green-400">
+                                    <div className="flex items-center justify-between text-sm text-success">
                                         <span>
                                             Coupon discount ({coupon})
                                         </span>

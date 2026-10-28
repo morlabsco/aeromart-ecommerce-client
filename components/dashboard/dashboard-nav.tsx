@@ -19,7 +19,7 @@ export function DashboardNav() {
     <div className="border-b bg-card">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide py-3">
-          <Link href="/" className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 mr-2 shrink-0">
+          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground mr-2 shrink-0">
             &larr; Store
           </Link>
           {tabs.map((tab) => {
@@ -33,7 +33,7 @@ export function DashboardNav() {
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    : "text-muted-foreground hover:bg-muted"
                 )}
               >
                 <Icon className="h-4 w-4" />

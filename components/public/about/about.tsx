@@ -48,10 +48,10 @@ export default function About({ about, brand }: { about: SettingsAbout | null; b
           {stats.map((stat) => (
             <span
               key={stat.label}
-              className="inline-flex items-baseline gap-2 rounded-full bg-white/5 px-4 py-2 ring-1 ring-white/10"
+              className="inline-flex items-baseline gap-2 rounded-full bg-header-nav-foreground/5 px-4 py-2 ring-1 ring-header-nav-foreground/10"
             >
               <span className="text-base font-extrabold text-brand">{stat.value}</span>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-white/60">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-header-nav-foreground/60">
                 {stat.label}
               </span>
             </span>
@@ -138,10 +138,10 @@ export default function About({ about, brand }: { about: SettingsAbout | null; b
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
         <div className="relative overflow-hidden rounded-[2rem] bg-header-nav px-6 py-14 text-center sm:px-10 sm:py-16">
           <div aria-hidden="true" className="pointer-events-none absolute -left-20 -bottom-24 size-80 rounded-full bg-brand/20 blur-3xl" />
-          <h2 className="relative text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h2 className="relative text-2xl font-bold tracking-tight text-header-nav-foreground sm:text-3xl">
             Ready to see what the fuss is about?
           </h2>
-          <p className="relative mx-auto mt-3 max-w-md text-sm text-white/60">
+          <p className="relative mx-auto mt-3 max-w-md text-sm text-header-nav-foreground/60">
             Thousands of products, honest prices, and a team that actually answers.
           </p>
           <Link

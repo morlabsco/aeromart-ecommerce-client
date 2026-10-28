@@ -7,20 +7,8 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/currency";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { OrderPaymentActions } from "@/components/dashboard/orders/order-payment-actions";
+import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 import type { Order } from "@/lib/types/backend";
-
-const statusStyles: Record<string, string> = {
-    Completed:
-        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    Shipped:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Processing:
-        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Pending:
-        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-    Cancelled:
-        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
 
 interface OrderDetailsProps {
     order: Order;
@@ -110,7 +98,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                         {order.offerDiscount > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Offer discount</span>
-                                <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                <span className="font-medium text-success">
                                     -{formatCurrency(order.offerDiscount, order.currency)}
                                 </span>
                             </div>
@@ -118,7 +106,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                         {order.discount > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Coupon discount</span>
-                                <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                <span className="font-medium text-success">
                                     -{formatCurrency(order.discount, order.currency)}
                                 </span>
                             </div>
@@ -174,15 +162,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                         </div>
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Status</p>
-                            <span
-                                className={cn(
-                                    "inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                                    statusStyles[order.status] ??
-                                        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                                )}
-                            >
-                                {order.status}
-                            </span>
+                            <OrderStatusBadge status={order.status} className="mt-1" />
                         </div>
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Payment</p>

@@ -27,58 +27,62 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   }
 
   return (
-    <div className="flex items-center justify-between pt-6">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Page {currentPage} of {totalPages}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage <= 1}
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors cursor-pointer",
-            currentPage <= 1
-              ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
-              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
-          )}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-
-        {pages.map((p, i) =>
-          p === "..." ? (
-            <span key={`e${i}`} className="flex h-8 w-8 items-center justify-center text-sm text-zinc-400">
-              ...
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p)}
-              className={cn(
-                "h-8 w-8 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-                p === currentPage
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
-              )}
-            >
-              {p}
-            </button>
-          ),
+    <nav
+      className="flex items-center justify-center gap-1.5 py-6"
+      aria-label="Pagination"
+    >
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
+        aria-label="Previous page"
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-sm transition-colors cursor-pointer",
+          currentPage <= 1
+            ? "border-border/60 text-muted-foreground/40 cursor-not-allowed"
+            : "border-border text-muted-foreground hover:border-brand hover:text-brand",
         )}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
 
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors cursor-pointer",
-            currentPage >= totalPages
-              ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
-              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
-          )}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span
+            key={`e${i}`}
+            className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground"
+          >
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            aria-current={p === currentPage ? "page" : undefined}
+            className={cn(
+              "h-9 w-9 rounded-lg text-sm font-semibold transition-colors cursor-pointer",
+              p === currentPage
+                ? "bg-header-nav text-header-nav-foreground"
+                : "border border-border bg-card text-muted-foreground hover:border-brand hover:text-brand",
+            )}
+          >
+            {p}
+          </button>
+        ),
+      )}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        aria-label="Next page"
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-sm transition-colors cursor-pointer",
+          currentPage >= totalPages
+            ? "border-border/60 text-muted-foreground/40 cursor-not-allowed"
+            : "border-border text-muted-foreground hover:border-brand hover:text-brand",
+        )}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </nav>
   )
 }

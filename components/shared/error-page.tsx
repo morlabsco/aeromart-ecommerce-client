@@ -37,11 +37,11 @@ export function ErrorPage({
         <div className="relative flex min-h-[75vh] w-full items-center justify-center overflow-hidden px-4 py-16">
             {/* Decorative background , theme-tinted (matches the failed payment page) */}
             <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-destructive/10 blur-3xl dark:bg-destructive/15" />
-            <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl dark:bg-amber-500/15" />
+            <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-warning/10 blur-3xl" />
 
             <div className="relative w-full max-w-lg">
                 {/* Gradient border , theme-aware */}
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-destructive via-destructive/70 to-amber-400 dark:from-destructive dark:via-destructive/70 dark:to-amber-500" />
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-destructive via-destructive/70 to-warning" />
 
                 <div className="relative flex flex-col items-center rounded-2xl bg-card px-6 py-10 shadow-xl sm:px-8 sm:py-12">
                     {/* Icon */}

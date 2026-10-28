@@ -704,10 +704,10 @@ export function VariantsEditor({
                                                                 />
                                                                 <span
                                                                     className={cn(
-                                                                        "absolute bottom-0.5 left-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-white",
+                                                                        "absolute bottom-0.5 left-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-scrim-foreground",
                                                                         si === 0
                                                                             ? "bg-primary"
-                                                                            : "bg-black/60"
+                                                                            : "bg-scrim/60"
                                                                     )}
                                                                 >
                                                                     {si === 0
@@ -728,7 +728,7 @@ export function VariantsEditor({
                                                                             si
                                                                         )
                                                                     }
-                                                                    className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
+                                                                    className="absolute right-0.5 top-0.5 rounded-full bg-scrim/60 p-0.5 text-scrim-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-scrim/80"
                                                                     aria-label="Remove variant image"
                                                                 >
                                                                     <X className="h-3 w-3" />
@@ -776,7 +776,7 @@ export function VariantsEditor({
                                                                     fi
                                                                 )
                                                             }
-                                                            className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                                                            className="absolute right-0.5 top-0.5 rounded-full bg-scrim/60 p-0.5 text-scrim-foreground"
                                                             aria-label="Remove variant upload"
                                                         >
                                                             <X className="h-3 w-3" />

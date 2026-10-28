@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { MessageCircle, MessagesSquare, Phone, X } from "lucide-react"
+import { MessageCircle, Phone, X } from "lucide-react"
 import type { SettingsContact } from "@/lib/types/backend"
 import { cn } from "@/lib/utils"
+import { MessengerIcon, WhatsAppIcon } from "./brand-icons"
 
 interface ChatWidgetProps {
   /** Contact section from the settings singleton. */
@@ -41,7 +42,7 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
     digits && {
       label: "WhatsApp",
       href: `https://wa.me/${digits.replace(/^\+/, "")}`,
-      icon: MessageCircle,
+      icon: WhatsAppIcon,
       // Platform brand colors — fixed identities, not theme tokens.
       className: "bg-[#25D366] hover:bg-[#1fb857]",
     },
@@ -49,7 +50,7 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
       messengerFromFacebook(facebookUrl) && {
         label: "Messenger",
         href: messengerFromFacebook(facebookUrl),
-        icon: MessagesSquare,
+        icon: MessengerIcon,
         className: "bg-[#0084FF] hover:bg-[#0073d9]",
       },
     phone && {
@@ -82,7 +83,7 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
               rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
               aria-label={action.label}
               className={cn(
-                "group relative flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-all duration-300 hover:scale-110",
+                "group relative flex h-12 w-12 items-center justify-center rounded-full text-brand-foreground shadow-lg transition-all duration-300 hover:scale-110",
                 action.className,
                 open
                   ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
@@ -96,7 +97,7 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
               }}
             >
               <Icon className="h-5 w-5" />
-              <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-full bg-header-nav px-3 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 sm:block">
+              <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-full bg-header-nav px-3 py-1.5 text-xs font-semibold text-header-nav-foreground opacity-0 shadow-md transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 sm:block">
                 {action.label}
               </span>
             </a>

@@ -4,12 +4,13 @@ import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Mail, ArrowRight, Check } from "lucide-react"
 import { toast } from "sonner"
+import { Button } from "../ui/button"
 
 /**
  * Newsletter strip, restyled for the Nittonova theme — every color flows
  * from the centralized tokens: cream panel on the page background, white
  * icon circle with a brand-orange glyph, bold heading with the signature
- * orange dash, and a pill email input with an orange subscribe button.
+ * orange dash, a standard field and an orange pill subscribe button.
  */
 export function Newsletter({ heading }: { heading?: string }) {
   const [email, setEmail] = useState("")
@@ -47,12 +48,14 @@ export function Newsletter({ heading }: { heading?: string }) {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 flex-1 rounded-full border-border bg-card text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-ring/25"
+              className="flex-1 border-border bg-card"
               required
             />
-            <button
+            <Button
               type="submit"
-              className="inline-flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-brand px-8 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90"
+              variant="brand"
+              size="xl"
+              className="w-full px-8 sm:w-auto"
             >
               {submitted ? (
                 <>
@@ -63,7 +66,7 @@ export function Newsletter({ heading }: { heading?: string }) {
                   Subscribe <ArrowRight className="size-4" />
                 </>
               )}
-            </button>
+            </Button>
           </form>
           <p className="mt-4 text-xs text-muted-foreground/70">No spam, ever. Unsubscribe anytime.</p>
         </div>

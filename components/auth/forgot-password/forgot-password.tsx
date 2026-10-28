@@ -8,11 +8,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { forgotPassword, verifyOtp, resetPassword } from "@/lib/services/auth";
 import { isErrorResult } from "@/lib/utils/result";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { AuthShell, authFieldClass, authLabelClass } from "../auth-shell";
+import { AuthShell, authLabelClass } from "../auth-shell";
 
 const emailSchema = z.object({
   email: z
@@ -160,13 +161,14 @@ export default function ForgotPassword() {
             </label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-              <input
+              <Input
                 id="forgot-email"
                 {...emailForm.register("email")}
                 placeholder="name@example.com"
                 inputMode="email"
                 autoComplete="email"
-                className={authFieldClass(!!emailForm.formState.errors.email)}
+                className="pl-10"
+                aria-invalid={!!emailForm.formState.errors.email}
               />
             </div>
             {emailForm.formState.errors.email && (
@@ -176,14 +178,10 @@ export default function ForgotPassword() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60"
-          >
+          <Button type="submit" variant="brand" size="xl" className="w-full" disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
             {loading ? "Sending..." : "Send verification code"}
-          </button>
+          </Button>
 
           <p className="text-center text-sm">
             <Link href="/login" className="font-semibold text-brand hover:underline underline-offset-4">
@@ -218,15 +216,17 @@ export default function ForgotPassword() {
               <Loader2 className="h-4 w-4 animate-spin" /> Verifying code...
             </p>
           )}
-          <button
+          <Button
             type="button"
+            variant="brand"
+            size="xl"
+            className="w-full"
             onClick={() => submitOtp(otp)}
             disabled={loading || otp.length !== 6}
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60"
           >
             <ShieldCheck className="h-4 w-4" />
             Verify
-          </button>
+          </Button>
           <div className="flex items-center justify-between text-sm">
             <Link
               href="/login"
@@ -254,13 +254,14 @@ export default function ForgotPassword() {
             </label>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-              <input
+              <Input
                 id="new-password"
                 type="password"
                 {...resetForm.register("newPassword")}
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className={authFieldClass(!!resetForm.formState.errors.newPassword)}
+                className="pl-10"
+                aria-invalid={!!resetForm.formState.errors.newPassword}
               />
             </div>
             {resetForm.formState.errors.newPassword && (
@@ -276,13 +277,14 @@ export default function ForgotPassword() {
             </label>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-              <input
+              <Input
                 id="confirm-new-password"
                 type="password"
                 {...resetForm.register("confirmPassword")}
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className={authFieldClass(!!resetForm.formState.errors.confirmPassword)}
+                className="pl-10"
+                aria-invalid={!!resetForm.formState.errors.confirmPassword}
               />
             </div>
             {resetForm.formState.errors.confirmPassword && (
@@ -292,14 +294,10 @@ export default function ForgotPassword() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60"
-          >
+          <Button type="submit" variant="brand" size="xl" className="w-full" disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
             {loading ? "Resetting..." : "Reset password"}
-          </button>
+          </Button>
         </form>
       )}
     </AuthShell>

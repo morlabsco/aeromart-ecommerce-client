@@ -4,7 +4,21 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Trash2, CreditCard, CheckCircle, ArrowLeft, Loader2, Tag, Minus, Plus, Truck, Store, MapPin, Package } from "lucide-react"
+import {
+  Trash2,
+  CreditCard,
+  CheckCircle,
+  ArrowLeft,
+  Loader2,
+  Tag,
+  Minus,
+  Plus,
+  Truck,
+  Store,
+  MapPin,
+  Package,
+  Lock,
+} from "lucide-react"
 import { useCartStore } from "../../../lib/store/app-store"
 import { ThemedImage } from "../../../components/shared/themed-image"
 import { Button } from "../../../components/ui/button"
@@ -15,13 +29,20 @@ import { cn } from "../../../lib/utils"
 import { toast } from "sonner"
 import { createOrder } from "@/lib/services/order"
 import { getCouponByCode } from "@/lib/services/coupon"
-import { getSettings } from "@/lib/services/settings"
+import { getSettings } from "../../../lib/services/settings"
 import { stripeInit, sslCommerzInit, bkashInit } from "@/lib/services/payment"
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone"
-import { formatCurrency, getOfferPrice } from "@/lib/utils/currency"
-import type { CartItem } from "@/lib/types"
-import type { Coupon, PaymentMethod, SettingsDeliveryOption } from "@/lib/types/backend"
-import { isErrorResult } from "@/lib/utils/result"
+import { formatCurrency, getOfferPrice } from "../../../lib/utils/currency"
+import type { CartItem } from "../../../lib/types"
+import type { Coupon, PaymentMethod, SettingsDeliveryOption } from "../../../lib/types/backend"
+import { isErrorResult } from "../../../lib/utils/result"
+
+/* ---------------------------------------------------------------------------
+ * Nittonova checkout (from the cropped reference): cream page, numbered white
+ * section cards (customer info → address → delivery method → coupon →
+ * payment) with box radios, and a sticky Order Summary card with the orange
+ * PLACE ORDER. Two steps kept: Review (editable cart) → Details.
+ * ------------------------------------------------------------------------- */
 
 type PaymentOption = PaymentMethod | "stripe" | "sslcommerz" | "bkash"
 
@@ -109,6 +130,15 @@ function offerDiscountFor(items: CartItem[]): number {
   )
 }
 
+/** Numbered micro-label heading shared by every checkout section. */
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
+      {children}
+    </h3>
+  )
+}
+
 /**
  * Lets a customer change the variant of an item already in the cart. The old
  * line is removed and the new selection is re-added with the same quantity, so
@@ -146,8 +176,8 @@ function VariantSwitcher({
   return (
     <div className="space-y-2">
       {axes.map((axis) => (
-        <div key={axis.name} className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-zinc-500 w-14 shrink-0">
+        <div key={axis.name} className="flex flex-wrap items-center gap-2">
+          <span className="w-14 shrink-0 text-xs font-semibold text-muted-foreground">
             {axis.name}:
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -160,11 +190,12 @@ function VariantSwitcher({
                   onClick={() =>
                     setSelection((prev) => ({ ...prev, [axis.name]: option }))
                   }
-                  className={`px-2.5 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                  className={cn(
+                    "cursor-pointer rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors",
                     active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"
-                  }`}
+                      ? "border-brand bg-brand/10 text-brand"
+                      : "border-border text-muted-foreground hover:border-brand/50 hover:text-foreground"
+                  )}
                 >
                   {option}
                 </button>
@@ -179,9 +210,9 @@ function VariantSwitcher({
         onClick={() => {
           if (resolvedSku) onSwap(resolvedSku.sku, selection)
         }}
-        className="text-xs font-medium text-primary hover:underline disabled:text-zinc-400 disabled:no-underline disabled:cursor-not-allowed"
+        className="cursor-pointer text-xs font-semibold text-brand transition-transform duration-300 hover:translate-x-1 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline disabled:hover:translate-x-0"
       >
-        {sameSku ? "Current selection" : "Apply selection"}
+        {sameSku ? "Current selection" : "Apply selection →"}
       </button>
     </div>
   )
@@ -443,121 +474,315 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 h-16 w-16 flex items-center justify-center mx-auto mb-4">
-          <CreditCard className="h-8 w-8 text-zinc-400" />
+      <div className="bg-hero-surface">
+        <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+          <span className="mx-auto mb-5 flex size-20 items-center justify-center rounded-full bg-card shadow-sm">
+            <CreditCard className="size-9 text-brand" strokeWidth={1.5} />
+          </span>
+          <h1 className="text-2xl font-bold text-foreground">Your cart is empty</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+            Add some products to get started — your checkout will be ready in seconds.
+          </p>
+          <Link
+            href="/products"
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-brand px-8 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90"
+          >
+            Browse Products
+          </Link>
         </div>
-        <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mb-6">Add some products to get started</p>
-        <Link
-          href="/products"
-          className="inline-flex h-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 px-2.5 text-sm font-medium transition-all outline-none select-none"
-        >
-          Browse Products
-        </Link>
       </div>
     )
   }
 
-  return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Checkout</h1>
+  const currency = items[0]?.product.currency
 
-      <div className="flex gap-2 mb-8">
-        {(["cart", "info"] as const).map((s, i) => {
-          const active = step === s
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStep(s)}
-              className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors cursor-pointer",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-foreground"
-              )}
-            >
-              <span
+  const field = (
+    id: keyof typeof form,
+    label: string,
+    optional = false,
+    type = "text"
+  ) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-semibold text-foreground">
+        {label}
+        {optional && <span className="ml-1 font-normal text-muted-foreground">(optional)</span>}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        value={form[id]}
+        onChange={(e) => setForm({ ...form, [id]: e.target.value })}
+        aria-invalid={!!errors[id]}
+      />
+      {errors[id] && <p className="text-xs text-destructive">{errors[id]}</p>}
+    </div>
+  )
+
+  /* ── Order summary card (shared by both steps) ── */
+  const summaryCard = (
+    <div className="sticky top-24 space-y-4 rounded-2xl bg-card p-6 shadow-sm">
+      <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
+        Order Summary
+      </h3>
+      <div className="max-h-64 space-y-3 overflow-y-auto">
+        {items.map((item) => (
+          <div
+            key={`${item.product.id}-${JSON.stringify(item.variant)}`}
+            className="flex items-center gap-3"
+          >
+            <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-background">
+              <ThemedImage
+                src={
+                  item.product.variantSkus?.find((s) => s.sku === item.variantSku)
+                    ?.imageUrls?.[0] ?? item.product.image
+                }
+                alt={item.product.title}
+                fallbackText={item.product.title}
+                fill
+                className="object-contain"
+                placeholderClassName="text-[9px]"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-1 text-xs font-bold text-foreground">
+                {item.product.title}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {item.variant &&
+                  `${Object.entries(item.variant)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(", ")} · `}
+                × {item.quantity}
+              </p>
+            </div>
+            <span className="text-xs font-bold tabular-nums text-foreground">
+              {formatCurrency(lineUnitPrice(item) * item.quantity, item.product.currency)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2 border-t border-border pt-4 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Subtotal ({itemCount()} items)</span>
+          <span className="tabular-nums">{formatCurrency(subtotal(), currency)}</span>
+        </div>
+        {offerDiscount > 0 && (
+          <div className="flex justify-between text-success">
+            <span>Offer Discount</span>
+            <span>-{formatCurrency(offerDiscount, currency)}</span>
+          </div>
+        )}
+        {discount > 0 && (
+          <div className="flex justify-between text-success">
+            <span>Discount ({appliedCoupon?.code})</span>
+            <span>-{formatCurrency(discount, currency)}</span>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Delivery</span>
+          <span className={cn("tabular-nums", deliveryCharge === 0 && "text-success")}>
+            {deliveryCharge === 0
+              ? "Free"
+              : formatCurrency(deliveryCharge, currency)}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-baseline justify-between border-t border-border pt-4">
+        <span className="text-sm font-bold uppercase tracking-wide text-foreground">Total</span>
+        <span className="text-xl font-extrabold text-brand tabular-nums">
+          {formatCurrency(finalTotal, currency)}
+        </span>
+      </div>
+      {step === "cart" ? (
+        <>
+          <Button variant="brand" size="xl" className="w-full" onClick={() => setStep("info")}>
+            Proceed to Details
+          </Button>
+          <Link
+            href="/products"
+            className="block text-center text-sm font-semibold text-brand transition-transform duration-300 hover:translate-x-1"
+          >
+            Continue Shopping
+          </Link>
+        </>
+      ) : (
+        <>
+          <Button
+            variant="brand"
+            size="xl"
+            className="w-full"
+            onClick={handlePlaceOrder}
+            disabled={placing}
+          >
+            {placing ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Placing Order...
+              </>
+            ) : (
+              <>
+                <Lock className="size-4" />
+                Place Order
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => setStep("cart")}
+            disabled={placing}
+          >
+            <ArrowLeft className="size-4" /> Back to Cart
+          </Button>
+        </>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="bg-hero-surface">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        {/* Breadcrumb + heading */}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <Link href="/" className="inline-block transition-colors hover:text-brand">
+            Home
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span className="font-semibold text-foreground">Checkout</span>
+        </nav>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="text-3xl font-bold uppercase tracking-tight text-foreground lg:text-4xl">
+            Checkout{" "}
+            <span className="font-bold text-muted-foreground">({itemCount()})</span>
+          </h1>
+        </div>
+
+        {/* Steps */}
+        <div className="mb-8 mt-6 flex gap-2">
+          {(["cart", "info"] as const).map((s, i) => {
+            const active = step === s
+            const done = s === "cart" && step === "info"
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStep(s)}
                 className={cn(
-                  "h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium",
-                  active ? "bg-primary-foreground/20" : "bg-zinc-200 dark:bg-zinc-700"
+                  "flex cursor-pointer items-center gap-2 rounded-lg border px-3.5 py-2 transition-colors",
+                  active
+                    ? "border-header-nav bg-header-nav text-header-nav-foreground"
+                    : done
+                    ? "border-brand/40 bg-brand/10 text-brand"
+                    : "border-border bg-card text-muted-foreground hover:border-brand/50 hover:text-brand"
                 )}
               >
-                {active && step === "cart" ? <CheckCircle className="h-3.5 w-3.5" /> : i + 1}
-              </span>
-              <span className="text-sm font-medium">
-                {s === "cart" ? "Review" : "Details"}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {step === "cart" ? (
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <div key={`${item.product.id}-${JSON.stringify(item.variant)}`} className="flex gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900">
-                <div className="relative h-24 w-24 shrink-0 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                  <ThemedImage
-                    src={
-                      item.product.variantSkus?.find(
-                        (s) => s.sku === item.variantSku
-                      )?.imageUrls?.[0] ?? item.product.image
-                    }
-                    alt={item.product.title}
-                    fallbackText={item.product.title}
-                    fill
-                    className="object-cover"
-                    placeholderClassName="text-sm"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm line-clamp-1">{item.product.title}</h3>
-                  {item.variant && (
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {Object.entries(item.variant).map(([k, v]) => `${k}: ${v}`).join(", ")}
-                      {item.variantSku && (
-                        <span className="font-mono ml-1">· {item.variantSku}</span>
-                      )}
-                    </p>
+                <span
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded text-[11px] font-bold",
+                    active ? "bg-header-nav-foreground/20" : "bg-muted"
                   )}
-                  <p className="text-sm font-semibold mt-1">{formatCurrency(lineUnitPrice(item) * item.quantity, item.product.currency)}</p>
+                >
+                  {done ? <CheckCircle className="size-3.5" /> : i + 1}
+                </span>
+                <span className="text-sm font-semibold">
+                  {s === "cart" ? "Review" : "Details"}
+                </span>
+              </button>
+            )
+          })}
+        </div>
 
-                  {/* Quantity modify */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => changeQty(item, -1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="text-sm w-8 text-center font-medium tabular-nums">{item.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => changeQty(item, 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.product.id, item.variant, item.variantSku)}
-                      className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+        {step === "cart" ? (
+          /* ── Step 1: review the cart ── */
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
+              {items.map((item) => (
+                <div
+                  key={`${item.product.id}-${JSON.stringify(item.variant)}`}
+                  className="rounded-2xl bg-card p-4 shadow-sm sm:p-5"
+                >
+                  <div className="flex gap-4">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-background sm:h-28 sm:w-28">
+                      <ThemedImage
+                        src={
+                          item.product.variantSkus?.find(
+                            (s) => s.sku === item.variantSku
+                          )?.imageUrls?.[0] ?? item.product.image
+                        }
+                        alt={item.product.title}
+                        fallbackText={item.product.title}
+                        fill
+                        className="object-contain"
+                        placeholderClassName="text-sm"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="line-clamp-2 text-sm font-bold text-foreground transition-colors hover:text-brand"
+                      >
+                        {item.product.title}
+                      </Link>
+                      {item.variant && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {Object.entries(item.variant)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(", ")}
+                        </p>
+                      )}
+                      <p className="mt-1 text-sm font-extrabold text-brand">
+                        {formatCurrency(lineUnitPrice(item), item.product.currency)}
+                      </p>
+
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex items-center rounded-full border border-border">
+                          <button
+                            type="button"
+                            onClick={() => changeQty(item, -1)}
+                            className="flex size-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-brand"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="size-3.5" />
+                          </button>
+                          <span className="w-7 select-none text-center text-sm font-bold tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => changeQty(item, 1)}
+                            className="flex size-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-brand"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="size-3.5" />
+                          </button>
+                        </div>
+                        <span className="text-sm font-bold tabular-nums text-foreground">
+                          {formatCurrency(
+                            lineUnitPrice(item) * item.quantity,
+                            item.product.currency
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeItem(item.product.id, item.variant, item.variantSku)
+                          }
+                          className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Change variant (variant products only) */}
                   {(item.product.variants?.length ?? 0) > 0 && (
-                    <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                      <p className="text-xs font-medium text-zinc-500 mb-1.5">
+                    <div className="mt-4 border-t border-border/60 pt-4">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
                         Change options
                       </p>
                       <VariantSwitcher
@@ -569,320 +794,196 @@ export default function Checkout() {
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="rounded-xl border bg-white dark:bg-zinc-900 p-6 space-y-4 sticky top-24">
-              <h3 className="font-semibold">Order Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Subtotal ({itemCount()} items)</span>
-                  <span>{formatCurrency(subtotal(), items[0]?.product.currency)}</span>
-                </div>
-                {offerDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Offer Discount</span>
-                    <span>-{formatCurrency(offerDiscount, items[0]?.product.currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Delivery</span>
-                  <span className={deliveryCharge === 0 ? "text-green-600" : ""}>
-                    {deliveryCharge === 0
-                      ? "Free"
-                      : formatCurrency(deliveryCharge, items[0]?.product.currency)}
-                  </span>
-                </div>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>{formatCurrency(finalTotal, items[0]?.product.currency)}</span>
-                </div>
-              </div>
-              <Button className="w-full" onClick={() => setStep("info")}>
-                Proceed to Details
-              </Button>
-              <Link
-                href="/products"
-                className="inline-flex w-full h-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted hover:text-foreground px-2.5 text-sm font-medium transition-all outline-none select-none"
-              >
-                Continue Shopping
-              </Link>
+              ))}
             </div>
+            <div className="lg:col-span-1">{summaryCard}</div>
           </div>
-        </div>
-      ) : (
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="rounded-xl border bg-white dark:bg-zinc-900 p-6 space-y-8">
-              <h3 className="font-semibold">Customer Information</h3>
+        ) : (
+          /* ── Step 2: details ── */
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              {/* Customer information */}
+              <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+                <SectionTitle>01 · Customer Information</SectionTitle>
+                <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                  <div className="sm:col-span-2">{field("name", "Full Name")}</div>
+                  {field("email", "Email", false, "email")}
+                  {field("phone", "Phone")}
+                </div>
+              </section>
 
-              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
-                <div className="sm:col-span-2 space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={errors.name ? "border-red-500" : ""} />
-                  {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={errors.email ? "border-red-500" : ""} />
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={errors.phone ? "border-red-500" : ""} />
-                  {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
-                </div>
-              </div>
-
+              {/* Delivery address */}
               {!isPickup && (
-                <>
-                  <h3 className="font-semibold pt-6 border-t">Delivery Address</h3>
-
-                  <div className="space-y-8">
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address Line 1</Label>
-                      <Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={errors.address ? "border-red-500" : ""} />
-                      {errors.address && <p className="text-xs text-red-500">{errors.address}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="address2">Address Line 2 (Optional)</Label>
-                      <Input id="address2" value={form.address2} onChange={(e) => setForm({ ...form, address2: e.target.value })} />
-                    </div>
-                    <div className="grid sm:grid-cols-3 gap-x-6 gap-y-8">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={errors.city ? "border-red-500" : ""} />
-                        {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
-                        <Input id="state" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className={errors.state ? "border-red-500" : ""} />
-                        {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="zip">ZIP Code</Label>
-                        <Input id="zip" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} className={errors.zip ? "border-red-500" : ""} />
-                        {errors.zip && <p className="text-xs text-red-500">{errors.zip}</p>}
-                      </div>
+                <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+                  <SectionTitle>02 · Delivery Address</SectionTitle>
+                  <div className="space-y-5">
+                    {field("address", "Address Line 1")}
+                    {field("address2", "Address Line 2", true)}
+                    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-3">
+                      {field("city", "City")}
+                      {field("state", "State")}
+                      {field("zip", "ZIP Code")}
                     </div>
                   </div>
-                </>
+                </section>
               )}
 
-              <h3 className="font-semibold pt-6 border-t">Delivery Method</h3>
-              <RadioGroup
-                value={deliveryOption}
-                onValueChange={(value) => setDeliveryOption(value)}
-                className="grid gap-3 sm:grid-cols-3"
-              >
-                {deliveryOptions.map((option) => {
-                  const Icon = option.icon
-                  return (
-                    <Label
-                      key={option.id}
-                      className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 has-data-[state=checked]:border-primary"
-                    >
-                      <RadioGroupItem value={option.id} className="mt-0.5" />
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 font-medium text-sm">
-                          <Icon className="h-4 w-4 shrink-0 text-primary" />
-                          {option.label}
+              {/* Delivery method */}
+              <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+                <SectionTitle>{isPickup ? "02" : "03"} · Delivery Method</SectionTitle>
+                <RadioGroup
+                  value={deliveryOption}
+                  onValueChange={(value) => setDeliveryOption(value)}
+                  className="grid gap-3 sm:grid-cols-3"
+                >
+                  {deliveryOptions.map((option) => {
+                    const Icon = option.icon
+                    return (
+                      <Label
+                        key={option.id}
+                        className="cursor-pointer rounded-xl border border-border bg-card p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5"
+                      >
+                        <span className="flex items-start gap-3">
+                          <RadioGroupItem value={option.id} className="mt-0.5" />
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-2 text-sm font-bold text-foreground">
+                              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-header-nav">
+                                <Icon className="size-3.5 text-header-nav-foreground" />
+                              </span>
+                              {option.label}
+                            </span>
+                            <span className="mt-1.5 block text-xs leading-snug text-muted-foreground">
+                              {option.description}
+                            </span>
+                            <span className="mt-2 block text-sm font-extrabold text-brand">
+                              {option.charge === 0
+                                ? "Free"
+                                : formatCurrency(option.charge, currency)}
+                            </span>
+                          </span>
+                        </span>
+                      </Label>
+                    )
+                  })}
+                </RadioGroup>
+              </section>
+
+              {/* Coupon */}
+              <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+                <SectionTitle>{isPickup ? "03" : "04"} · Coupon</SectionTitle>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between rounded-lg border border-success/40 bg-success/10 p-4">
+                    <div className="flex items-center gap-2.5">
+                      <Tag className="size-4 text-success" />
+                      <div>
+                        <p className="text-sm font-bold text-foreground">
+                          {appliedCoupon.code}
                         </p>
-                        <p className="text-xs text-zinc-500 mt-1 leading-snug">
-                          {option.description}
-                        </p>
-                        <p className="text-sm font-semibold mt-2">
-                          {option.charge === 0
-                            ? "Free"
-                            : formatCurrency(option.charge, items[0]?.product.currency)}
+                        <p className="text-xs text-muted-foreground">
+                          {appliedCoupon.discountType === "percentage"
+                            ? `${appliedCoupon.discountValue}% off`
+                            : `${formatCurrency(appliedCoupon.discountValue, currency)} off`}
                         </p>
                       </div>
-                    </Label>
-                  )
-                })}
-              </RadioGroup>
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={removeCoupon}>
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Coupon code (e.g. SAVE20)"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={applyCoupon}
+                      disabled={couponBusy || !couponCode.trim()}
+                    >
+                      {couponBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </section>
 
-              <h3 className="font-semibold pt-6 border-t">Coupon</h3>
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-primary" />
+              {/* Payment method */}
+              <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+                <SectionTitle>{isPickup ? "04" : "05"} · Payment Method</SectionTitle>
+                <RadioGroup
+                  value={paymentMethod}
+                  onValueChange={(value) => setPaymentMethod(value as PaymentOption)}
+                  className="space-y-2.5"
+                >
+                  <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
+                    <RadioGroupItem value="COD" />
                     <div>
-                      <p className="font-medium text-sm">{appliedCoupon.code}</p>
-                      <p className="text-xs text-zinc-500">
-                        {appliedCoupon.discountType === "percentage"
-                          ? `${appliedCoupon.discountValue}% off`
-                          : `${formatCurrency(appliedCoupon.discountValue, items[0]?.product.currency)} off`}
+                      <p className="text-sm font-bold text-foreground">Cash on Delivery</p>
+                      <p className="text-xs text-muted-foreground">
+                        Pay when your order arrives.
                       </p>
                     </div>
-                  </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={removeCoupon}>
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Coupon code (e.g. SAVE20)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={applyCoupon}
-                    disabled={couponBusy || !couponCode.trim()}
-                  >
-                    {couponBusy ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Apply"
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              <h3 className="font-semibold pt-6 border-t">Payment Method</h3>
-              <RadioGroup
-                value={paymentMethod}
-                onValueChange={(value) => setPaymentMethod(value as PaymentOption)}
-                className="space-y-2"
-              >
-                <Label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary">
-                  <RadioGroupItem value="COD" />
-                  <div>
-                    <p className="font-medium">Cash on Delivery</p>
-                    <p className="text-xs text-zinc-500">Pay when your order arrives.</p>
-                  </div>
-                </Label>
-                <Label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary">
-                  <RadioGroupItem value="stripe" />
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/images/stripe-pay-logo.png"
-                      alt="Stripe"
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="h-6 w-auto object-contain"
-                    />
-                    <div>
-                      <p className="font-medium">Stripe</p>
-                      <p className="text-xs text-zinc-500">Pay securely with a card.</p>
-                    </div>
-                  </div>
-                </Label>
-                <Label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary">
-                  <RadioGroupItem value="sslcommerz" />
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/images/sslcommerz-pay-logo.png"
-                      alt="SSLCommerz"
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="h-6 w-auto object-contain"
-                    />
-                    <div>
-                      <p className="font-medium">SSLCommerz</p>
-                      <p className="text-xs text-zinc-500">Bangladesh online payment gateway.</p>
-                    </div>
-                  </div>
-                </Label>
-                <Label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-data-[state=checked]:border-primary">
-                  <RadioGroupItem value="bkash" />
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/images/bkash-pay-logo.png"
-                      alt="bKash"
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="h-6 w-auto object-contain"
-                    />
-                    <div>
-                      <p className="font-medium">bKash</p>
-                      <p className="text-xs text-zinc-500">Bangladesh mobile wallet.</p>
-                    </div>
-                  </div>
-                </Label>
-              </RadioGroup>
+                  </Label>
+                  {(
+                    [
+                      {
+                        value: "stripe",
+                        logo: "/images/stripe-pay-logo.png",
+                        alt: "Stripe",
+                        title: "Stripe",
+                        desc: "Pay securely with a card.",
+                      },
+                      {
+                        value: "sslcommerz",
+                        logo: "/images/sslcommerz-pay-logo.png",
+                        alt: "SSLCommerz",
+                        title: "SSLCommerz",
+                        desc: "Bangladesh online payment gateway.",
+                      },
+                      {
+                        value: "bkash",
+                        logo: "/images/bkash-pay-logo.png",
+                        alt: "bKash",
+                        title: "bKash",
+                        desc: "Bangladesh mobile wallet.",
+                      },
+                    ] as const
+                  ).map((method) => (
+                    <Label
+                      key={method.value}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5"
+                    >
+                      <RadioGroupItem value={method.value} />
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={method.logo}
+                          alt={method.alt}
+                          width={0}
+                          height={0}
+                          sizes="100vw"
+                          className="h-6 w-auto object-contain"
+                        />
+                        <div>
+                          <p className="text-sm font-bold text-foreground">{method.title}</p>
+                          <p className="text-xs text-muted-foreground">{method.desc}</p>
+                        </div>
+                      </div>
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </section>
             </div>
-          </div>
 
-          <div className="lg:col-span-1">
-            <div className="rounded-xl border bg-white dark:bg-zinc-900 p-6 space-y-4 sticky top-24">
-              <h3 className="font-semibold">Order Summary</h3>
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={`${item.product.id}-${JSON.stringify(item.variant)}`} className="flex justify-between text-sm">
-                    <span className="text-zinc-500 line-clamp-1">
-                      {item.product.title}
-                      {item.variant && (
-                        <span className="text-xs">
-                          {" "}
-                          ({Object.entries(item.variant).map(([k, v]) => `${k}: ${v}`).join(", ")})
-                        </span>
-                      )}
-                      {" "}× {item.quantity}
-                    </span>
-                    <span>{formatCurrency(lineUnitPrice(item) * item.quantity, item.product.currency)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t pt-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Subtotal</span>
-                  <span>{formatCurrency(subtotal(), items[0]?.product.currency)}</span>
-                </div>
-                {offerDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Offer Discount</span>
-                    <span>-{formatCurrency(offerDiscount, items[0]?.product.currency)}</span>
-                  </div>
-                )}
-                {discount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount ({appliedCoupon?.code})</span>
-                    <span>-{formatCurrency(discount, items[0]?.product.currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Delivery</span>
-                  <span className={deliveryCharge === 0 ? "text-green-600" : ""}>
-                    {deliveryCharge === 0
-                      ? "Free"
-                      : formatCurrency(deliveryCharge, items[0]?.product.currency)}
-                  </span>
-                </div>
-              </div>
-              <div className="border-t pt-4">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>{formatCurrency(finalTotal, items[0]?.product.currency)}</span>
-                </div>
-              </div>
-              <Button className="w-full" onClick={handlePlaceOrder} disabled={placing}>
-                {placing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Placing Order...
-                  </>
-                ) : (
-                  "Place Order"
-                )}
-              </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setStep("cart")} disabled={placing}>
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to Cart
-              </Button>
-            </div>
+            <div className="lg:col-span-1">{summaryCard}</div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

@@ -91,7 +91,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const term = searchTerm.trim()
-    router.push(term ? `/products?searchTerm=${encodeURIComponent(term)}` : "/products")
+    router.push(term ? `/products?search=${encodeURIComponent(term)}` : "/products")
     setSearchTerm("")
     setSearchOpen(false)
     setMobileMenuOpen(false)
@@ -194,7 +194,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                 aria-label="Open cart"
               >
                 <ShoppingBag className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-400 px-1 text-[9px] font-semibold text-white ring-2 ring-background">
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/60 px-1 text-[9px] font-semibold text-background ring-2 ring-background">
                   {cartCount}
                 </span>
               </button>
@@ -281,7 +281,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                         <div className="my-1 h-px bg-border/60" />
                         <Link
                           href="/logout"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive hover:text-white"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <LogOut className="h-4 w-4" />
                           Logout
@@ -323,7 +323,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="py-1 text-sm font-semibold text-white transition-colors hover:text-brand"
+                className="py-1 text-sm font-semibold text-header-nav-foreground transition-colors hover:text-brand"
               >
                 {link.label}
               </Link>
@@ -365,7 +365,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
       {/* Mobile drawer — left slide-in panel over a scrim */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 md:hidden",
+          "fixed inset-0 z-50 bg-scrim/50 transition-opacity duration-300 md:hidden",
           isMobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => setMobileMenuOpen(false)}

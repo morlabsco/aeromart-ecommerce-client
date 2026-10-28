@@ -208,7 +208,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
                     <div className="rounded-lg border p-4 space-y-3 bg-muted/30">
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 text-sm font-medium">
-                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                                 Payment link ready
                             </div>
                             <span className="text-xs text-muted-foreground tabular-nums">
@@ -228,7 +228,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
                                 title="Copy payment link"
                             >
                                 {copied ? (
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <CheckCircle2 className="h-4 w-4 text-success" />
                                 ) : (
                                     <Copy className="h-4 w-4" />
                                 )}

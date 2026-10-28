@@ -145,16 +145,16 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
       >
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-white/5 p-1.5 ring-1 ring-white/15 backdrop-blur"
+          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-header-nav-foreground/5 p-1.5 ring-1 ring-header-nav-foreground/15 backdrop-blur"
         >
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-white/40" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-header-nav-foreground/40" />
             <input
               value={orderId}
               onChange={(e) => setOrderId(e.target.value.toUpperCase())}
               placeholder="ENTER ORDER ID"
               aria-label="Order ID"
-              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-white placeholder:font-normal placeholder:tracking-normal placeholder:text-white/40 focus:outline-none"
+              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/40 focus:outline-none"
             />
           </div>
           <button
@@ -257,8 +257,8 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
             <span className="relative mx-auto flex size-12 items-center justify-center rounded-2xl bg-destructive/20 text-destructive">
               <X className="size-6" />
             </span>
-            <p className="relative mt-5 text-base font-bold text-white">{error}</p>
-            <p className="relative mt-1.5 text-sm text-white/50">
+            <p className="relative mt-5 text-base font-bold text-header-nav-foreground">{error}</p>
+            <p className="relative mt-1.5 text-sm text-header-nav-foreground/50">
               It looks like DEY2H7ULPD — check your confirmation and try again.
             </p>
             <button

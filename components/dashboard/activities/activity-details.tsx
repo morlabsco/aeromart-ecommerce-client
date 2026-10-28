@@ -21,27 +21,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { clearSingleActivity } from "@/lib/services/activity";
 import { isErrorResult } from "@/lib/utils/result";
+import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 import type { Activity, ActivityModule, ActivityType } from "@/lib/types/backend";
-
-const MODULE_BADGE: Record<string, string> = {
-    Order: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Product: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    Brand: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    Category: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    User: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    Coupon: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Review: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
-    Settings: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    Payment: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-};
-
-const TYPE_BADGE: Record<string, string> = {
-    create: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    update: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    delete: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    status: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    preset: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-};
 
 interface ActivityDetailsProps {
     activity: Activity;
@@ -97,27 +78,15 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Module</p>
-                            <span
-                                className={cn(
-                                    "inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                                    MODULE_BADGE[activity.module] ??
-                                        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                                )}
-                            >
-                                {activity.module}
-                            </span>
+                            <div className="mt-1">
+                                <ActivityModuleBadge module={activity.module} />
+                            </div>
                         </div>
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Type</p>
-                            <span
-                                className={cn(
-                                    "inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                                    TYPE_BADGE[activity.type] ??
-                                        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                                )}
-                            >
-                                {activity.type}
-                            </span>
+                            <div className="mt-1">
+                                <ActivityTypeBadge type={activity.type} />
+                            </div>
                         </div>
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Reference</p>

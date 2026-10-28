@@ -6,6 +6,7 @@ import { useCustomerStore, useOrderStore } from "../../../lib/store/app-store"
 import { useQueryParams } from "../../../lib/hooks/use-query-params"
 import { Input } from "../../ui/input"
 import { Pagination } from "../../ui/pagination"
+import { OrderStatusBadge } from "../../shared/order-status-badge"
 
 function CustomersPageContent() {
   const { customers } = useCustomerStore()
@@ -55,12 +56,12 @@ function CustomersPageContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Customers</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">View customer information and order history</p>
+        <p className="text-muted-foreground text-sm mt-1">View customer information and order history</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or phone..."
             value={params.search}
@@ -71,7 +72,7 @@ function CustomersPageContent() {
         <select
           value={params.sort}
           onChange={(e) => setParams({ sort: e.target.value })}
-          className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+          className="border rounded-lg px-3 py-2 text-sm bg-card border-border"
         >
           <option value="most-orders">Most Orders</option>
           <option value="name-asc">Name: A-Z</option>
@@ -85,26 +86,26 @@ function CustomersPageContent() {
           const customerOrders = orders.filter((o) => o.customerId === customer.id)
 
           return (
-            <div key={customer.id} className="rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden">
+            <div key={customer.id} className="rounded-xl border bg-card overflow-hidden">
               <button
                 onClick={() => setExpandedId(expandedId === customer.id ? null : customer.id)}
-                className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left"
+                className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-muted/50 transition-colors text-left"
               >
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-semibold">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
                     {customer.name.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{customer.name}</p>
-                    <p className="text-xs text-zinc-500">{customer.email}</p>
+                    <p className="text-xs text-muted-foreground">{customer.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-8">
                   <div className="text-right hidden sm:block">
                     <p className="text-sm font-medium">{customer.totalOrders} orders</p>
-                    <p className="text-xs text-zinc-500">${customer.totalSpent.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">${customer.totalSpent.toFixed(2)}</p>
                   </div>
-                  {expandedId === customer.id ? <ChevronUp className="h-4 w-4 text-zinc-400" /> : <ChevronDown className="h-4 w-4 text-zinc-400" />}
+                  {expandedId === customer.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </div>
               </button>
 
@@ -113,7 +114,7 @@ function CustomersPageContent() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Contact Info</h4>
-                      <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4" /> {customer.email}
                         </div>
@@ -124,7 +125,7 @@ function CustomersPageContent() {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Stats</h4>
-                      <div className="text-sm space-y-1 text-zinc-600 dark:text-zinc-400">
+                      <div className="text-sm space-y-1 text-muted-foreground">
                         <p>Total Orders: <span className="font-medium">{customer.totalOrders}</span></p>
                         <p>Total Spent: <span className="font-medium">${customer.totalSpent.toFixed(2)}</span></p>
                         <p>Last Order: <span className="font-medium">{new Date(customer.lastOrderDate).toLocaleDateString()}</span></p>
@@ -138,20 +139,14 @@ function CustomersPageContent() {
                       <h4 className="text-sm font-semibold mb-3">Order History</h4>
                       <div className="space-y-2">
                         {customerOrders.map((order) => (
-                          <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-sm">
+                          <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted text-sm">
                             <div>
                               <span className="font-medium">{order.id}</span>
-                              <span className="text-zinc-500 ml-2">{new Date(order.createdAt).toLocaleDateString()}</span>
+                              <span className="text-muted-foreground ml-2">{new Date(order.createdAt).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="font-medium">${order.total.toFixed(2)}</span>
-                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                                order.status === "delivered" ? "bg-green-100 text-green-700" :
-                                order.status === "shipped" ? "bg-blue-100 text-blue-700" :
-                                "bg-zinc-100 text-zinc-600"
-                              }`}>
-                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                              </span>
+                              <OrderStatusBadge status={order.status} />
                             </div>
                           </div>
                         ))}
@@ -165,7 +160,7 @@ function CustomersPageContent() {
         })}
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-muted-foreground">
             <p>No customers found</p>
           </div>
         )}
@@ -178,7 +173,7 @@ function CustomersPageContent() {
 
 export default function Customers() {
   return (
-    <Suspense fallback={<div className="text-center py-12 text-zinc-500">Loading customers...</div>}>
+    <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading customers...</div>}>
       <CustomersPageContent />
     </Suspense>
   )

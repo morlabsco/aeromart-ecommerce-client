@@ -46,7 +46,7 @@ export function PageHero({ eyebrow, title, subtitle, align = "center", children 
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">{eyebrow}</p>
         <h1
           className={cn(
-            "mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl",
+            "mt-4 text-3xl font-bold tracking-tight text-header-nav-foreground sm:text-4xl",
             align === "center" ? "" : "max-w-3xl sm:text-5xl lg:text-[3.5rem] lg:leading-[1.08]"
           )}
         >
@@ -55,7 +55,7 @@ export function PageHero({ eyebrow, title, subtitle, align = "center", children 
         {subtitle && (
           <p
             className={cn(
-              "mt-4 text-sm text-white/60 sm:text-base",
+              "mt-4 text-sm text-header-nav-foreground/60 sm:text-base",
               align === "center" ? "mx-auto max-w-md" : "max-w-2xl"
             )}
           >

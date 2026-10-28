@@ -35,7 +35,7 @@ export function NewArrivals({ products: serverProducts }: NewArrivalsProps = {})
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {newArrivals.map((product, i) => (
           <Reveal key={product.id} delay={i * 0.07}>
-            <ProductCard product={product} variant="default" />
+            <ProductCard product={product} />
           </Reveal>
         ))}
       </div>

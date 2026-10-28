@@ -12,6 +12,13 @@ const badgeVariants = cva(
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+        /* Status pills (Nittonova light-pill pattern: tinted bg + strong text) */
+        success: "bg-success/15 text-success",
+        warning: "bg-warning/15 text-warning",
+        info: "bg-info/15 text-info",
+        highlight: "bg-highlight/15 text-highlight",
+        teal: "bg-teal/15 text-teal",
+        neutral: "bg-muted text-muted-foreground",
         destructive:
           "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
         outline:

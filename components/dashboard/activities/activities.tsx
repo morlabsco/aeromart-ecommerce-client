@@ -37,26 +37,7 @@ import type { DateRange } from "react-day-picker";
 import type { ApiMeta, Activity, ActivityModule, ActivityType } from "@/lib/types/backend";
 import { clearActivities, clearSingleActivity } from "@/lib/services/activity";
 import { isErrorResult } from "@/lib/utils/result";
-
-const MODULE_BADGE: Record<string, string> = {
-    Order: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Product: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    Brand: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    Category: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    User: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    Coupon: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Review: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
-    Settings: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    Payment: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-};
-
-const TYPE_BADGE: Record<string, string> = {
-    create: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    update: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    delete: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    status: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    preset: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-};
+import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 
 interface ActivitiesTableProps {
     activities: Activity[];
@@ -120,15 +101,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                 header: "Module",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span
-                        className={cn(
-                            "inline-block px-2 py-0.5 rounded-full text-xs font-medium",
-                            MODULE_BADGE[row.original.module] ??
-                                "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        )}
-                    >
-                        {row.original.module}
-                    </span>
+                    <ActivityModuleBadge module={row.original.module} />
                 ),
             },
             {
@@ -136,15 +109,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                 header: "Type",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span
-                        className={cn(
-                            "inline-block px-2 py-0.5 rounded-full text-xs font-medium",
-                            TYPE_BADGE[row.original.type] ??
-                                "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        )}
-                    >
-                        {row.original.type}
-                    </span>
+                    <ActivityTypeBadge type={row.original.type} />
                 ),
             },
             {
@@ -423,7 +388,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                         <AlertDialogAction
                             onClick={confirmBulk === "all" ? confirmClearAll : confirmClearRange}
                             disabled={isPending}
-                            className="bg-red-100 text-primary hover:bg-red-200"
+                            className="bg-destructive/10 text-destructive hover:bg-destructive/20"
                         >
                             {isPending ? (
                                 <>

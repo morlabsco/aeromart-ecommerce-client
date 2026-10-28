@@ -1,4 +1,4 @@
-import { TrendingCard } from "./trending-card"
+import { ProductCard } from "./product-card"
 import { SectionHeader } from "./section-header"
 import type { Product } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,7 @@ interface ProductShelfProps {
 
 /**
  * Reusable Nittonova product shelf: a section header (title + orange dash +
- * optional View All) above a responsive grid of TrendingCards. Powers the
+ * optional View All) above a responsive grid of ProductCards. Powers the
  * home page's Trending and category-wise shelves, and is meant for any
  * other page that shows a row of products.
  */
@@ -39,7 +39,7 @@ export function ProductShelf({
         <SectionHeader title={title} viewAllHref={viewAllHref} />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => (
-            <TrendingCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>

@@ -84,8 +84,8 @@ export function PaymentResultPage({ outcome, searchParams }: PaymentResultPagePr
                 className={cn(
                     "pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full blur-3xl",
                     isSuccess
-                        ? "bg-emerald-500/10 dark:bg-emerald-500/15"
-                        : "bg-amber-500/10 dark:bg-amber-500/15"
+                        ? "bg-success/10"
+                        : "bg-warning/10"
                 )}
             />
 
@@ -123,8 +123,8 @@ export function PaymentResultPage({ outcome, searchParams }: PaymentResultPagePr
                         className={cn(
                             "absolute -inset-px rounded-2xl bg-gradient-to-br",
                             isSuccess
-                                ? "from-primary via-primary/70 to-emerald-400 dark:from-primary dark:via-primary/70 dark:to-emerald-500"
-                                : "from-destructive via-destructive/70 to-amber-400 dark:from-destructive dark:via-destructive/70 dark:to-amber-500"
+                                ? "from-primary via-primary/70 to-success"
+                                : "from-destructive via-destructive/70 to-warning"
                         )}
                     />
                     <div className="relative flex flex-col items-center rounded-2xl bg-card px-6 py-12 shadow-xl sm:px-10 sm:py-14">

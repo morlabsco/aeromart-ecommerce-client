@@ -16,10 +16,11 @@ import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { registerAction } from "@/lib/services/auth";
 import { isErrorResult } from "@/lib/utils/result";
-import { AuthShell, authFieldClass, authLabelClass } from "../auth-shell";
+import { AuthShell, authLabelClass } from "../auth-shell";
 
 const signupSchema = z
   .object({
@@ -117,12 +118,13 @@ function RegisterInner() {
           </label>
           <div className="relative">
             <User className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-            <input
+            <Input
               id="register-name"
               {...register("name")}
               placeholder="John Doe"
               autoComplete="name"
-              className={authFieldClass(!!errors.name)}
+              className="pl-10"
+              aria-invalid={!!errors.name}
             />
           </div>
           {errors.name && (
@@ -136,13 +138,14 @@ function RegisterInner() {
           </label>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-            <input
+            <Input
               id="register-email"
               {...register("email")}
               placeholder="name@example.com"
               inputMode="email"
               autoComplete="email"
-              className={authFieldClass(!!errors.email)}
+              className="pl-10"
+              aria-invalid={!!errors.email}
             />
           </div>
           {errors.email && (
@@ -157,13 +160,14 @@ function RegisterInner() {
             </label>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-              <input
+              <Input
                 id="register-password"
                 {...register("password")}
                 placeholder="••••••••"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                className={cn(authFieldClass(!!errors.password), "pr-11")}
+                className="pr-11 pl-10"
+                aria-invalid={!!errors.password}
               />
               <button
                 type="button"
@@ -185,13 +189,14 @@ function RegisterInner() {
             </label>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-              <input
+              <Input
                 id="register-confirm"
                 {...register("confirmPassword")}
                 placeholder="••••••••"
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
-                className={cn(authFieldClass(!!errors.confirmPassword), "pr-11")}
+                className="pr-11 pl-10"
+                aria-invalid={!!errors.confirmPassword}
               />
               <button
                 type="button"
@@ -210,11 +215,7 @@ function RegisterInner() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-brand-foreground transition-colors hover:bg-brand/90 disabled:opacity-60"
-        >
+        <Button type="submit" variant="brand" size="xl" className="w-full" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -226,7 +227,7 @@ function RegisterInner() {
               Sign up
             </>
           )}
-        </button>
+        </Button>
 
         <p className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>

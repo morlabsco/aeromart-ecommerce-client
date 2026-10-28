@@ -18,30 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, Trash2, Flag, FlagOff, Star } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Flag, FlagOff } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { StarRating } from "@/components/shared/star-rating";
 import { deleteReview, toggleReviewFlag } from "@/lib/services/review";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Review } from "@/lib/types/backend";
-
-function Stars({ value }: { value: number }) {
-    return (
-        <span className="inline-flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                    key={i}
-                    className={cn(
-                        "h-5 w-5",
-                        i < Math.round(value)
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-muted text-muted"
-                    )}
-                />
-            ))}
-        </span>
-    );
-}
 
 export function ReviewDetails({ review }: { review: Review }) {
     const router = useRouter();
@@ -131,7 +114,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                 <CardHeader>
                     <CardTitle className="text-base flex items-center justify-between">
                         <span>{review.product?.name ?? "Product"}</span>
-                        <Stars value={review.rating} />
+                        <StarRating rating={review.rating} size="lg" />
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -144,14 +127,10 @@ export function ReviewDetails({ review }: { review: Review }) {
                         </span>
                         <div className="flex flex-wrap gap-1.5 ml-auto">
                             {review.isVerifiedPurchase && (
-                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                    Verified Purchase
-                                </Badge>
+                                <Badge variant="success">Verified Purchase</Badge>
                             )}
                             {review.isFlagged ? (
-                                <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                                    Flagged
-                                </Badge>
+                                <Badge variant="destructive">Flagged</Badge>
                             ) : (
                                 <Badge variant="outline">Active</Badge>
                             )}
@@ -212,7 +191,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isPending}
-                            className="bg-red-400 text-white hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isPending ? (
                                 <>

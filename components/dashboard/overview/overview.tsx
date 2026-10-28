@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { MetaData, Order } from "@/lib/types/backend";
 
@@ -38,19 +38,6 @@ interface OverviewProps {
     /** Fallback currency for revenue display (brand currency). */
     brandCurrency?: string;
 }
-
-const statusStyles: Record<string, string> = {
-    Completed:
-        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    Shipped:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Processing:
-        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Pending:
-        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-    Cancelled:
-        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
 
 export function DashboardOverview({ meta, orders, brandCurrency = "usd" }: OverviewProps) {
     const currency = brandCurrency;
@@ -212,17 +199,7 @@ export function DashboardOverview({ meta, orders, brandCurrency = "usd" }: Overv
                                             <p className="text-sm font-medium tabular-nums">
                                                 {formatCurrency(order.finalAmount, order.currency ?? currency)}
                                             </p>
-                                            <span
-                                                className={cn(
-                                                    "inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                                    statusStyles[
-                                                        order.status
-                                                    ] ??
-                                                        "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                                                )}
-                                            >
-                                                {order.status}
-                                            </span>
+                                            <OrderStatusBadge status={order.status} />
                                         </div>
                                     </div>
                                 ))

@@ -8,16 +8,6 @@ interface AuthShellProps {
   children: ReactNode
 }
 
-/** Shared class for auth form fields (Nittonova style, all theme tokens). */
-export function authFieldClass(hasError?: boolean) {
-  return cn(
-    "h-11 w-full rounded-lg border bg-background pl-10 pr-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground/60",
-    hasError
-      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-      : "border-input focus:border-brand/50 focus:ring-2 focus:ring-ring/25"
-  )
-}
-
 /** Shared label style for auth form fields. */
 export const authLabelClass = "ml-0.5 block text-xs font-semibold text-foreground"
 

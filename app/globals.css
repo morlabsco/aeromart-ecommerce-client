@@ -62,6 +62,11 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
+  /* On-dark pairs: white text/scrims sit on near-black surfaces in BOTH themes */
+  --color-header-nav-foreground: var(--header-nav-foreground);
+  --color-scrim: var(--scrim);
+  --color-scrim-foreground: var(--scrim-foreground);
   /* Radius scale (Nittonova: btn .5rem, box 1rem, badge 1.9rem pill) */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -83,13 +88,14 @@
   --popover-foreground: oklch(0.2781 0.0296 256.848);
   --primary: oklch(0.4912 0.3096 275.75);
   --primary-foreground: oklch(0.8982 0.0619 275.75);
-  --secondary: oklch(0.9674 0.0013 286.37);
+  --secondary: oklch(0.2303 0.0879 258.66);
   --secondary-foreground: oklch(0.2103 0.0059 285.89);
   --muted: oklch(0.9674 0.0013 286.37);
   --muted-foreground: oklch(0.551 0.0234 264.36);
   --accent: oklch(0.9674 0.0013 286.37);
   --accent-foreground: oklch(0.2103 0.0059 285.89);
   --destructive: oklch(0.7176 0.221 22.18);
+  --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9197 0.004 286.32);
   --input: oklch(0.9197 0.004 286.32);
   --ring: oklch(0.4912 0.3096 275.75);
@@ -102,7 +108,7 @@
   --radius-box: 1rem;
   --radius-badge: 1.9rem;
   /* Nittonova brand accents */
-  --brand: oklch(0.6493 0.2011 33.88); /* #f0512e signature orange */
+  --brand: oklch(0.534379 0.214782 259.7221); /* #f0512e signature orange */
   --header-nav: oklch(0.227 0.005 286); /* charcoal category nav bar, #232323 */
   --hero-surface: oklch(0.9663 0.0176 81.33); /* cream page surface behind hero, #FAF3E7 */
   --brand-foreground: oklch(1 0 0);
@@ -116,6 +122,10 @@
   --warning-foreground: oklch(0.2781 0.0296 256.848);
   --info: oklch(0.7206 0.191 231.6);
   --info-foreground: oklch(1 0 0);
+  /* Static in both themes — white-on-charcoal never inverts with dark mode */
+  --header-nav-foreground: oklch(1 0 0);
+  --scrim: oklch(0.227 0.005 286); /* same charcoal as --header-nav */
+  --scrim-foreground: oklch(1 0 0);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.2781 0.0296 256.848);
   --sidebar-primary: oklch(0.6493 0.2011 33.88);
@@ -142,6 +152,7 @@
   --accent: oklch(0.2115 0.0117 254.088);
   --accent-foreground: oklch(0.7465 0.0216 264.436);
   --destructive: oklch(0.7176 0.221 22.18);
+  --destructive-foreground: oklch(1 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.6569 0.196 275.75);

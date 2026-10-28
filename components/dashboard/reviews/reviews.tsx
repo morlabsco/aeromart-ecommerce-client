@@ -7,26 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Star, Flag, CheckCircle2, MessageSquare, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StarRating } from "@/components/shared/star-rating";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Review } from "@/lib/types/backend";
-
-function Stars({ value }: { value: number }) {
-    return (
-        <span className="inline-flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                    key={i}
-                    className={cn(
-                        "h-3.5 w-3.5",
-                        i < Math.round(value)
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-muted text-muted"
-                    )}
-                />
-            ))}
-        </span>
-    );
-}
 
 interface ReviewsTableProps {
     reviews: Review[];
@@ -102,7 +85,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
                 enableSorting: true,
                 cell: ({ row }) => (
                     <span className="inline-flex items-center gap-2">
-                        <Stars value={row.original.rating} />
+                        <StarRating rating={row.original.rating} />
                         <span className="text-xs text-muted-foreground">
                             {row.original.rating}
                         </span>
@@ -124,14 +107,10 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
                 cell: ({ row }) => (
                     <div className="flex flex-wrap gap-1.5">
                         {row.original.isVerifiedPurchase && (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                Verified
-                            </Badge>
+                            <Badge variant="success">Verified</Badge>
                         )}
                         {row.original.isFlagged ? (
-                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                                Flagged
-                            </Badge>
+                            <Badge variant="destructive">Flagged</Badge>
                         ) : (
                             <Badge variant="outline">Active</Badge>
                         )}

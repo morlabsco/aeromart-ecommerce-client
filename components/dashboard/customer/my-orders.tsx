@@ -11,14 +11,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { ApiMeta, Order } from "@/lib/types/backend";
 import { formatCurrency } from "@/lib/utils/currency";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
-
-const statusStyles: Record<string, string> = {
-    Completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    Shipped: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Processing: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Pending: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-    Cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
+import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 
 interface MyOrdersTableProps {
     orders: Order[];
@@ -108,15 +101,7 @@ export function MyOrdersTable({ orders, meta, brandCurrency = "usd" }: MyOrdersT
                 header: "Status",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span
-                        className={
-                            "inline-block px-2 py-0.5 rounded-full text-xs font-medium " +
-                            (statusStyles[row.original.status] ??
-                                "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
-                        }
-                    >
-                        {row.original.status}
-                    </span>
+                    <OrderStatusBadge status={row.original.status} />
                 ),
             },
             {

@@ -59,5 +59,6 @@ export function toStorefrontProduct(
         rating: product.averageRating,
         reviewCount: product.ratingCount,
         createdAt: product.createdAt,
+        keyFeatures: product.keyFeatures ?? [],
     };
 }

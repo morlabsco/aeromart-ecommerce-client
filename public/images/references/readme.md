@@ -29,24 +29,24 @@ Build each section from its **cropped** reference — full-page shots are for co
 
 | File | Section | Status |
 |---|---|---|
-| `nittonova-products-page-large-device.png` | Products grid, populated state | ⬜ TODO |
-| `nittonova-products-page-large-device-empty.png` | Products page, empty state | ⬜ TODO |
-| `nittonova-products-large-device-filter-section.png` | Filter sidebar/panel (category, price, attributes) | ⬜ TODO |
-| `nittonova-products-large-device-category.png` | Category landing view (`products-category/{slug}`) | ⬜ TODO |
+| `nittonova-products-page-large-device.png` | Products grid, populated state | ✅ DONE — 2026-10-25 |
+| `nittonova-products-page-large-device-empty.png` | Products page, empty state | ✅ DONE — 2026-10-25 |
+| `nittonova-products-large-device-filter-section.png` | Filter sidebar/panel (category, price, attributes) | ✅ DONE — 2026-10-25 |
+| `nittonova-products-large-device-category.png` | Category landing view (`products-category/{slug}`) | ✅ DONE — 2026-10-25 |
 
 ## Product details (`app/(public)/products/[slug]/`)
 
 | File | Section | Status |
 |---|---|---|
-| `nittonova-product-details-large-device.png` | Full details page: gallery, price/offer, buy box, description HTML, reviews | ⬜ TODO |
+| `nittonova-product-details-large-device.png` | Full details page: gallery, price/offer, buy box, description HTML, reviews | ✅ DONE — 2026-10-25 |
 
 ## Cart & checkout
 
 | File | Section | Status |
 |---|---|---|
-| `nittonova-cart-section-large-device-empty.png` | Cart page/drawer, empty state | ⬜ TODO |
-| `nittonova-cart-section-large-device-with-items.png` | Cart with items: rows, qty steppers, totals | ⬜ TODO |
-| `nittonova-checkout-page-large-device.png` | Checkout: address form, order summary, payment | ⬜ TODO |
+| `nittonova-cart-section-large-device-empty.png` | Cart page/drawer, empty state | ✅ DONE — 2026-10-25 |
+| `nittonova-cart-section-large-device-with-items.png` | Cart with items: rows, qty steppers, totals | ✅ DONE — 2026-10-25 |
+| `nittonova-checkout-page-large-device.png` | Checkout: address form, order summary, payment | ✅ DONE — 2026-10-25 |
 
 ## Account (`app/(public)/dashboard/`)
 

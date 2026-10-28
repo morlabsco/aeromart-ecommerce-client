@@ -1,6 +1,7 @@
 "use client"
 
-import { Star, Quote } from "lucide-react"
+import { Quote } from "lucide-react"
+import { StarRating } from "../shared/star-rating"
 import {
   Carousel,
   CarouselContent,
@@ -76,17 +77,8 @@ export function Testimonials({
                   className="h-full bg-card border border-border rounded-2xl p-6 sm:p-8 flex flex-col"
                 >
                   <Quote className="size-8 text-primary/30 mb-4" />
-                  <div className="flex gap-1 mb-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`size-4 ${
-                          i < t.rating
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-muted-foreground/30"
-                        }`}
-                      />
-                    ))}
+                  <div className="mb-4">
+                    <StarRating rating={t.rating} size="lg" />
                   </div>
                   <p className="text-foreground/90 leading-relaxed mb-6 flex-1">
                     &ldquo;{t.quote}&rdquo;

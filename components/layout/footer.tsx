@@ -14,18 +14,28 @@ import {
     Video,
 } from "lucide-react"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
+import {
+  FacebookIcon,
+  InstagramIcon,
+  MessengerIcon,
+  WhatsAppIcon,
+} from "../shared/brand-icons"
 import type { SettingsBrand, SettingsContact, SettingsFooter } from "@/lib/types/backend"
 
-/** Maps a social platform name to the closest available lucide icon. */
+/**
+ * Maps a social platform name to its icon — real single-color brand glyphs
+ * for the major platforms, the closest lucide icon for everything else.
+ */
 const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  facebook: ThumbsUp,
-  instagram: Camera,
+  facebook: FacebookIcon,
+  instagram: InstagramIcon,
+  whatsapp: WhatsAppIcon,
+  messenger: MessengerIcon,
   twitter: AtSign,
   youtube: Video,
   linkedin: Briefcase,
   tiktok: Video,
   pinterest: ThumbsUp,
-  whatsapp: Users,
   telegram: Send,
   discord: Users,
 }
@@ -118,10 +128,14 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:gap-16 xl:gap-24">
           {/* Brand block */}
           <div>
-            <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              aria-label={`${brandName} — home`}
+              className="flex items-center gap-2 transition-opacity hover:opacity-90"
+            >
               {brand?.logoOnly && hasLogo ? (
                 /* Logo-only mode: natural aspect, uncropped */
                 <Image
@@ -154,7 +168,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
                   </span>
                 </>
               )}
-            </div>
+            </Link>
             <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{description}</p>
 
             {socialLinks.length > 0 && (
@@ -169,7 +183,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
                       rel="noopener noreferrer"
                       title={platformLabel(social.platform)}
                       aria-label={platformLabel(social.platform)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-brand transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
                     >
                       <Icon className="h-4 w-4" />
                     </a>
@@ -179,8 +193,11 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
             )}
           </div>
 
-          {/* Link columns from settings */}
-          {columns.map((col) => (
+          {/* Quick Links / Categories / Get in Touch grouped to the right,
+              clearly separated from the brand block on large devices. */}
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 xl:gap-12">
+            {/* Link columns from settings */}
+            {columns.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h3 className={columnHeading}>{col.title}</h3>
               <ul className="mt-6 space-y-3.5">
@@ -229,6 +246,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
               </ul>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -237,7 +255,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <p>
             {copyrightText}{" "}
-            <span className="text-zinc-400">
+            <span className="text-muted-foreground">
               · Built by{" "}
               <a
                 href="https://morlabs.co"

@@ -1,29 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Star, MessageSquare, Package } from "lucide-react";
+import { MessageSquare, Package } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { StarRating } from "@/components/shared/star-rating";
 import type { Review } from "@/lib/types/backend";
-
-function Stars({ value }: { value: number }) {
-    return (
-        <span className="inline-flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                    key={i}
-                    className={cn(
-                        "h-4 w-4",
-                        i < Math.round(value)
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-muted text-muted"
-                    )}
-                />
-            ))}
-        </span>
-    );
-}
 
 export function MyReviews({ reviews }: { reviews: Review[] }) {
     const [filter, setFilter] = useState<"all" | "verified">("all");
@@ -108,16 +91,12 @@ export function MyReviews({ reviews }: { reviews: Review[] }) {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Stars value={review.rating} />
+                                        <StarRating rating={review.rating} />
                                         {review.isVerifiedPurchase && (
-                                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                                Verified
-                                            </Badge>
+                                            <Badge variant="success">Verified</Badge>
                                         )}
                                         {review.isFlagged && (
-                                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                                                Flagged
-                                            </Badge>
+                                            <Badge variant="destructive">Flagged</Badge>
                                         )}
                                     </div>
                                 </div>
