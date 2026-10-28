@@ -14,47 +14,99 @@ export const dynamic = "force-dynamic";
 
 function ProductDetailsSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-      <div className="h-4 w-28 bg-muted rounded animate-pulse mb-6" />
-      <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-        <div className="space-y-4">
-          <div className="aspect-square w-full rounded-2xl bg-muted animate-pulse" />
-          <div className="flex gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
+    <div className="bg-hero-surface">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        {/* Breadcrumb */}
+        <div className="h-4 w-44 rounded bg-muted animate-pulse" />
+
+        {/* Gallery + buy box */}
+        <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Left: main image + thumbnail strip (thumbs below on mobile) */}
+          <div className="min-w-0 space-y-4">
+            <div className="aspect-square w-full rounded-lg bg-card animate-pulse" />
+            <div className="flex gap-3 overflow-hidden">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="size-16 shrink-0 rounded-lg bg-card animate-pulse sm:size-20"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Right: buy box */}
+          <div className="min-w-0 space-y-5">
+            <div className="h-8 w-3/4 rounded bg-muted animate-pulse" />
+            <div className="flex items-center gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="size-4 rounded bg-muted animate-pulse" />
+              ))}
+              <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+            </div>
+            {/* Cream price panel */}
+            <div className="h-[4.5rem] rounded-xl bg-muted animate-pulse" />
+            {/* Spec bullets */}
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-3.5 w-2/3 rounded bg-muted animate-pulse" />
+              ))}
+            </div>
+            {/* Variant pills */}
+            <div className="flex gap-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-10 w-16 rounded-lg bg-muted animate-pulse" />
+              ))}
+            </div>
+            {/* Quantity + availability */}
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-32 rounded-full bg-muted animate-pulse" />
+              <div className="h-3.5 w-20 rounded bg-muted animate-pulse" />
+            </div>
+            {/* ADD TO CART / BUY NOW pair */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="h-11 flex-1 rounded-lg bg-muted animate-pulse" />
+              <div className="h-11 flex-1 rounded-lg bg-muted animate-pulse" />
+            </div>
+            {/* Quick contact pair */}
+            <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2">
+              <div className="h-11 rounded-lg bg-muted animate-pulse" />
+              <div className="h-11 rounded-lg bg-muted animate-pulse" />
+            </div>
+            {/* Trust badges */}
+            <div className="grid grid-cols-1 gap-4 border-t border-border pt-5 sm:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="size-9 shrink-0 rounded-full bg-muted animate-pulse" />
+                  <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Description card */}
+        <div className="mt-12 lg:mt-16">
+          <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-8">
+            <div className="h-4 w-28 rounded bg-muted animate-pulse" />
+            <div className="mt-6 space-y-2.5">
+              <div className="h-3.5 w-full rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-11/12 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews */}
+        <div className="mt-12 lg:mt-16">
+          <div className="h-4 w-52 rounded bg-muted animate-pulse" />
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, i) => (
               <div
                 key={i}
-                className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-muted animate-pulse"
+                className="h-44 rounded-2xl bg-card shadow-sm animate-pulse"
               />
             ))}
           </div>
-        </div>
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-            <div className="h-8 w-3/4 bg-muted rounded animate-pulse" />
-          </div>
-          <div className="flex items-center gap-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-4 w-4 rounded bg-muted animate-pulse" />
-            ))}
-            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-          </div>
-          <div className="h-9 w-40 bg-muted rounded animate-pulse" />
-          <div className="h-20 w-full bg-muted rounded animate-pulse" />
-          <div className="h-12 w-full sm:w-64 bg-muted rounded animate-pulse" />
-          <div className="grid grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-16 bg-muted rounded animate-pulse" />
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="mt-16">
-        <div className="h-7 w-48 bg-muted rounded animate-pulse mb-6" />
-        <div className="grid sm:grid-cols-2 gap-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />
-          ))}
         </div>
       </div>
     </div>

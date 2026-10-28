@@ -13,7 +13,7 @@ import {
   Minus,
   Phone,
   Plus,
-  ShoppingCart,
+  ShoppingBag,
   Star,
   Truck,
   ShieldCheck,
@@ -21,7 +21,6 @@ import {
   Check,
   Zap,
   MessageSquareOff,
-  MessageCircle,
 } from "lucide-react"
 import { useCartStore, useUIStore } from "@/lib/store/app-store"
 import { Button } from "@/components/ui/button"
@@ -29,6 +28,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ProductCard } from "@/components/shared/product-card"
 import { StarRating } from "@/components/shared/star-rating"
+import { WhatsAppIcon } from "@/components/shared/brand-icons"
 import { toast } from "sonner"
 import { createReview } from "@/lib/services/review"
 import { formatCurrency, getOfferPrice } from "@/lib/utils/currency"
@@ -90,6 +90,35 @@ const AVATAR_TINTS = [
   "bg-teal text-teal-foreground",
   "bg-highlight text-highlight-foreground",
 ]
+
+/* ── Product description rendering ──
+ * The admin writes descriptions in a rich-text editor, so the field can be
+ * HTML (headings, lists, tables) OR plain text. HTML is rendered into a
+ * token-styled `.rich-description` container (admin-authored content, same
+ * trust level as any CMS); plain text renders as paragraphs. Both use the
+ * Bangla "Li Ador Noirrit" face first with the Jost/Hind stack behind it. */
+const looksLikeHtml = (text: string) => /<\/?[a-z][^>]*>/i.test(text)
+
+function renderDescription(text: string) {
+  if (!looksLikeHtml(text)) {
+    return (
+      <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+        {text
+          .split(/\n+/)
+          .filter(Boolean)
+          .map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+      </div>
+    )
+  }
+  return (
+    <div
+      className="rich-description text-sm leading-relaxed text-muted-foreground"
+      dangerouslySetInnerHTML={{ __html: text }}
+    />
+  )
+}
 
 /* ── Main component ── */
 interface ProductDetailsProps {
@@ -330,7 +359,7 @@ export default function ProductDetails({
           </Link>
           <span aria-hidden="true">/</span>
           <Link href="/products" className="inline-block transition-colors hover:text-brand">
-            Shop
+            Products
           </Link>
           {product.category && (
             <>
@@ -357,15 +386,15 @@ export default function ProductDetails({
           className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12"
         >
           {/* ── Left: gallery — vertical thumbs + arrowed main image ── */}
-          <motion.div variants={fadeUp}>
+          <motion.div variants={fadeUp} className="min-w-0">
             {galleryImages.length > 0 ? (
-              <div className="flex flex-col-reverse gap-4 lg:flex-row">
+              <div className="flex min-w-0 flex-col-reverse gap-4 lg:flex-row">
                 {galleryImages.length > 1 && (
-                  <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:pb-0 lg:pr-1">
+                  <div className="flex min-w-0 gap-3 overflow-x-auto pb-1 scrollbar-hide lg:max-h-[560px] lg:flex-col lg:overflow-y-auto lg:pb-0 lg:pr-1">
                     {galleryImages.map(thumb)}
                   </div>
                 )}
-                <div className="relative flex-1">
+                <div className="relative min-w-0 flex-1">
                   <ZoomableImage
                     src={galleryImages[selectedImage]}
                     alt={product.title}
@@ -400,7 +429,7 @@ export default function ProductDetails({
           </motion.div>
 
           {/* ── Right: buy box ── */}
-          <motion.div variants={fadeUp} className="space-y-5">
+          <motion.div variants={fadeUp} className="min-w-0 space-y-5">
             {/* Title + rating */}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">
@@ -574,16 +603,16 @@ export default function ProductDetails({
               <Button
                 variant="brandOutline"
                 size="xl"
-                className="flex-1"
+                className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px]"
                 onClick={handleAddToCart}
               >
-                <ShoppingCart className="size-5" />
+                <ShoppingBag className="size-5" />
                 Add to Cart
               </Button>
               <Button
                 variant="brand"
                 size="xl"
-                className="flex-1"
+                className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px] animate-wiggle motion-reduce:animate-none"
                 onClick={handleBuyNow}
               >
                 <Zap className="size-5" />
@@ -593,7 +622,7 @@ export default function ProductDetails({
 
             {/* ── Quick contact row (settings-driven, hidden without a phone) ── */}
             {contactPhone && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2">
                 {whatsappHref && (
                   <a
                     href={whatsappHref}
@@ -601,7 +630,7 @@ export default function ProductDetails({
                     rel="noopener noreferrer"
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-teal/15 text-sm font-bold text-teal-foreground transition-colors hover:bg-teal/25"
                   >
-                    <MessageCircle className="size-4" />
+                    <WhatsAppIcon className="size-4" />
                     WhatsApp
                   </a>
                 )}
@@ -666,21 +695,11 @@ export default function ProductDetails({
             </button>
             {descriptionOpen && (
               <div className="mt-6 space-y-6">
-                {product.description && (
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {product.description}
-                  </p>
-                )}
-                {product.fullDescription && (
-                  <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-                    {product.fullDescription
-                      .split(/\n+/)
-                      .filter(Boolean)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph}</p>
-                      ))}
-                  </div>
-                )}
+                {product.description &&
+                  renderDescription(product.description)}
+                {product.fullDescription &&
+                  product.fullDescription !== product.description &&
+                  renderDescription(product.fullDescription)}
                 {product.keyFeatures && product.keyFeatures.length > 0 && (
                   <div>
                     <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">
@@ -749,7 +768,7 @@ export default function ProductDetails({
 
           {/* Verified-purchase gate notice */}
           {!canReview && (
-            <div className="mt-6 rounded-full bg-warning/15 px-5 py-2.5 text-center text-xs font-semibold text-warning">
+            <div className="mt-6 rounded-xl border border-border bg-muted/60 px-5 py-3 text-center text-sm font-semibold text-foreground">
               Only customers who have purchased this product can leave a review.
             </div>
           )}

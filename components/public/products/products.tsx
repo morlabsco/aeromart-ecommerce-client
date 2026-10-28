@@ -542,7 +542,7 @@ function ProductsPageContent({
                     variants={fadeUp}
                     initial="hidden"
                     animate="show"
-                    className="mt-3 text-center text-3xl font-bold uppercase tracking-tight text-foreground lg:text-4xl"
+                    className="mt-3 text-center text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
                 >
                     All Products{" "}
                     <span className="font-bold text-muted-foreground">
@@ -567,7 +567,7 @@ function ProductsPageContent({
                             />
                         )}
                     </button>
-                    <p className="text-sm text-muted-foreground sm:flex-1 sm:text-center">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground sm:flex-1 sm:text-center">
                         Showing {rangeStart}–{rangeEnd} of {filtered.length}{" "}
                         product{filtered.length === 1 ? "" : "s"}
                     </p>
@@ -595,7 +595,7 @@ function ProductsPageContent({
                 />
                 <aside
                     className={cn(
-                        "fixed inset-y-0 left-0 z-50 flex w-[85%] max-w-sm flex-col bg-card shadow-xl transition-transform duration-300",
+                        "fixed inset-y-0 left-0 z-50 flex w-full flex-col bg-card shadow-xl transition-transform duration-300 sm:w-[24rem] sm:max-w-[90vw]",
                         filtersOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                     aria-label="Product filters"
@@ -618,14 +618,14 @@ function ProductsPageContent({
                     <div className="flex-1 space-y-7 overflow-y-auto p-5">
                         {/* Category */}
                         <div>
-                            <h3 className="text-sm font-bold text-foreground">Category</h3>
+                            <h3 className="text-base font-bold text-foreground">Categories</h3>
                             <ul className="mt-3 space-y-1">
                                 <li>
                                     <button
                                         type="button"
                                         onClick={() => setParams({ category: "all", page: "1" })}
                                         className={cn(
-                                            "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                                            "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[15px] transition-colors",
                                             activeCategoryName === "all"
                                                 ? "font-bold text-brand"
                                                 : "text-muted-foreground hover:text-brand",
@@ -671,14 +671,14 @@ function ProductsPageContent({
                         {/* Brand */}
                         {brands.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-bold text-foreground">Brand</h3>
+                                <h3 className="text-base font-bold text-foreground">Brand</h3>
                                 <ul className="mt-3 space-y-1">
                                     <li>
                                         <button
                                             type="button"
                                             onClick={() => setParams({ brand: "all", page: "1" })}
                                             className={cn(
-                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-[15px] transition-colors",
                                                 params.brand === "all"
                                                     ? "font-bold text-brand"
                                                     : "text-muted-foreground hover:text-brand",
@@ -695,7 +695,7 @@ function ProductsPageContent({
                                                     setParams({ brand: b.name, page: "1" })
                                                 }
                                                 className={cn(
-                                                    "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                    "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-[15px] transition-colors",
                                                     params.brand === b.name
                                                         ? "font-bold text-brand"
                                                         : "text-muted-foreground hover:text-brand",
@@ -712,14 +712,14 @@ function ProductsPageContent({
                         {/* Color */}
                         {availableColors.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-bold text-foreground">Color</h3>
+                                <h3 className="text-base font-bold text-foreground">Color</h3>
                                 <ul className="mt-3 space-y-1">
                                     <li>
                                         <button
                                             type="button"
                                             onClick={() => setParams({ color: "all", page: "1" })}
                                             className={cn(
-                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-sm transition-colors",
+                                                "block w-full cursor-pointer rounded-lg px-2 py-1 text-left text-[15px] transition-colors",
                                                 params.color === "all" || !params.color
                                                     ? "font-bold text-brand"
                                                     : "text-muted-foreground hover:text-brand",
@@ -765,7 +765,7 @@ function ProductsPageContent({
 
                         {/* Price */}
                         <div>
-                            <h3 className="text-sm font-bold text-foreground">Price</h3>
+                            <h3 className="text-base font-bold text-foreground">Price</h3>
                             <div className="mt-4 space-y-3">
                                 <Slider
                                     value={sliderValue}
@@ -807,7 +807,7 @@ function ProductsPageContent({
                         </div>
 
                         {/* Stock */}
-                        <Label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+                        <Label className="flex cursor-pointer items-center gap-2.5 text-[15px] text-foreground">
                             <Checkbox
                                 checked={params.inStock === "true"}
                                 onCheckedChange={(checked: boolean) =>

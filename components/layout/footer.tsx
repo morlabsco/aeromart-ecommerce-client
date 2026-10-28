@@ -1,53 +1,13 @@
 import Link from "next/link"
 import Image from "next/image"
-import {
-    AtSign,
-    Briefcase,
-    Camera,
-    Globe,
-    Mail,
-    MapPin,
-    Phone,
-    Send,
-    ThumbsUp,
-    Users,
-    Video,
-} from "lucide-react"
+import { Mail, MapPin, Phone } from "lucide-react"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
-import {
-  FacebookIcon,
-  InstagramIcon,
-  MessengerIcon,
-  WhatsAppIcon,
-} from "../shared/brand-icons"
+import { socialPlatformIcon } from "../shared/brand-icons"
 import type { SettingsBrand, SettingsContact, SettingsFooter } from "@/lib/types/backend"
-
-/**
- * Maps a social platform name to its icon — real single-color brand glyphs
- * for the major platforms, the closest lucide icon for everything else.
- */
-const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  facebook: FacebookIcon,
-  instagram: InstagramIcon,
-  whatsapp: WhatsAppIcon,
-  messenger: MessengerIcon,
-  twitter: AtSign,
-  youtube: Video,
-  linkedin: Briefcase,
-  tiktok: Video,
-  pinterest: ThumbsUp,
-  telegram: Send,
-  discord: Users,
-}
 
 /** Capitalized platform name, e.g. "twitter" -> "Twitter". */
 function platformLabel(platform: string): string {
   return platform.charAt(0).toUpperCase() + platform.slice(1)
-}
-
-/** Resolves the icon for a platform, falling back to a globe for unknowns. */
-function platformIcon(platform: string) {
-  return SOCIAL_ICONS[platform.toLowerCase()] ?? Globe
 }
 
 interface FooterProps {
@@ -174,7 +134,7 @@ export function Footer({ brand, footer, contact, categories }: FooterProps) {
             {socialLinks.length > 0 && (
               <div className="mt-6 flex flex-wrap items-center gap-2.5">
                 {socialLinks.map((social) => {
-                  const Icon = platformIcon(social.platform)
+                  const Icon = socialPlatformIcon(social.platform)
                   return (
                     <a
                       key={social.platform}

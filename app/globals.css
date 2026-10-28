@@ -15,9 +15,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-display: var(--font-display);
-  --font-mono: var(--font-sans);
+  /* AeroMart type system: Jost for Latin, Hind Siliguri as the Bangla
+     companion — every token stacks Jost first so Bengali glyphs fall
+     through to Hind Siliguri while Latin stays Jost. */
+  --font-sans: var(--font-jost), var(--font-hind), sans-serif;
+  --font-display: var(--font-jost), var(--font-hind), sans-serif;
+  --font-mono: var(--font-jost), var(--font-hind), sans-serif;
+  /* Buy Now CTA wiggle: a quick wiggle followed by a rest period, looping
+     forever (transform-only, so it stays fast and smooth). */
+  --animate-wiggle: wiggle 2.2s ease-in-out infinite;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -190,9 +196,155 @@
   h4,
   h5,
   h6 {
-    /* Oswald display face for all headings (Nittonova style). */
+    /* Headings share the Jost + Hind Siliguri stack (AeroMart type system). */
     @apply font-display;
   }
+}
+
+/* Buy Now wiggle — the movement happens in the first ~30% of the timeline
+   (~0.65s), the rest of the loop is a rest pause before it repeats. */
+@keyframes wiggle {
+  0%,
+  30%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  6% {
+    transform: rotate(-2.5deg) scale(1.02);
+  }
+  12% {
+    transform: rotate(2deg) scale(1.02);
+  }
+  18% {
+    transform: rotate(-1.5deg) scale(1);
+  }
+  24% {
+    transform: rotate(1deg) scale(1);
+  }
+}
+
+/* Bangla rich-text face for product descriptions (admin-authored HTML or
+   plain text). Latin glyphs fall through to the Jost/Hind stack. */
+@font-face {
+  font-family: "Li Ador Noirrit";
+  src: url("/fonts/Li Ador Noirrit SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Rich product-description container: renders the admin's rich-text HTML
+   with sane, token-styled spacing inside the card. Whatever boxes/borders
+   the editor baked into the HTML are normalized away (no backgrounds, no
+   boxed sections) so every product's description reads the same. */
+.rich-description {
+  font-family: "Li Ador Noirrit", var(--font-jost), var(--font-hind), sans-serif;
+}
+/* Strip backgrounds everywhere (stylesheet !important beats the editor's
+   inline styles) — text hierarchy comes from typography, not boxes. */
+.rich-description * {
+  background-color: transparent !important;
+}
+.rich-description section,
+.rich-description div {
+  border: none !important;
+  box-shadow: none !important;
+}
+.rich-description p {
+  margin-block: 0.6em;
+}
+.rich-description h2,
+.rich-description h3,
+.rich-description h4 {
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.rich-description ul,
+.rich-description ol {
+  margin-block: 0.6em;
+  padding-inline-start: 1.4em;
+}
+.rich-description ul {
+  list-style: disc;
+}
+.rich-description ol {
+  list-style: decimal;
+}
+.rich-description li {
+  margin-block: 0.25em;
+}
+.rich-description a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.rich-description img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-box, 1rem);
+  margin-block: 0.75em;
+}
+.rich-description table {
+  width: 100%;
+  border-collapse: collapse;
+}
+/* Tables keep readable structure with hairline row separators only — no
+   boxed cells, no shaded sections. */
+.rich-description td,
+.rich-description th {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.4em 0.6em;
+}
+
+/* ── Sonner toasts — brand-led, theme-token driven ─────────────────────
+   Normal, success and info toasts carry the brand: primary background with
+   its foreground. Warning and error keep their own semantic colors so they
+   never read as "primary". Stylesheet !important beats Sonner's inline
+   styles and the editor's defaults. */
+[data-sonner-toast] {
+  background: var(--primary) !important;
+  border: 1px solid var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-radius: var(--radius) !important;
+}
+[data-sonner-toast][data-type="warning"] {
+  background: var(--warning) !important;
+  border-color: var(--warning) !important;
+  color: var(--warning-foreground) !important;
+}
+[data-sonner-toast][data-type="error"] {
+  background: var(--destructive) !important;
+  border-color: var(--destructive) !important;
+  color: var(--destructive-foreground) !important;
+}
+[data-sonner-toast] [data-description] {
+  color: color-mix(in oklab, currentColor 80%, transparent) !important;
+}
+/* Action buttons invert their toast for contrast. */
+[data-sonner-toast] [data-button] {
+  background: var(--primary-foreground) !important;
+  color: var(--primary) !important;
+}
+[data-sonner-toast][data-type="warning"] [data-button] {
+  background: var(--warning-foreground) !important;
+  color: var(--warning) !important;
+}
+[data-sonner-toast][data-type="error"] [data-button] {
+  background: var(--destructive-foreground) !important;
+  color: var(--destructive) !important;
+}
+/* Close button: solid card (white) circle so it stands off the colored
+   toast, muted icon, brand hover. */
+[data-sonner-toast] [data-close-button] {
+  background: var(--card) !important;
+  color: var(--muted-foreground) !important;
+  border: 1px solid var(--border) !important;
+}
+[data-sonner-toast] [data-close-button]:hover {
+  border-color: var(--brand) !important;
+  color: var(--brand) !important;
 }
 
 @utility scrollbar-hide {

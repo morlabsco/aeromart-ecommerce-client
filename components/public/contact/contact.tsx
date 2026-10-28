@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Clock, Mail, MapPin, Phone, Send } from "lucide-react";
+import { socialPlatformIcon } from "@/components/shared/brand-icons";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -129,17 +130,22 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
               <div className="mt-8 border-t border-border/60 pt-6">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Follow us</p>
                 <div className="mt-3 flex flex-wrap gap-2.5">
-                  {socials.map((social) => (
-                    <a
-                      key={social.platform}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-9 items-center rounded-full border border-border px-4 text-xs font-semibold capitalize text-muted-foreground transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
-                    >
-                      {social.platform}
-                    </a>
-                  ))}
+                  {socials.map((social) => {
+                    const Icon = socialPlatformIcon(social.platform)
+                    return (
+                      <a
+                        key={social.platform}
+                        href={social.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={social.platform}
+                        aria-label={social.platform}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-brand transition-colors hover:border-brand hover:bg-brand hover:text-brand-foreground"
+                      >
+                        <Icon className="h-[18px] w-[18px]" />
+                      </a>
+                    )
+                  })}
                 </div>
               </div>
             )}

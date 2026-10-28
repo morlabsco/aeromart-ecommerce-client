@@ -46,11 +46,25 @@ function buildColorCss(colors: Partial<SettingsColorSet>): string {
     .join("\n");
 }
 
+/**
+ * Families loaded via next/font resolve to their optimized CSS variables so
+ * the admin setting picks up the self-hosted font; any other family keeps
+ * the admin's name with the Bangla companion appended so Bengali text always
+ * has a fallback.
+ */
+const FONT_STACKS: Record<string, string> = {
+  Jost: "var(--font-jost), var(--font-hind), sans-serif",
+}
+
+function fontStackFor(family: string): string {
+  return FONT_STACKS[family] ?? `"${family}", var(--font-hind), sans-serif`
+}
+
 function buildThemeCss(theme: SettingsTheme): string {
   const light = buildColorCss(theme.colors);
   const dark = theme.dark.enabled ? buildColorCss(theme.dark.colors) : "";
   const fontFamily = theme.fonts.family
-    ? `--font-sans: ${theme.fonts.family}, sans-serif;`
+    ? `--font-sans: ${fontStackFor(theme.fonts.family)};`
     : "";
   const fontMono = theme.fonts.mono
     ? `--font-mono: ${theme.fonts.mono}, ui-monospace, monospace;`

@@ -1,4 +1,5 @@
-import type { SVGProps } from "react"
+import type { SVGProps, ComponentType } from "react"
+import { AtSign, Briefcase, Camera, Globe, Send, ThumbsUp, Users, Video } from "lucide-react"
 
 /**
  * Single-color brand icons extracted from the RGB SVGs in /public/icons
@@ -63,4 +64,31 @@ export function MessengerIcon({ className, ...props }: SVGProps<SVGSVGElement>) 
       <path d="m51.137 160.47 37.6-59.653c5.98-9.49 18.788-11.853 27.762-5.123l29.905 22.43a7.68 7.68 0 0 0 9.252-.027l40.388-30.652c5.39-4.091 12.428 2.36 8.82 8.085l-37.6 59.654c-5.981 9.489-18.79 11.852-27.763 5.122l-29.906-22.43a7.68 7.68 0 0 0-9.25.027l-40.39 30.652c-5.39 4.09-12.427-2.36-8.818-8.085Z" />
     </svg>
   )
+}
+
+/**
+ * Maps a social platform name to its icon — real brand glyphs for the major
+ * platforms, the closest lucide icon for everything else. Shared by the
+ * footer and the contact page.
+ */
+export const SOCIAL_PLATFORM_ICONS: Record<
+    string,
+    ComponentType<{ className?: string }>
+> = {
+    facebook: FacebookIcon,
+    instagram: InstagramIcon,
+    whatsapp: WhatsAppIcon,
+    messenger: MessengerIcon,
+    twitter: AtSign,
+    youtube: Video,
+    linkedin: Briefcase,
+    tiktok: Video,
+    pinterest: ThumbsUp,
+    telegram: Send,
+    discord: Users,
+}
+
+/** Resolves the icon for a platform, falling back to a globe for unknowns. */
+export function socialPlatformIcon(platform: string) {
+    return SOCIAL_PLATFORM_ICONS[platform.toLowerCase()] ?? Globe
 }
