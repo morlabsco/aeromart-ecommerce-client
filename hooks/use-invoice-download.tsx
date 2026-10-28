@@ -45,7 +45,11 @@ export function useInvoiceDownload() {
                 };
 
             const blob = await pdf(
-                <InvoiceDocument invoice={invoice} brand={brand} />
+                <InvoiceDocument
+                    invoice={invoice}
+                    brand={brand}
+                    currency={brand.currency}
+                />
             ).toBlob();
 
             const url = URL.createObjectURL(blob);

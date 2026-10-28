@@ -13,14 +13,8 @@ import {
   Tag,
   Minus,
   Plus,
-  Truck,
-  Store,
-  MapPin,
-  Package,
   Lock,
   Copy,
-  Wallet,
-  Landmark,
 } from "lucide-react"
 import { useCartStore } from "../../../lib/store/app-store"
 import { ThemedImage } from "../../../components/shared/themed-image"
@@ -28,20 +22,14 @@ import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { DistrictCombobox } from "../../../components/public/checkout/district-combobox"
 import { cn } from "../../../lib/utils"
 import { toast } from "sonner"
 import { createOrder } from "@/lib/services/order"
 import { getCouponByCode } from "@/lib/services/coupon"
 import { getSettings } from "../../../lib/services/settings"
 import { stripeInit } from "@/lib/services/payment"
-import { BD_DISTRICTS } from "../../../lib/data/bd-districts"
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone"
 import { formatCurrency, getOfferPrice } from "../../../lib/utils/currency"
 import type { CartItem } from "../../../lib/types"
@@ -76,28 +64,14 @@ interface DeliveryChoice {
   label: string
   description: string
   charge: number
-  icon: typeof Store
 }
 
 /** Fallback options used when the backend/settings are unreachable. */
 const FALLBACK_DELIVERY_OPTIONS: DeliveryChoice[] = [
-  { id: "pickup", label: "Store Pickup", description: "Collect your order from our store.", charge: 0, icon: Store },
-  { id: "inside-dhaka", label: "Inside Dhaka", description: "Delivery within Dhaka city.", charge: 90, icon: MapPin },
-  { id: "outside-dhaka", label: "Outside Dhaka", description: "Delivery anywhere else in the country.", charge: 150, icon: Truck },
+  { id: "pickup", label: "Store Pickup", description: "Collect your order from our store.", charge: 0 },
+  { id: "inside-dhaka", label: "Inside Dhaka", description: "Delivery within Dhaka city.", charge: 90 },
+  { id: "outside-dhaka", label: "Outside Dhaka", description: "Delivery anywhere else in the country.", charge: 150 },
 ]
-
-const DELIVERY_ICONS: Record<string, typeof Store> = {
-  pickup: Store,
-  "store-pickup": Store,
-  "inside-dhaka": MapPin,
-  "outside-dhaka": Truck,
-  international: Package,
-}
-
-function optionIcon(name: string): typeof Store {
-  const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
-  return DELIVERY_ICONS[key] ?? DELIVERY_ICONS.pickup
-}
 
 function toDeliveryChoices(options: SettingsDeliveryOption[] | undefined): DeliveryChoice[] {
   if (!options || options.length === 0) return FALLBACK_DELIVERY_OPTIONS
@@ -110,7 +84,6 @@ function toDeliveryChoices(options: SettingsDeliveryOption[] | undefined): Deliv
         ? `Delivery to ${o.country}`
         : "Store pickup or international delivery",
       charge: o.charge,
-      icon: optionIcon(o.name),
     }))
 }
 
@@ -311,6 +284,8 @@ export default function Checkout() {
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryChoice[]>(FALLBACK_DELIVERY_OPTIONS)
   const [deliveryOption, setDeliveryOption] = useState<string>(FALLBACK_DELIVERY_OPTIONS[1].id)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Terms acceptance — required before the order can be placed.
+  const [agreedTerms, setAgreedTerms] = useState(false)
   const [couponCode, setCouponCode] = useState("")
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null)
   const [couponBusy, setCouponBusy] = useState(false)
@@ -429,6 +404,10 @@ export default function Checkout() {
     }
     if (paymentMethod === "bank-manual" && !manualPayment.bankRef.trim()) {
       errs.bankRef = "The NPSB transaction reference number is required"
+    }
+    // The policy agreement gates the order, like every other field.
+    if (!agreedTerms) {
+      errs.terms = "Please accept the Terms, Privacy & Refund Policy to continue"
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -697,10 +676,52 @@ export default function Checkout() {
         </>
       ) : (
         <>
+          {/* Policy agreement — part of the same form's validation, so it
+              lives right above the CTA it gates */}
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="checkout-terms"
+              className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed font-normal text-muted-foreground"
+            >
+              <Checkbox
+                id="checkout-terms"
+                checked={agreedTerms}
+                onCheckedChange={(checked) => {
+                  setAgreedTerms(checked === true)
+                  if (checked === true && errors.terms) {
+                    setErrors((prev) => {
+                      const { terms, ...rest } = prev
+                      return rest
+                    })
+                  }
+                }}
+                aria-invalid={!!errors.terms}
+                className="mt-0.5"
+              />
+              <span>
+                I agree to the{" "}
+                <Link
+                  href="/return-refund-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline font-semibold text-brand underline-offset-4 transition-colors hover:underline"
+                >
+                  Terms, Privacy &amp; Refund Policy
+                </Link>
+                .
+              </span>
+            </Label>
+            {errors.terms && (
+              <p className="text-xs text-destructive">{errors.terms}</p>
+            )}
+          </div>
           <Button
             variant="brand"
             size="xl"
-            className="w-full"
+            className={cn(
+              "w-full",
+              !placing && "animate-wiggle motion-reduce:animate-none"
+            )}
             onClick={handlePlaceOrder}
             disabled={placing}
           >
@@ -918,26 +939,11 @@ export default function Checkout() {
                       <Label className="text-xs font-semibold text-foreground">
                         District
                       </Label>
-                      <Select
-                        value={form.district || undefined}
-                        onValueChange={(value) =>
-                          setForm({ ...form, district: String(value ?? "") })
-                        }
-                      >
-                        <SelectTrigger
-                          aria-label="District"
-                          className={cn(errors.district && "border-destructive")}
-                        >
-                          <SelectValue placeholder="Select your district" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72">
-                          {BD_DISTRICTS.map((district) => (
-                            <SelectItem key={district} value={district}>
-                              {district}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <DistrictCombobox
+                        value={form.district}
+                        onChange={(district) => setForm({ ...form, district })}
+                        invalid={!!errors.district}
+                      />
                       {errors.district && (
                         <p className="text-xs text-destructive">{errors.district}</p>
                       )}
@@ -961,35 +967,29 @@ export default function Checkout() {
                   onValueChange={(value) => setDeliveryOption(value)}
                   className="grid gap-3 sm:grid-cols-3"
                 >
-                  {deliveryOptions.map((option) => {
-                    const Icon = option.icon
-                    return (
-                      <Label
-                        key={option.id}
-                        className="cursor-pointer rounded-xl border border-border bg-card p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5"
-                      >
-                        <span className="flex items-start gap-3">
-                          <RadioGroupItem value={option.id} className="mt-0.5" />
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-2 text-sm font-bold text-foreground">
-                              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-header-nav">
-                                <Icon className="size-3.5 text-header-nav-foreground" />
-                              </span>
-                              {option.label}
-                            </span>
-                            <span className="mt-1.5 block text-xs leading-snug text-muted-foreground">
-                              {option.description}
-                            </span>
-                            <span className="mt-2 block text-sm font-extrabold text-brand">
-                              {option.charge === 0
-                                ? "Free"
-                                : formatCurrency(option.charge, currency)}
-                            </span>
+                  {deliveryOptions.map((option) => (
+                    <Label
+                      key={option.id}
+                      className="cursor-pointer rounded-xl border border-border bg-card p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5"
+                    >
+                      <span className="flex items-start gap-3">
+                        <RadioGroupItem value={option.id} className="mt-0.5" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-bold text-foreground">
+                            {option.label}
+                          </span>
+                          <span className="mt-1.5 block text-xs leading-snug text-muted-foreground">
+                            {option.description}
+                          </span>
+                          <span className="mt-2 block text-sm font-extrabold text-brand">
+                            {option.charge === 0
+                              ? "Free"
+                              : formatCurrency(option.charge, currency)}
                           </span>
                         </span>
-                      </Label>
-                    )
-                  })}
+                      </span>
+                    </Label>
+                  ))}
                 </RadioGroup>
               </section>
 
@@ -1078,8 +1078,13 @@ export default function Checkout() {
                   <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
                     <RadioGroupItem value="bkash-manual" />
                     <div className="flex items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-header-nav">
-                        <Wallet className="size-4 text-header-nav-foreground" />
+                      <span className="flex h-9 shrink-0 items-center px-1.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/icons/bkash-logo.svg"
+                          alt="bKash"
+                          className="h-5 w-auto object-contain"
+                        />
                       </span>
                       <div>
                         <p className="text-sm font-bold text-foreground">
@@ -1099,8 +1104,13 @@ export default function Checkout() {
                   <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
                     <RadioGroupItem value="bank-manual" />
                     <div className="flex items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-header-nav">
-                        <Landmark className="size-4 text-header-nav-foreground" />
+                      <span className="flex h-9 shrink-0 items-center px-1">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/icons/bank-transfer-logo.svg"
+                          alt="Bank transfer"
+                          className="h-7 w-auto object-contain"
+                        />
                       </span>
                       <div>
                         <p className="text-sm font-bold text-foreground">

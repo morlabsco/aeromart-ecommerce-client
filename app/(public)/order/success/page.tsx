@@ -4,6 +4,7 @@ import { PackageSearch } from "lucide-react"
 import { PageHero } from "@/components/shared/page-hero"
 import { OrderSuccess } from "@/components/public/order/order-success"
 import { trackOrder } from "@/lib/services/order"
+import { getSettings } from "@/lib/services/settings"
 import { unwrapData } from "@/lib/services/api-client"
 import { isErrorResult } from "@/lib/utils/result"
 import type { Metadata } from "next"
@@ -19,12 +20,15 @@ export const metadata: Metadata = {
  * looked up through the PUBLIC tracking endpoint, so the page works for
  * guests, survives reloads and can be shared — the customer keeps, copies
  * or shares the order ID from here, jumps into tracking, or downloads the
- * invoice (owner/admin auth applies on the invoice API).
+ * invoice (owner/admin auth applies on the invoice API). Prices render in
+ * the LIVE brand currency so old orders stamped "usd" still show ৳.
  */
 async function OrderSuccessContent({
   orderId,
+  brandCurrency,
 }: {
   orderId?: string
+  brandCurrency?: string
 }) {
   let order = null
   if (orderId) {
@@ -56,7 +60,7 @@ async function OrderSuccessContent({
     )
   }
 
-  return <OrderSuccess order={order} />
+  return <OrderSuccess order={order} currency={brandCurrency} />
 }
 
 export default async function OrderSuccessPage({
@@ -65,6 +69,7 @@ export default async function OrderSuccessPage({
   searchParams: Promise<{ orderId?: string }>
 }) {
   const { orderId } = await searchParams
+  const brandCurrency = unwrapData(await getSettings())?.brand?.currency
 
   return (
     <div className="bg-hero-surface">
@@ -75,7 +80,7 @@ export default async function OrderSuccessPage({
       />
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         <Suspense fallback={<div className="h-96 animate-pulse rounded-[1.75rem] bg-card" />}>
-          <OrderSuccessContent orderId={orderId} />
+          <OrderSuccessContent orderId={orderId} brandCurrency={brandCurrency} />
         </Suspense>
       </section>
     </div>

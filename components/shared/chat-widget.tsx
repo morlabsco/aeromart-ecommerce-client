@@ -110,7 +110,7 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat options" : "Open chat options"}
         aria-expanded={open}
-        className="relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-brand text-brand-foreground shadow-xl transition-transform duration-300 hover:scale-105"
+        className="relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-brand text-brand-foreground shadow-xl ring-4 ring-white transition-transform duration-300 hover:scale-105"
       >
         {/* Flowing pulse ring while collapsed */}
         {!open && (

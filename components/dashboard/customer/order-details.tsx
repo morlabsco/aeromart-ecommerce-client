@@ -29,6 +29,7 @@ import { DownloadInvoiceButton } from "@/components/shared/download-invoice-butt
 import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Order } from "@/lib/types/backend";
+import { paymentMethodLabel } from "@/lib/utils/format";
 
 type PaymentProviderOption = "stripe" | "sslcommerz" | "bkash";
 
@@ -365,7 +366,7 @@ export function CustomerOrderDetails({ order }: CustomerOrderDetailsProps) {
                                 {order.paymentStatus}
                             </Badge>
                             <p className="text-xs text-muted-foreground mt-1">
-                                {order.paymentMethod}
+                                {paymentMethodLabel(order.paymentMethod)}
                             </p>
                         </div>
                         <div className="rounded-lg border p-4">

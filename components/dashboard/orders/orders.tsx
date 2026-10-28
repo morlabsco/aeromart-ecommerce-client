@@ -13,6 +13,7 @@ import { updateOrderStatus } from "@/lib/services/order";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { formatCurrency } from "@/lib/utils/currency";
+import { paymentMethodLabel } from "@/lib/utils/format";
 
 interface OrdersTableProps {
     orders: Order[];
@@ -135,7 +136,7 @@ export function OrdersTable({ orders, meta }: OrdersTableProps) {
                 header: "Method",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span className="text-sm">{row.original.paymentMethod}</span>
+                    <span className="text-sm">{paymentMethodLabel(row.original.paymentMethod)}</span>
                 ),
             },
             {

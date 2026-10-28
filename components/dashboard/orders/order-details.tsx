@@ -9,6 +9,7 @@ import { DownloadInvoiceButton } from "@/components/shared/download-invoice-butt
 import { OrderPaymentActions } from "@/components/dashboard/orders/order-payment-actions";
 import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 import type { Order } from "@/lib/types/backend";
+import { paymentMethodLabel } from "@/lib/utils/format";
 
 interface OrderDetailsProps {
     order: Order;
@@ -179,7 +180,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                                 {order.paymentStatus}
                             </Badge>
                             <p className="text-xs text-muted-foreground mt-1">
-                                {order.paymentMethod}
+                                {paymentMethodLabel(order.paymentMethod)}
                             </p>
                         </div>
                         <div className="rounded-lg border p-4">

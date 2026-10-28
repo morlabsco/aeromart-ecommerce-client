@@ -43,15 +43,16 @@ export default function About({ about, brand }: { about: SettingsAbout | null; b
         title={tagline}
         subtitle={`${story.split(".")[0]}.`}
       >
-        {/* stat chips */}
+        {/* stat chips — bright white pills so they hold up on any primary
+            shade (brand-tinted chips camouflaged into the gradient) */}
         <div className="flex flex-wrap gap-2.5">
           {stats.map((stat) => (
             <span
               key={stat.label}
-              className="inline-flex items-baseline gap-2 rounded-full bg-header-nav-foreground/5 px-4 py-2 ring-1 ring-header-nav-foreground/10"
+              className="inline-flex items-baseline gap-2 rounded-full bg-header-nav-foreground px-4 py-2 shadow-sm"
             >
-              <span className="text-base font-extrabold text-brand">{stat.value}</span>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-header-nav-foreground/60">
+              <span className="text-base font-extrabold text-header-nav">{stat.value}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-header-nav/60">
                 {stat.label}
               </span>
             </span>
@@ -88,18 +89,19 @@ export default function About({ about, brand }: { about: SettingsAbout | null; b
         </div>
       </section>
 
-      {/* ── Full-bleed orange mission band ────────────────────────── */}
+      {/* ── Full-bleed brand mission band — white type so it stays readable
+             whatever the dynamic brand/primary shade is ────────────────── */}
       <section className="bg-brand">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:gap-10">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-header-nav text-brand">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-header-nav text-header-nav-foreground">
               <Quote className="size-6" strokeWidth={1.75} />
             </span>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-header-nav/70">
+              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-header-nav-foreground/80">
                 02 — Our mission
               </p>
-              <p className="mt-3 max-w-4xl text-xl font-bold leading-snug text-header-nav sm:text-2xl lg:text-[1.75rem]">
+              <p className="mt-3 max-w-4xl text-xl font-bold leading-snug text-header-nav-foreground sm:text-2xl lg:text-[1.75rem]">
                 {mission}
               </p>
             </div>

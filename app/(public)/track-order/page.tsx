@@ -16,10 +16,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function TrackOrderPage({
+export default async function TrackOrderPage({
     searchParams,
 }: {
     searchParams: Promise<{ orderId?: string }>;
 }) {
-    return <TrackOrderClient searchParams={searchParams} />;
+    // Live brand currency — prices on this page always match the storefront,
+    // even for old orders stamped with a different currency.
+    const brandCurrency = unwrapData(await getSettings())?.brand?.currency;
+    return <TrackOrderClient searchParams={searchParams} currency={brandCurrency} />;
 }

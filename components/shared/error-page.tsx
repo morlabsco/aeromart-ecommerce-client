@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, RotateCcw } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { PageHero } from "@/components/shared/page-hero";
 import { cn } from "@/lib/utils";
 
 interface ErrorPageProps {
@@ -10,20 +11,22 @@ interface ErrorPageProps {
     title?: string;
     /** Friendly description shown to the user. */
     message?: string;
-    /** Link the "Go back" button navigates to. */
+    /** Link the secondary button navigates to. */
     backHref: string;
-    /** Text for the "Go back" button. */
+    /** Text for the secondary button. */
     backLabel?: string;
-    /** Next.js error recovery , re-renders the segment. */
+    /** Next.js error recovery — re-renders the segment. */
     reset?: () => void;
-    /** Error code shown at the bottom, e.g. "500". */
+    /** Error code shown in the hero eyebrow, e.g. "500". */
     code?: string;
 }
 
 /**
- * Full-width, centered error state for Next.js `error.tsx` boundaries.
- * Shows a friendly message, a "Try again" reset and a "Go back" link so the
- * user never sees a raw runtime error.
+ * Error boundary state for Next.js `error.tsx` files, built as a sibling of
+ * the track-order-style 404: gradient command hero ("Error 500"), cream
+ * surface below with a centered white card (destructive icon tile, message)
+ * and a Try-again (re-runs the segment) + back action pair. Client component
+ * so it can call the `reset` handler.
  */
 export function ErrorPage({
     title = "Something went wrong",
@@ -31,55 +34,57 @@ export function ErrorPage({
     backHref,
     backLabel = "Go Back",
     reset,
-    code = "Error",
+    code = "500",
 }: ErrorPageProps) {
     return (
-        <div className="relative flex min-h-[75vh] w-full items-center justify-center overflow-hidden px-4 py-16">
-            {/* Decorative background , theme-tinted (matches the failed payment page) */}
-            <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-destructive/10 blur-3xl dark:bg-destructive/15" />
-            <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-warning/10 blur-3xl" />
+        <div className="bg-hero-surface">
+            <PageHero
+                eyebrow={`Error ${code}`}
+                title={title}
+                subtitle="An unexpected error occurred — you can retry right here, nothing was lost."
+            />
 
-            <div className="relative w-full max-w-lg">
-                {/* Gradient border , theme-aware */}
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-destructive via-destructive/70 to-warning" />
-
-                <div className="relative flex flex-col items-center rounded-2xl bg-card px-6 py-10 shadow-xl sm:px-8 sm:py-12">
-                    {/* Icon */}
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 sm:h-20 sm:w-20">
-                        <AlertTriangle className="h-8 w-8 text-destructive sm:h-10 sm:w-10" />
-                    </div>
-
-                    <h1 className="text-center text-xl font-bold tracking-tight text-destructive sm:text-2xl">
-                        {title}
-                    </h1>
-                    <p className="mx-auto mt-2 max-w-sm text-center text-sm text-muted-foreground">
+            <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-[1.75rem] bg-card p-6 text-center shadow-sm sm:p-10">
+                    <span className="mx-auto flex size-13 items-center justify-center rounded-2xl bg-destructive p-3.5 text-destructive-foreground">
+                        <AlertTriangle className="size-6" />
+                    </span>
+                    <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
                         {message}
                     </p>
 
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                        {reset && (
-                            <Button type="button" onClick={reset}>
-                                <RotateCcw className="mr-2 h-4 w-4" />
+                    {/* Actions — stacked on mobile, row from sm up */}
+                    <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                        {reset ? (
+                            <button
+                                type="button"
+                                onClick={reset}
+                                className={cn(
+                                    buttonVariants({ variant: "brand", size: "xl" }),
+                                    "cursor-pointer px-8"
+                                )}
+                            >
+                                <RotateCcw className="size-4" />
                                 Try Again
-                            </Button>
-                        )}
+                            </button>
+                        ) : null}
                         <Link
                             href={backHref}
                             className={cn(
-                                buttonVariants({ variant: "outline" }),
-                                "inline-flex items-center gap-2"
+                                buttonVariants({ variant: "outline", size: "xl" }),
+                                "border-[1.5px] px-8 font-bold"
                             )}
                         >
-                            <ArrowLeft className="h-4 w-4" />
+                            <ArrowLeft className="size-4" />
                             {backLabel}
                         </Link>
                     </div>
 
-                    <div className="mt-8 text-sm text-muted-foreground/60">
-                        Error Code: {code}
-                    </div>
+                    <p className="mt-8 text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground/60">
+                        Error code: {code}
+                    </p>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }

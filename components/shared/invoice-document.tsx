@@ -9,17 +9,47 @@ import {
     View,
 } from "@react-pdf/renderer";
 import type { OrderInvoice, SettingsBrand } from "@/lib/types/backend";
-import { formatCurrency } from "@/lib/utils/currency";
+import { currencySymbol } from "@/lib/utils/currency";
+import { paymentMethodLabel } from "@/lib/utils/format";
 
 interface InvoiceDocumentProps {
     invoice: OrderInvoice;
     brand: SettingsBrand;
+    /**
+     * Live brand currency from settings — wins over the order's stamped
+     * currency so every amount (and the currency note) matches the store.
+     */
+    currency?: string;
 }
 
-function formatMoney(amount: number, currency: string): string {
-    return formatCurrency(amount ?? 0, currency, {
+/**
+ * PDF-safe currency rendering. react-pdf's built-in Helvetica cannot render
+ * every glyph the browser can (the taka sign "৳" comes out broken), so the
+ * invoice writes BDT as the character form "Tk." — other currencies keep
+ * their regular symbol.
+ */
+const PDF_CURRENCY_SYMBOLS: Record<string, string> = {
+    bdt: "Tk.",
+};
+
+/** The PDF-safe symbol for a currency code, e.g. "bdt" → "Tk.". */
+function pdfSymbolFor(currency: string): string {
+    return (
+        PDF_CURRENCY_SYMBOLS[currency?.toLowerCase()] ??
+        currencySymbol(currency)
+    );
+}
+
+/** Money formatted for the PDF — "Tk. 1,240.00" for BDT, "$49.99" for USD. */
+function formatPdfMoney(amount: number, currency: string): string {
+    const symbol = pdfSymbolFor(currency);
+    const number = (amount ?? 0).toLocaleString("en-US", {
         minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     });
+    return symbol.endsWith(".")
+        ? `${symbol} ${number}`
+        : `${symbol}${number}`;
 }
 
 function formatDate(value: string): string {
@@ -57,7 +87,7 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         borderBottomWidth: 2,
         borderBottomColor: "#e4e4e7",
-        paddingBottom: 16,
+        paddingBottom: 6,
         marginBottom: 20,
     },
     brandBlock: {
@@ -66,8 +96,13 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     logo: {
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
+        objectFit: "contain",
+    },
+    logoOnly: {
+        width: 120,
+        height: 120,
         objectFit: "contain",
     },
     brandName: {
@@ -81,6 +116,9 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     invoiceTitle: {
+        // Small breathing room under the page top — the Order # block reads
+        // better slightly set into the header, next to the tall brand mark.
+        marginTop: 8,
         textAlign: "right",
     },
     invoiceLabel: {
@@ -183,11 +221,38 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         fontSize: 12,
     },
+    quote: {
+        alignItems: "center",
+        marginTop: 12,
+    },
+    quoteText: {
+        fontSize: 11,
+        fontStyle: "italic",
+        color: "#52525b",
+        textAlign: "center",
+    },
+    paymentInfo: {
+        marginTop: 14,
+        borderWidth: 1,
+        borderColor: "#e4e4e7",
+        borderRadius: 6,
+        padding: 12,
+        backgroundColor: "#fafafa",
+    },
+    paymentInfoTitle: {
+        fontSize: 8,
+        textTransform: "uppercase",
+        letterSpacing: 0.8,
+        fontWeight: "bold",
+        color: "#71717a",
+        marginBottom: 4,
+    },
+    paymentInfoText: {
+        fontSize: 9,
+        color: "#52525b",
+    },
     footer: {
-        position: "absolute",
-        bottom: 24,
-        left: 36,
-        right: 36,
+        marginTop: 14,
         borderTopWidth: 1,
         borderTopColor: "#e4e4e7",
         paddingTop: 8,
@@ -202,10 +267,16 @@ const styles = StyleSheet.create({
 
 /**
  * React-pdf invoice document rendered from the backend's invoice JSON
- * (GET /order/:orderId/invoice) plus the shop brand settings.
+ * (GET /order/:orderId/invoice) plus the shop brand settings. Money renders
+ * in the LIVE brand currency (৳ for bdt), the brand block follows the
+ * settings' logo-only mode, and the payment column spells methods out in
+ * full ("Cash on Delivery") so customers and staff read it at a glance.
  */
-export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
-    const currency = invoice.currency;
+export function InvoiceDocument({ invoice, brand, currency }: InvoiceDocumentProps) {
+    const money = currency || invoice.currency;
+    const isCod = invoice.payment.method === "COD";
+    const isPaid = invoice.payment.status === "Paid";
+    const logoOnly = brand.logoOnly && !!brand.logo;
 
     return (
         <Document
@@ -214,20 +285,26 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
             subject={`Invoice for order ${invoice.orderId}`}
         >
             <Page size="A4" style={styles.page}>
-                {/* Header: brand left, invoice meta right */}
+                {/* Header: brand left (logo-only mode renders just the mark),
+                    invoice meta right */}
                 <View style={styles.header}>
                     <View style={styles.brandBlock}>
                         {brand.logo && (
-                            <PdfImage src={brand.logo} style={styles.logo} />
+                            <PdfImage
+                                src={brand.logo}
+                                style={logoOnly ? styles.logoOnly : styles.logo}
+                            />
                         )}
-                        <View style={{ paddingVertical: 14 }}>
-                            <Text style={styles.brandName}>{brand.name}</Text>
-                            {brand.tagline && (
-                                <Text style={styles.brandTagline}>
-                                    {brand.tagline}
-                                </Text>
-                            )}
-                        </View>
+                        {!logoOnly && (
+                            <View style={{ paddingVertical: 14 }}>
+                                <Text style={styles.brandName}>{brand.name}</Text>
+                                {brand.tagline && (
+                                    <Text style={styles.brandTagline}>
+                                        {brand.tagline}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
                     </View>
                     <View style={styles.invoiceTitle}>
                         <Text style={styles.invoiceLabel}>Invoice</Text>
@@ -240,31 +317,10 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                     </View>
                 </View>
 
-                {/* Billed to / Recipient / Payment */}
+                {/* Billed to (recipient) / Payment */}
                 <View style={styles.grid}>
                     <View style={styles.gridCol}>
-                        <Text style={styles.blockTitle}>Billed To</Text>
-                        <Text style={styles.blockText}>
-                            {invoice.customer?.name ?? "—"}
-                        </Text>
-                        {invoice.customer?.email && (
-                            <Text style={styles.blockMuted}>
-                                {invoice.customer.email}
-                            </Text>
-                        )}
-                        {invoice.customer?.phoneNo && (
-                            <Text style={styles.blockMuted}>
-                                {invoice.customer.phoneNo}
-                            </Text>
-                        )}
-                        {invoice.customer?.address && (
-                            <Text style={styles.blockMuted}>
-                                {invoice.customer.address}
-                            </Text>
-                        )}
-                    </View>
-                    <View style={styles.gridCol}>
-                        <Text style={styles.blockTitle}>Ship To</Text>
+                        <Text style={styles.blockTitle}>Billed to</Text>
                         <Text style={styles.blockText}>
                             {invoice.recipient?.name ?? "—"}
                         </Text>
@@ -287,11 +343,11 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                     <View style={styles.gridCol}>
                         <Text style={styles.blockTitle}>Payment</Text>
                         <Text style={styles.blockText}>
-                            {invoice.payment?.method ?? "—"}
+                            {paymentMethodLabel(invoice.payment?.method)}
                         </Text>
                         {invoice.payment?.provider && (
                             <Text style={styles.blockMuted}>
-                                {invoice.payment.provider}
+                                via {invoice.payment.provider}
                             </Text>
                         )}
                         {invoice.payment?.transactionId && (
@@ -300,7 +356,14 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                             </Text>
                         )}
                         <Text style={styles.blockMuted}>
-                            Paid with {currency?.toUpperCase()}
+                            Currency: {money.toUpperCase()} ({pdfSymbolFor(money)})
+                        </Text>
+                        <Text style={styles.blockMuted}>
+                            {isPaid
+                                ? "Payment: Paid"
+                                : isCod
+                                  ? "Payment: Due on delivery"
+                                  : "Payment: Pending"}
                         </Text>
                     </View>
                 </View>
@@ -345,10 +408,10 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                                     {item.quantity}
                                 </Text>
                                 <Text style={[styles.tdText, styles.colPrice]}>
-                                    {formatMoney(item.unitPrice, currency)}
+                                    {formatPdfMoney(item.unitPrice, money)}
                                 </Text>
                                 <Text style={[styles.tdText, styles.colTotal]}>
-                                    {formatMoney(item.total, currency)}
+                                    {formatPdfMoney(item.total, money)}
                                 </Text>
                             </View>
                         );
@@ -360,9 +423,9 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                     <View style={[styles.totalRow, styles.totalRowMuted]}>
                         <Text>Subtotal</Text>
                         <Text>
-                            {formatMoney(
+                            {formatPdfMoney(
                                 invoice.totals?.subtotal ?? 0,
-                                currency,
+                                money,
                             )}
                         </Text>
                     </View>
@@ -371,9 +434,9 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                             <Text>Offer Discount</Text>
                             <Text>
                                 -
-                                {formatMoney(
+                                {formatPdfMoney(
                                     invoice.totals.offerDiscount,
-                                    currency,
+                                    money,
                                 )}
                             </Text>
                         </View>
@@ -383,9 +446,9 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                             <Text>Coupon Discount</Text>
                             <Text>
                                 -
-                                {formatMoney(
+                                {formatPdfMoney(
                                     invoice.totals.discount,
-                                    currency,
+                                    money,
                                 )}
                             </Text>
                         </View>
@@ -395,9 +458,9 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                             <Text>Total Discount</Text>
                             <Text>
                                 -
-                                {formatMoney(
+                                {formatPdfMoney(
                                     invoice.totals.totalDiscount,
-                                    currency,
+                                    money,
                                 )}
                             </Text>
                         </View>
@@ -405,30 +468,57 @@ export function InvoiceDocument({ invoice, brand }: InvoiceDocumentProps) {
                     <View style={[styles.totalRow, styles.totalRowMuted]}>
                         <Text>Delivery Charge</Text>
                         <Text>
-                            {formatMoney(
+                            {formatPdfMoney(
                                 invoice.totals?.deliveryCharge ?? 0,
-                                currency,
+                                money,
                             )}
                         </Text>
                     </View>
                     <View style={[styles.totalRow, styles.totalFinal]}>
                         <Text>Final Amount</Text>
                         <Text>
-                            {formatMoney(
+                            {formatPdfMoney(
                                 invoice.totals?.finalAmount ?? 0,
-                                currency,
+                                money,
                             )}
                         </Text>
                     </View>
                 </View>
 
+                {/* Spacer — grows to push the closing sections to the very
+                    bottom of the page (yoga flex within the fixed A4 page);
+                    collapses naturally when the content itself is long. */}
+                <View style={{ flexGrow: 1, minHeight: 16 }} />
+
+                {/* Payment information */}
+                <View style={styles.paymentInfo}>
+                    <Text style={styles.paymentInfoTitle}>
+                        Payment Information
+                    </Text>
+                    <Text style={styles.paymentInfoText}>
+                        Please retain this invoice copy for your records.
+                    </Text>
+                    <Text style={styles.paymentInfoText}>
+                        For order inquiries, contact our customer service.
+                    </Text>
+                </View>
+
+                {/* Thank-you note — the very last line of the invoice */}
+                <View style={styles.quote}>
+                    <Text style={styles.quoteText}>
+                        Thank you for shopping with us &mdash; your trust means
+                        everything. We hope to serve you again soon!
+                    </Text>
+                </View>
+
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>
-                        {brand.name} , {brand.tagline}
+                        {brand.name}
+                        {brand.tagline ? ` , ${brand.tagline}` : ""}
                     </Text>
                     <Text style={styles.footerText}>
-                        Thank you for your purchase!
+                        Invoice #{invoice.orderId}
                     </Text>
                 </View>
             </Page>

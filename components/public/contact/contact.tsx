@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Mail, MapPin, Phone, Send } from "lucide-react";
+import { Clock, Loader2, Mail, MapPin, Phone, Send } from "lucide-react";
 import { socialPlatformIcon } from "@/components/shared/brand-icons";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,14 +31,19 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+const WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit";
+
 /**
  * Contact page in the Nittonova tone: cream surface, a "Get in Touch" card
- * with icon-tile rows and a white form card. Submitting composes an email
- * to the store's support address (no backend endpoint exists for messages).
+ * with icon-tile rows and a white form card. Submitting sends the message
+ * straight to the store's inbox through Web3Forms (access key from the
+ * NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY env; subject/sender carry the live brand
+ * identity). Until the key is filled in, the form gracefully falls back to
+ * composing the email client-side.
  */
 export default function Contact({ contact, brand }: { contact: SettingsContact | null; brand: SettingsBrand | null }) {
   const data = contact ?? FALLBACK_CONTACT;
-  const brandName = brand?.name ?? "us";
+  const brandName = brand?.name ?? "AeroMart";
 
   const [sending, setSending] = useState(false);
   const {
@@ -66,15 +71,56 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
     .filter(([, url]) => url)
     .map(([platform, url]) => ({ platform, url }));
 
-  const onSubmit = handleSubmit((values) => {
-    if (!data.email) return;
-    setSending(true);
+  /** mailto compose — the fallback used until the Web3Forms key is set. */
+  const openMailto = (values: ContactFormValues) => {
     const subject = encodeURIComponent(values.subject || `Message from ${values.name}`);
     const body = encodeURIComponent(`${values.message}\n\n— ${values.name} (${values.email})`);
     window.location.href = `mailto:${data.email}?subject=${subject}&body=${body}`;
     toast.success("Opening your email app…");
-    setSending(false);
-    reset();
+  };
+
+  const onSubmit = handleSubmit(async (values) => {
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    if (!accessKey) {
+      openMailto(values);
+      reset();
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch(WEB3FORMS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: accessKey,
+          // Email identity follows the live brand settings (dynamic).
+          subject: values.subject
+            ? `${values.subject} — ${brandName} Contact Form`
+            : `New contact message — ${brandName}`,
+          from_name: `${brandName} Website`,
+          // Web3Forms renders every extra field as a labeled row — these
+          // names read as a tidy little table in the inbox.
+          "Customer Name": values.name,
+          "Customer Email": values.email,
+          Subject: values.subject || "—",
+          Message: values.message,
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as
+        | { success?: boolean; message?: string }
+        | null;
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.message || "Send failed");
+      }
+      toast.success(`Message sent — ${brandName} will get back to you soon.`);
+      reset();
+    } catch {
+      toast.error("Couldn't send your message right now. Please try again.");
+    } finally {
+      setSending(false);
+    }
   });
 
   return (
@@ -166,6 +212,15 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
           <div className="rounded-2xl bg-card p-6 shadow-sm sm:p-8 lg:col-span-3">
             <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Send a Message</h2>
             <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
+              {/* Web3Forms honeypot — invisible to humans, catches bots */}
+              <input
+                type="checkbox"
+                name="botcheck"
+                className="hidden"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="contact-name" className="ml-0.5 block text-xs font-semibold text-foreground">
@@ -231,8 +286,12 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
                 className="w-full sm:w-auto sm:px-10"
                 disabled={sending}
               >
-                <Send className="size-4" />
-                Send Message
+                {sending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                {sending ? "Sending…" : "Send Message"}
               </Button>
             </form>
           </div>

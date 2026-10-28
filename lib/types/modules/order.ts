@@ -140,6 +140,8 @@ export interface OrderInvoicePayment {
   method: PaymentMethod;
   provider: PaymentProvider;
   transactionId: string;
+  /** Payment state at issue time — COD receipts are "Pending" until delivery. */
+  status?: PaymentStatus;
 }
 
 export interface OrderInvoiceItem {

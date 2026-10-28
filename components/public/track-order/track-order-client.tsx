@@ -7,11 +7,14 @@ import { cn } from "@/lib/utils";
 import { trackOrder } from "@/lib/services/order";
 import { isErrorResult } from "@/lib/utils/result";
 import { formatCurrency } from "@/lib/utils/currency";
+import { paymentMethodLabel } from "@/lib/utils/format";
 import { PageHero } from "@/components/shared/page-hero";
 import type { OrderTracking } from "@/lib/types/backend";
 
 interface TrackOrderClientProps {
   searchParams?: Promise<{ orderId?: string }>;
+  /** Live brand currency from settings — wins over the order's stamped one. */
+  currency?: string;
 }
 
 /** Keep the loading state on screen at least this long so results ease in
@@ -53,7 +56,7 @@ const STEP_META: { status: string; label: string; title: string; description: st
  * receipt-style summary. Public lookup by orderId; ?orderId= prefill and
  * copy-link share preserved.
  */
-export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
+export function TrackOrderClient({ searchParams, currency }: TrackOrderClientProps) {
   const [orderId, setOrderId] = useState("");
   const [result, setResult] = useState<OrderTracking | null>(null);
   const [loading, setLoading] = useState(false);
@@ -120,6 +123,14 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
       .catch(() => toast.error("Could not copy the link"));
   }
 
+  function copyOrderId() {
+    if (!result) return;
+    navigator.clipboard
+      .writeText(result.orderId)
+      .then(() => toast.success("Order ID copied"))
+      .catch(() => toast.error("Could not copy the order ID"));
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     search(orderId);
@@ -132,6 +143,8 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
   const activeMeta = currentStep >= 0 ? STEP_META[currentStep] : null;
   const dateFor = (status: string) =>
     result?.statusHistory.find((h) => h.status === status)?.at;
+  // Live brand currency wins — old orders stamped "usd" still price in ৳.
+  const money = currency || result?.currency;
 
   const entrance = "animate-in fade-in slide-in-from-bottom-5 duration-500 fill-mode-both";
 
@@ -145,16 +158,16 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
       >
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-header-nav-foreground/10 p-1.5 ring-1 ring-header-nav-foreground/30 backdrop-blur"
+          className="mx-auto flex max-w-xl items-center gap-2 rounded-full bg-header-nav-foreground/20 p-1.5 ring-1 ring-header-nav-foreground/40 backdrop-blur"
         >
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-header-nav-foreground/60" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-header-nav-foreground/70" />
             <input
               value={orderId}
               onChange={(e) => setOrderId(e.target.value.toUpperCase())}
               placeholder="ENTER ORDER ID"
               aria-label="Order ID"
-              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/60 focus:outline-none"
+              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/70 focus:outline-none"
             />
           </div>
           <button
@@ -282,9 +295,20 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                     Order
                   </p>
-                  <p className="mt-1 text-xl font-extrabold tracking-widest text-foreground">
-                    {result.orderId}
-                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <p className="text-xl font-extrabold tracking-widest text-foreground">
+                      {result.orderId}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={copyOrderId}
+                      aria-label="Copy order ID"
+                      title="Copy order ID"
+                      className="flex size-8 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+                    >
+                      <Copy className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span
@@ -317,7 +341,7 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
               </div>
               <p className="mt-5 border-t border-dashed border-border pt-4 text-xs text-muted-foreground">
                 Placed {new Date(result.createdAt).toLocaleString()} · by {result.placedBy || "Guest"} ·{" "}
-                {result.paymentMethod}
+                {paymentMethodLabel(result.paymentMethod)}
                 {result.paymentProvider ? ` via ${result.paymentProvider}` : ""}
               </p>
             </div>
@@ -332,28 +356,44 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
               </h2>
 
               <div className="mt-7 overflow-x-auto pb-1">
-                <ol className="flex min-w-[560px] items-start">
+                <ol className="relative flex min-w-[560px] items-start">
+                  {/* One continuous track from the FIRST circle center to the
+                      LAST circle center — the circles sit at 0 / 33 / 66 / 100%
+                      of it (first flush left, middles centered, Delivered flush
+                      right), so every gap between them is identical and the
+                      Delivered circle terminates the bar at the very end. */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-[22px] right-[22px] left-[22px] h-0.5 rounded-full bg-border"
+                  />
+                  {/* Brand progress overlay — fills the exact fraction of the
+                      journey covered so far (0 → 1 → 2 → 3 of 3 segments). */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-[22px] left-[22px] h-0.5 rounded-full bg-brand transition-[width] duration-700 ease-out"
+                    style={{
+                      width: `calc((100% - 44px) * ${Math.max(currentStep, 0) / (STEP_META.length - 1)})`,
+                    }}
+                  />
                   {STEP_META.map((step, index) => {
                     const isPast = currentStep >= 0 && index < currentStep;
                     const isCurrent = index === currentStep;
+                    const isFirst = index === 0;
+                    const isLast = index === STEP_META.length - 1;
                     const stepDate = dateFor(step.status);
                     return (
-                      <li key={step.status} className={cn("flex-1", index < STEP_META.length - 1 && "relative pr-2")}>
-                        {index < STEP_META.length - 1 && (
-                          /* Connector runs icon-center to icon-center so the
-                             rail reads as ONE bar stretching left → right
-                             across the whole card (icons sit on top, z-10). */
-                          <span
-                            aria-hidden="true"
-                            className={cn(
-                              "absolute -right-[30px] left-[22px] top-[22px] h-0.5 rounded-full",
-                              isPast ? "bg-brand" : "bg-border"
-                            )}
-                          />
+                      <li
+                        key={step.status}
+                        className={cn(
+                          "relative z-10 flex flex-1 flex-col",
+                          isFirst && "items-start text-left",
+                          !isFirst && !isLast && "items-center text-center",
+                          isLast && "items-end text-right"
                         )}
+                      >
                         <span
                           className={cn(
-                            "relative z-10 flex size-11 items-center justify-center rounded-full border-2",
+                            "relative flex size-11 items-center justify-center rounded-full border-2",
                             isPast && "border-brand bg-brand text-brand-foreground",
                             isCurrent && !isCancelled && "border-brand bg-card text-brand",
                             !isPast && !isCurrent && "border-border bg-card text-muted-foreground/40"
@@ -454,11 +494,11 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
                             </p>
                           )}
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {product.quantity} × {formatCurrency(product.unitPrice, result.currency)}
+                            {product.quantity} × {formatCurrency(product.unitPrice, money)}
                           </p>
                         </div>
                         <p className="text-sm font-semibold tabular-nums text-foreground">
-                          {formatCurrency(product.total, result.currency)}
+                          {formatCurrency(product.total, money)}
                         </p>
                       </li>
                     ))}
@@ -514,14 +554,14 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Subtotal</dt>
                       <dd className="font-semibold tabular-nums text-foreground">
-                        {formatCurrency(result.totalAmount, result.currency)}
+                        {formatCurrency(result.totalAmount, money)}
                       </dd>
                     </div>
                     {result.offerDiscount > 0 && (
                       <div className="flex justify-between border-t border-dashed border-border pt-3.5">
                         <dt className="text-muted-foreground">Offer discount</dt>
                         <dd className="font-semibold tabular-nums text-success">
-                          −{formatCurrency(result.offerDiscount, result.currency)}
+                          −{formatCurrency(result.offerDiscount, money)}
                         </dd>
                       </div>
                     )}
@@ -529,20 +569,20 @@ export function TrackOrderClient({ searchParams }: TrackOrderClientProps) {
                       <div className="flex justify-between border-t border-dashed border-border pt-3.5">
                         <dt className="text-muted-foreground">Coupon</dt>
                         <dd className="font-semibold tabular-nums text-success">
-                          −{formatCurrency(result.discount, result.currency)}
+                          −{formatCurrency(result.discount, money)}
                         </dd>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-dashed border-border pt-3.5">
                       <dt className="text-muted-foreground">Delivery</dt>
                       <dd className="font-semibold tabular-nums text-foreground">
-                        {formatCurrency(result.deliveryCharge, result.currency)}
+                        {formatCurrency(result.deliveryCharge, money)}
                       </dd>
                     </div>
                     <div className="flex items-baseline justify-between border-t-2 border-header-nav/20 pt-4">
                       <dt className="text-xs font-bold uppercase tracking-wide text-foreground">Total</dt>
                       <dd className="text-2xl font-extrabold tabular-nums text-brand">
-                        {formatCurrency(result.finalAmount, result.currency)}
+                        {formatCurrency(result.finalAmount, money)}
                       </dd>
                     </div>
                   </dl>

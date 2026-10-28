@@ -971,7 +971,7 @@ GET /api/v1/order/track-order/DEY2H7ULPD
 
 ### 8.6 GET /api/v1/order/:orderId/invoice, Get order invoice
 
-Protected, `admin`, `customer` (owner). Returns invoice data as JSON for the frontend to render with react-pdf and a download button. **400 unless the order is `Paid`.**
+Protected, `admin`, `customer` (owner). Returns invoice data as JSON for the frontend to render with react-pdf and a download button. Available for **every** order — COD orders are payable on delivery, so pending payments still get a receipt (`payment.status` tells the client which).
 
 **Request, by orderId or Mongo `_id` (default):**
 ```
@@ -999,7 +999,7 @@ Use `?by=transactionId` on the payment success page to fetch the invoice straigh
     "issuedAt": "2026-07-16T10:00:00.000Z",
     "customer": { "name": "John Doe", "email": "customer@example.com", "phoneNo": "+1 (555) 123-4567", "address": "123 Main Street, Dhaka" },
     "recipient": { "name": "John Doe", "phoneNo": "+1 (555) 123-4567", "shippingAddress": "123 Main Street, Dhaka", "notes": "" },
-    "payment": { "method": "Online", "provider": "stripe", "transactionId": "cs_test_abc123..." },
+    "payment": { "method": "Online", "provider": "stripe", "transactionId": "cs_test_abc123...", "status": "Paid" },
     "items": [
       { "productId": "664f1a2b...", "name": "Smartphone X", "image": "https://...", "quantity": 2, "unitPrice": 799.99, "total": 1599.98, "variant": { "sku": "SMAR-BLACK-M-7F3K9Q", "attributes": { "Color": "Black", "Size": "M" } } }
     ],
@@ -2311,7 +2311,7 @@ When sending these fields (e.g. `category` on product create), send the **plain 
 | 18 | GET | `/api/v1/order/my-orders` | customer | – |
 | 19 | GET | `/api/v1/order/track-order/:orderId` | – (public) | – |
 | 20 | GET | `/api/v1/order/:orderId` | admin, customer (owner) | – |
-| 21 | GET | `/api/v1/order/:orderId/invoice` | admin, customer (owner); paid only | – |
+| 21 | GET | `/api/v1/order/:orderId/invoice` | admin, customer (owner) | – |
 | 22 | POST | `/api/v1/order` | – (guest checkout, optional auth) | – |
 | 23 | PATCH | `/api/v1/order/:orderId` | admin, customer (owner) | – |
 | 24 | PATCH | `/api/v1/order/:orderId/status` | admin | – |

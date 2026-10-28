@@ -55,7 +55,7 @@ export function PageHero({ eyebrow, title, subtitle, align = "center", children 
         {subtitle && (
           <p
             className={cn(
-              "mt-4 text-sm text-header-nav-foreground/60 sm:text-base",
+              "mt-4 text-sm text-header-nav-foreground/90 sm:text-base",
               align === "center" ? "mx-auto max-w-md" : "max-w-2xl"
             )}
           >
