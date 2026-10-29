@@ -161,6 +161,26 @@ export interface SettingsLimitedOffer {
   endsAt: string;
 }
 
+/**
+ * Store-wide SEO (dashboard → Settings → SEO). Every field falls back
+ * gracefully when empty: title → brand name, ogImage → first hero slide →
+ * brand logo.
+ */
+export interface SettingsSeo {
+  /** Home page meta title — keep it the plain brand name for the home page. */
+  title: string;
+  /** Next.js title pattern for sub-pages, must contain %s, e.g. "%s | Attor". */
+  titleTemplate: string;
+  /** Meta description used for the search snippet. */
+  description: string;
+  /** Comma-separated meta keywords. */
+  keywords: string;
+  /** Social share image (Open Graph / Twitter), recommended 1200×630. */
+  ogImage: string;
+  /** When true the storefront sends noindex, nofollow. */
+  noindex: boolean;
+}
+
 export interface Settings {
   _id: string;
   brand: SettingsBrand;
@@ -172,6 +192,8 @@ export interface Settings {
   contact: SettingsContact;
   about: SettingsAbout;
   limitedOffer: SettingsLimitedOffer;
+  /** Optional until older settings docs are saved with the SEO section. */
+  seo?: SettingsSeo;
   createdAt: string;
   updatedAt: string;
 }
@@ -184,4 +206,5 @@ export type SettingsSectionKey =
   | "footer"
   | "contact"
   | "about"
-  | "limitedOffer";
+  | "limitedOffer"
+  | "seo";

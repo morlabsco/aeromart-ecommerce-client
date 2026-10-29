@@ -12,6 +12,8 @@ export interface Product {
   id: string
   title: string
   slug: string
+  /** Product-level stock code (parent SKU; variants carry their own). */
+  sku?: string
   description: string
   fullDescription: string
   price: number

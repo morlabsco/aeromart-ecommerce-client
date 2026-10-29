@@ -94,12 +94,12 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
       <header className="sticky top-0 z-40 w-full bg-background">
         {/* Main bar: white, logo / search / action groups on desktop,
             hamburger / centered logo / icons on mobile */}
-        <div className="border-b border-border/60 md:border-b-0">
-          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 md:h-20 sm:px-6 lg:h-[5.25rem] lg:px-8">
+        <div className="border-b border-border/60 min-[860px]:border-b-0">
+          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 min-[860px]:h-20 sm:px-6 lg:h-[5.25rem] lg:px-8">
             {/* Hamburger (mobile) */}
             <button
               onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-              className="-ml-2 cursor-pointer p-2 text-foreground md:hidden"
+              className="-ml-2 cursor-pointer p-2 text-foreground min-[860px]:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
             >
@@ -110,7 +110,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
             <Link
               href="/"
               title={tagline}
-              className="absolute left-1/2 flex -translate-x-1/2 shrink-0 items-center gap-1.5 md:static md:translate-x-0"
+              className="absolute left-1/2 flex -translate-x-1/2 shrink-0 items-center gap-1.5 min-[860px]:static min-[860px]:translate-x-0"
             >
               {brand?.logoOnly && hasLogo ? (
                 /* Logo-only mode: the artwork at its natural aspect, uncropped */
@@ -120,7 +120,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                   width={0}
                   height={0}
                   sizes="200px"
-                  className="h-9 w-auto max-w-[170px] object-contain sm:h-10 md:h-11 md:max-w-[200px]"
+                  className="h-9 w-auto max-w-[170px] object-contain sm:h-10 min-[860px]:h-11 min-[860px]:max-w-[200px]"
                 />
               ) : (
                 <>
@@ -130,14 +130,14 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                       alt={brandName}
                       width={40}
                       height={40}
-                      className="h-9 w-9 object-contain md:h-10 md:w-10"
+                      className="h-9 w-9 object-contain min-[860px]:h-10 min-[860px]:w-10"
                     />
                   ) : (
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground md:h-10 md:w-10">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-foreground min-[860px]:h-10 min-[860px]:w-10">
                       {brandName.charAt(0)}
                     </span>
                   )}
-                  <span className="text-base font-extrabold tracking-tight text-foreground md:text-xl">
+                  <span className="text-base font-extrabold tracking-tight text-foreground min-[860px]:text-xl">
                     {brandName}
                   </span>
                 </>
@@ -146,16 +146,16 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
 
             {/* Search (desktop): bordered rectangle + orange magnifier button,
                 with live product suggestions as you type */}
-            <div className="hidden flex-1 justify-center px-4 md:flex lg:px-8">
+            <div className="hidden flex-1 justify-center px-4 min-[860px]:flex lg:px-8">
               <SearchBox currency={brand?.currency} className="w-full max-w-xl" />
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-0.5 md:gap-5 lg:gap-6">
+            <div className="flex items-center gap-0.5 min-[860px]:gap-5 lg:gap-6">
               {/* Mobile: search icon toggles the dropdown search panel */}
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                className="cursor-pointer p-2 text-foreground md:hidden"
+                className="cursor-pointer p-2 text-foreground min-[860px]:hidden"
                 aria-label="Search"
                 aria-expanded={searchOpen}
               >
@@ -164,7 +164,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               {/* Mobile: cart in a gray circle with a ringed badge */}
               <button
                 onClick={() => setCartOpen(true)}
-                className="relative ml-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-muted md:hidden"
+                className="relative ml-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-muted min-[860px]:hidden"
                 aria-label="Open cart"
               >
                 <ShoppingBag className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
@@ -174,7 +174,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               </button>
 
               {/* Desktop: Support group */}
-              <Link href="/contact" className="group hidden items-center gap-2 md:flex">
+              <Link href="/contact" className="group hidden items-center gap-2 min-[860px]:flex">
                 <Phone
                   className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
                   strokeWidth={1.5}
@@ -188,7 +188,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               {/* Desktop: Account menu — opens on hover, focusable for
                   keyboard users. Logged out shows Login/Register buttons;
                   logged in shows the user, RBAC links, and Logout. */}
-              <div className="group relative hidden md:block">
+              <div className="group relative hidden min-[860px]:block">
                 <Link href="/login" className="flex items-center gap-2">
                   <User
                     className="h-[22px] w-[22px] text-foreground transition-colors group-hover:text-brand"
@@ -269,7 +269,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
               {/* Desktop: Cart group with live total */}
               <button
                 onClick={() => setCartOpen(true)}
-                className="group hidden cursor-pointer items-center gap-2 md:flex"
+                className="group hidden cursor-pointer items-center gap-2 min-[860px]:flex"
                 aria-label="Open cart"
               >
                 <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -291,7 +291,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
         </div>
 
         {/* Category nav (desktop): charcoal bar, white title-case links */}
-        <nav className="hidden bg-header-nav md:block" aria-label="Main navigation">
+        <nav className="hidden bg-header-nav min-[860px]:block" aria-label="Main navigation">
           <div className="mx-auto flex h-12 max-w-7xl items-center justify-center gap-8 px-4 sm:px-6 lg:gap-10 lg:px-8">
             {links.map((link) => (
               <Link
@@ -308,7 +308,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
         {/* Mobile: search panel — the same concept search as desktop
             (input + live suggestions), dropping in under the header bar */}
         {searchOpen && (
-          <div className="absolute inset-x-0 top-full z-50 animate-in fade-in slide-in-from-top-2 border-b border-border/60 bg-background shadow-lg md:hidden">
+          <div className="absolute inset-x-0 top-full z-50 animate-in fade-in slide-in-from-top-2 border-b border-border/60 bg-background shadow-lg min-[860px]:hidden">
             <div className="px-4 py-3">
               <SearchBox
                 autoFocus
@@ -323,7 +323,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
       {/* Mobile drawer — left slide-in panel over a scrim */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-scrim/50 transition-opacity duration-300 md:hidden",
+          "fixed inset-0 z-50 bg-scrim/50 transition-opacity duration-300 min-[860px]:hidden",
           isMobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => setMobileMenuOpen(false)}
@@ -331,7 +331,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
       />
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[75%] max-w-xs flex-col bg-card shadow-xl transition-transform duration-300 md:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-[75%] max-w-xs flex-col bg-card shadow-xl transition-transform duration-300 min-[860px]:hidden",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
         aria-label="Mobile navigation"

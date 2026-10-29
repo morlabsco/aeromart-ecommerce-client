@@ -549,7 +549,7 @@ Authorization: Bearer <adminAccessToken>
 
 Parent route: `/api/v1/product`
 
-Product model fields: `name`, `slug` (auto-generated), `description`, `price`, `currency` (inherited from store brand settings, not sent on create; **accepted on update**), `stock`, `weight`, `category` (ObjectId → Category), `brand` (ObjectId → Brand), `createdBy` (ObjectId → User, attached automatically), `imageUrls[]` (`{ publicId, url, order }`), `isActive`, `isDeleted`, `averageRating`, `ratingCount`, `specification[]` (`{key, value}`), `keyFeatures[]`, `offerPrice` (`{ type: flat|percentage, value, startAt, endAt, isActive }`), `colorOptions[]` (`{ name, hex }`, **the single source of truth for colors**), `attributes[]` (`{ key, values }`, variant axes, **non-color only**, e.g. Size/Material/custom), `variants[]` (`{ sku, attributes, price?, stock, imageUrls, isActive }`, a variant's `attributes` may include `Color` by name, validated against `colorOptions` and **auto-added** to it if missing; `imageUrls` use the same `{ publicId, url, order }` shape with `{}` placeholders filled from `variantImages`), `hasVariants` (auto-set from the presence of `variants`), timestamps.
+Product model fields: `name`, `slug` (auto-generated), `sku` (**product-level stock code**, optional in payloads — auto-generated as `{NAME4}-{RANDOM6}` (e.g. `SMAR-7F3K9Q`) when blank, uppercased + uniqueness-checked when provided → 409 `"A product with this SKU already exists!"` on duplicate; unique sparse index; renames never regenerate it; legacy rows without one are healed on their next update), `description`, `price`, `currency` (inherited from store brand settings, not sent on create; **accepted on update**), `stock`, `weight`, `category` (ObjectId → Category), `brand` (ObjectId → Brand), `createdBy` (ObjectId → User, attached automatically), `imageUrls[]` (`{ publicId, url, order }`), `isActive`, `isDeleted`, `averageRating`, `ratingCount`, `specification[]` (`{key, value}`), `keyFeatures[]`, `offerPrice` (`{ type: flat|percentage, value, startAt, endAt, isActive }`), `colorOptions[]` (`{ name, hex }`, **the single source of truth for colors**), `attributes[]` (`{ key, values }`, variant axes, **non-color only**, e.g. Size/Material/custom), `variants[]` (`{ sku, attributes, price?, stock, imageUrls, isActive }`, a variant's `attributes` may include `Color` by name, validated against `colorOptions` and **auto-added** to it if missing; `imageUrls` use the same `{ publicId, url, order }` shape with `{}` placeholders filled from `variantImages`), `hasVariants` (auto-set from the presence of `variants`), timestamps.
 
 ### 7.1 GET /api/v1/product, Get all products
 
@@ -560,6 +560,10 @@ Public. Returns **non-deleted only** (`isDeleted: false`). Category (`name`, `sl
 - `brand`, brand ObjectId
 - `minPrice`, `maxPrice`, numeric price range
 - `isActive`, boolean
+- `onOffer=true`, only products with a **live** offer right now (`offerPrice.isActive` true, value > 0, and today inside `startAt`–`endAt`; a missing/null date boundary counts as always open — same semantics as the storefront's offer pricing). Powers the home "Special Offers" shelf and `/products?offer=true`.
+- `hasOffer=true`, every product carrying an `offerPrice` at all (live, scheduled, expired or inactive) — powers the admin "Offered Products" manager.
+
+> NOTE (29/10 fix): the manually-handled params (`minPrice`, `maxPrice`, `onOffer`, `hasOffer`) are stripped from the generic filter before querying — previously `minPrice`/`maxPrice` leaked into the Mongo filter as unknown fields and silently returned **0 results**.
 
 **Request:**
 ```
@@ -670,7 +674,7 @@ Form fields:
 - Every other variant `attributes` key **and** value must be declared in the `attributes` axes, otherwise `400` with a clear message.
 - `hasVariants` is set to `true` automatically when `variants` has entries.
 
-Required `data` fields: `name`, `description`, `price`, `weight`, `category`, `brand`. Optional: `slug`, `stock` (default 0), `imageUrls`, `isActive` (default true), `specification`, `keyFeatures`, `colorOptions`, `attributes` (variant axes `{ key, values }`, non-color), `variants` (SKUs auto-generated as `{PREFIX}-{COLOR}-{SIZE}-{RANDOM}` when omitted; `imageUrls` entries are `{}` placeholders for new variant images), `hasVariants`, `offerPrice`. **Do NOT send `currency`**, it inherits from the store's brand settings (`brand.currency`). `createdBy` is attached automatically. `offerPrice.endAt` must be after `startAt` (400 otherwise).
+Required `data` fields: `name`, `description`, `price`, `weight`, `category`, `brand`. Optional: `slug`, `sku` (product-level stock code; auto-generated `{NAME4}-{RANDOM6}` when omitted, 409 on duplicate), `stock` (default 0), `imageUrls`, `isActive` (default true), `specification`, `keyFeatures`, `colorOptions`, `attributes` (variant axes `{ key, values }`, non-color), `variants` (SKUs auto-generated as `{PREFIX}-{COLOR}-{SIZE}-{RANDOM}` when omitted; `imageUrls` entries are `{}` placeholders for new variant images), `hasVariants`, `offerPrice`. **Do NOT send `currency`**, it inherits from the store's brand settings (`brand.currency`). `createdBy` is attached automatically. `offerPrice.endAt` must be after `startAt` (400 otherwise).
 
 **Response (201):**
 ```json
@@ -1889,7 +1893,7 @@ Authorization: Bearer <adminAccessToken>
 
 Parent route: `/api/v1/settings`
 
-The Settings module is a **single singleton document** (`_id: "singleton"`) that drives the whole storefront: brand identity, theme (colors/fonts/radius/global CSS), hero slides, testimonials, navbar (links + role groups), footer, contact, about, and limited-offer banner. The whole config is readable in one request, and each section can be updated independently by an admin. Seeded at deploy time via `npm run seed:settings` (prefilled from the default `clothing` preset).
+The Settings module is a **single singleton document** (`_id: "singleton"`) that drives the whole storefront: brand identity, theme (colors/fonts/radius/global CSS), hero slides, testimonials, navbar (links + role groups), footer, contact, about, limited-offer banner, and SEO metadata. The whole config is readable in one request, and each section can be updated independently by an admin. Seeded at deploy time via `npm run seed:settings` (prefilled from the default `clothing` preset).
 
 **Full document shape:**
 ```json
@@ -1917,6 +1921,7 @@ The Settings module is a **single singleton document** (`_id: "singleton"`) that
   "contact": { "address": "123 Fashion Avenue, New York, NY 10001", "phone": "+1 (555) 123-4567", "email": "hello@attor.com", "hours": "Mon–Sat 9am–6pm", "mapEmbedUrl": "", "social": { "twitter": "https://twitter.com/attor", "instagram": "https://instagram.com/attor", "facebook": "https://facebook.com/attor" } },
   "about": { "story": "...", "mission": "...", "image": "/demo/clothing/about.jpg", "stats": [{ "label": "Founded", "value": "2020" }, { "label": "Collections", "value": "50+" }] },
   "limitedOffer": { "enabled": false, "badge": "Limited Time", "title": "Seasonal Sale", "subtitle": "Up to 30% off selected items", "ctaText": "Shop Now", "ctaLink": "/products", "image": "", "endsAt": "" },
+  "seo": { "title": "", "titleTemplate": "", "description": "", "keywords": "", "ogImage": "", "noindex": false },
   "createdAt": "2026-01-01T00:00:00.000Z",
   "updatedAt": "2026-01-01T00:00:00.000Z"
 }
@@ -1972,7 +1977,7 @@ Only provided brand fields are updated (unprovided ones keep their value). `curr
 
 ### 15.3 PATCH /api/v1/settings/:section, Update one section (admin)
 
-Protected, `admin`. Sections: `theme`, `hero`, `testimonials`, `navbar`, `footer`, `contact`, `about`, `limitedOffer`. **Multipart** (`data` JSON + optional `images` files for hero/testimonials/about/limitedOffer; plain JSON for the rest). Each section has its own schema; unknown section → 400, invalid body → 400. Writes invalidate the cache. **Replacing/removing an image in hero/testimonials/about/limitedOffer destroys the old file from Cloudinary** (best-effort, after the DB write).
+Protected, `admin`. Sections: `theme`, `hero`, `testimonials`, `navbar`, `footer`, `contact`, `about`, `limitedOffer`, `seo`. **Multipart** (`data` JSON + optional `images` files for hero/testimonials/about/limitedOffer/seo; plain JSON for the rest). Each section has its own schema; unknown section → 400, invalid body → 400. Writes invalidate the cache. **Replacing/removing an image in hero/testimonials/about/limitedOffer/seo destroys the old file from Cloudinary** (best-effort, after the DB write).
 
 **Request (hero, plain JSON):**
 ```
@@ -1989,7 +1994,13 @@ Content-Type: application/json
 - `hero` → `data` (slides) + `images` files → `slides[i].image = files[i].path`.
 - `testimonials` → `data` (items) + `images` files → `items[i].avatar = files[i].path`.
 - `about` / `limitedOffer` → `data` + `images[0]` → `image`.
+- `seo` → `data` + `images[0]` → `ogImage` (send the current URL in `data.seo.ogImage` to keep it; `""` removes it and destroys the file).
 - Other sections → plain JSON.
+
+**SEO section notes:**
+- Shape: `{ title, titleTemplate, description, keywords, ogImage, noindex }` — max lengths 120/120/500/500 chars (enforced by zod).
+- The **seo section is PRESERVED by preset/full/empty resets** (like `brand.currency`) — it is store identity, not theme content. Older singleton documents get an all-empty `seo` normalized on read, so `GET /settings` always returns the full shape.
+- `title` = home `<title>` (empty → brand name); `titleTemplate` must contain `%s` (the client falls back to `%s` when it doesn't); `ogImage` empty → the client auto-falls back to the first hero slide image, then the brand logo.
 
 **Response (200):**
 ```json

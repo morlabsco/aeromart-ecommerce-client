@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/shared/page-hero";
+import { notifyInvalidFields } from "@/lib/utils/form-feedback";
 import type { SettingsBrand, SettingsContact } from "@/lib/types/backend";
 
 const FALLBACK_CONTACT: SettingsContact = {
@@ -79,7 +80,8 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
     toast.success("Opening your email app…");
   };
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit(
+    async (values) => {
     const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
     if (!accessKey) {
       openMailto(values);
@@ -121,7 +123,23 @@ export default function Contact({ contact, brand }: { contact: SettingsContact |
     } finally {
       setSending(false);
     }
-  });
+    },
+    // Invalid submit — tell the user what's missing (RHF already focuses
+    // the first errored field; the toast names the fields so nothing feels
+    // like a silent dead button).
+    (errors) => {
+      notifyInvalidFields(
+        Object.keys(errors),
+        {
+          name: "Name",
+          email: "Email",
+          subject: "Subject",
+          message: "Message",
+        },
+        "send your message",
+      );
+    },
+  );
 
   return (
     <div className="bg-hero-surface">

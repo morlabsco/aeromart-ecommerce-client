@@ -47,12 +47,16 @@ export function Banner({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section aria-label="Featured promotions" className="bg-hero-surface">
-      <div className="relative">
-        <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
-          <CarouselContent className="-ml-0">
-            {slides.map((slide, index) => (
-              <CarouselItem key={index} className="pl-0">
-                <div className="mx-auto w-full max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-6">
+      {/* The max-width inset wraps the CAROUSEL VIEWPORT, not each slide —
+          embla's overflow-hidden viewport then clips slide transitions
+          exactly at the banner's rounded edge, so incoming/outgoing artwork
+          never sweeps across the full page width outside this container. */}
+      <div className="mx-auto w-full max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8 lg:pt-6">
+        <div className="relative">
+          <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
+            <CarouselContent className="-ml-0">
+              {slides.map((slide, index) => (
+                <CarouselItem key={index} className="pl-0">
                   {slide.image && slide.image.length > 0 ? (
                     /* Composed banner artwork, inset with rounded corners */
                     <div
@@ -85,24 +89,24 @@ export function Banner({ slides }: { slides: HeroSlide[] }) {
                       )}
                     </div>
                   )}
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
 
-        {/* Dots only when rotating multiple banners; single-slide stays clean
-            like the reference (shared CarouselDots — same style as
-            testimonials). */}
-        <CarouselDots
-          count={slides.length}
-          current={current}
-          onSelect={(index) => {
-            interactedRef.current = true
-            api?.scrollTo(index)
-          }}
-          className="absolute bottom-0.5 left-1/2 z-30 -translate-x-1/2 lg:bottom-1.5"
-        />
+          {/* Dots only when rotating multiple banners; single-slide stays clean
+              like the reference (shared CarouselDots — same style as
+              testimonials). */}
+          <CarouselDots
+            count={slides.length}
+            current={current}
+            onSelect={(index) => {
+              interactedRef.current = true
+              api?.scrollTo(index)
+            }}
+            className="absolute bottom-0.5 left-1/2 z-30 -translate-x-1/2 lg:bottom-1.5"
+          />
+        </div>
       </div>
       {/* Cream breathing room below the banner before the next section */}
       <div className="h-3 sm:h-4 lg:h-6" />

@@ -6,6 +6,7 @@ import { apiRequest, toServiceResult } from "./api-client";
 import type {
   ListQuery,
   Product,
+  ProductOfferPrice,
   ProductPayload,
   ServiceResult,
 } from "@/lib/types/backend";
@@ -112,6 +113,29 @@ export const deleteProduct = async (
         method: "DELETE",
       }
     );
+    revalidateTag("PRODUCT", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
+/**
+ * PATCH /product/:id with ONLY the offerPrice — the Offered Products
+ * manager's targeted save, so offers are created/updated/removed without
+ * round-tripping the whole product form. Pass null to remove the offer.
+ */
+export const updateProductOffer = async (
+  productId: string,
+  offer: ProductOfferPrice | null
+): Promise<ServiceResult<Product>> => {
+  try {
+    const formData = new FormData();
+    formData.append("data", JSON.stringify({ offerPrice: offer }));
+    const result = await apiRequest<Product>(`/product/${productId}`, {
+      method: "PATCH",
+      formData,
+    });
     revalidateTag("PRODUCT", "max");
     return result;
   } catch (error: any) {

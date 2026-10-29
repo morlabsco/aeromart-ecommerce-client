@@ -1,4 +1,3 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import { BadgeCheck, Mail, Phone, ShieldCheck } from "lucide-react"
 import { WhatsAppIcon } from "@/components/shared/brand-icons"
@@ -6,14 +5,16 @@ import { PageHero } from "@/components/shared/page-hero"
 import { getSettings } from "@/lib/services/settings"
 import { unwrapData } from "@/lib/services/api-client"
 import { themes, DEFAULT_NICHE } from "@/lib/theme.config"
+import { storefrontMetadata } from "@/lib/metadata"
 
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: "Return & Refund Policy",
-  description:
-    "রিটার্ন, রিপ্লেসমেন্ট ও রিফান্ড পলিসি — how returns, replacements, refunds and warranty claims work.",
-}
+export const generateMetadata = () =>
+  storefrontMetadata({
+    title: "Return & Refund Policy",
+    description:
+      "রিটার্ন, রিপ্লেসমেন্ট ও রিফান্ড পলিসি — how returns, replacements, refunds and warranty claims work.",
+  });
 
 /* ---------------------------------------------------------------------------
  * Policy content (docs/data/return-&-refund-policy.md) — Bangla + English

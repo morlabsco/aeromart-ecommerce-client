@@ -14,6 +14,7 @@ export const SETTINGS_SECTIONS = [
     { href: "/dashboard/admin/settings/contact", label: "Contact" },
     { href: "/dashboard/admin/settings/about", label: "About" },
     { href: "/dashboard/admin/settings/limited-offer", label: "Limited Offer" },
+    { href: "/dashboard/admin/settings/seo", label: "SEO" },
 ] as const;
 
 /** Sub-navigation for the route-based Settings section. */

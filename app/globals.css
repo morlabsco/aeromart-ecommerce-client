@@ -347,7 +347,11 @@
   color: var(--destructive-foreground) !important;
 }
 [data-sonner-toast] [data-description] {
-  color: color-mix(in oklab, currentColor 80%, transparent) !important;
+  color: color-mix(in oklab, currentColor 92%, transparent) !important;
+  /* Sonner ships the description at font-weight 400 — too thin to read on
+     the colored error/warning toasts. Medium weight + the higher opacity
+     keeps it legible. */
+  font-weight: 500 !important;
 }
 /* Action buttons invert their toast for contrast. */
 [data-sonner-toast] [data-button] {

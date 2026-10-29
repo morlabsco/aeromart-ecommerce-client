@@ -454,6 +454,14 @@ export default function ProductDetails({
                     {product.brand}
                   </span>
                 )}
+                {product.sku && (
+                  <span className="text-xs tracking-wide text-muted-foreground/80">
+                    SKU:{" "}
+                    <span className="font-mono font-semibold text-muted-foreground">
+                      {product.sku}
+                    </span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -614,7 +622,7 @@ export default function ProductDetails({
               <Button
                 variant="brandOutline"
                 size="xl"
-                className="min-w-0 flex-1 h-auto min-h-12 py-3 text-[15px]"
+                className="min-w-0 flex-1 h-auto min-h-12 bg-card py-3 text-[15px]"
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
               >

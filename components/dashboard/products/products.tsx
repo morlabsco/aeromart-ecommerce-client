@@ -102,7 +102,10 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                         </div>
                         <div>
                             <p className="font-medium text-sm">{row.original.name}</p>
-                            <p className="text-xs text-muted-foreground">{row.original.slug}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {row.original.slug}
+                                {row.original.sku ? ` · ${row.original.sku}` : ""}
+                            </p>
                         </div>
                     </div>
                 ),

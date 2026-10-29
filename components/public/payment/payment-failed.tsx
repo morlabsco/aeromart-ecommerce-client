@@ -36,7 +36,7 @@ export function PaymentFailed({ order, tranId, currency }: PaymentFailedProps) {
   }
 
   const failedCard = (
-    <div className="animate-in fade-in slide-in-from-bottom-5 duration-500 rounded-[1.75rem] bg-card p-6 text-center shadow-sm sm:p-8 lg:col-span-2 lg:self-start [animation-delay:120ms]">
+    <div className="animate-in fade-in slide-in-from-bottom-5 duration-500 min-w-0 rounded-[1.75rem] bg-card p-6 text-center shadow-sm sm:p-8 lg:col-span-2 lg:self-start [animation-delay:120ms]">
       <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-destructive/10">
         <XCircle className="size-8 text-destructive" strokeWidth={1.8} />
       </span>
@@ -106,7 +106,7 @@ export function PaymentFailed({ order, tranId, currency }: PaymentFailedProps) {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
       {/* ── Summary card (left) ── */}
       <OrderSummaryCard order={order} currency={currency} />
       {/* ── Failed confirmation card (right) ── */}

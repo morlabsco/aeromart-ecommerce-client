@@ -44,12 +44,12 @@ export function OrderSuccess({
   const isPaid = order.paymentStatus === "Paid"
 
   return (
-    <div className="grid gap-5 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
       {/* ── Summary card (left) ── */}
       <OrderSummaryCard order={order} currency={money} />
 
       {/* ── Confirmation card (right) ── */}
-      <div className="animate-in fade-in slide-in-from-bottom-5 duration-500 rounded-[1.75rem] bg-card p-6 text-center shadow-sm sm:p-8 lg:col-span-2 lg:self-start [animation-delay:120ms]">
+      <div className="animate-in fade-in slide-in-from-bottom-5 duration-500 min-w-0 rounded-[1.75rem] bg-card p-6 text-center shadow-sm sm:p-8 lg:col-span-2 lg:self-start [animation-delay:120ms]">
         <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-success/15">
           <CheckCircle2 className="size-8 text-success" strokeWidth={1.8} />
         </span>
@@ -152,7 +152,7 @@ export function OrderSummaryCard({
   const money = currency || order.currency
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-5 rounded-[1.75rem] bg-card p-6 shadow-sm duration-500 sm:p-8 lg:col-span-3">
+    <div className="animate-in fade-in slide-in-from-bottom-5 min-w-0 rounded-[1.75rem] bg-card p-6 shadow-sm duration-500 sm:p-8 lg:col-span-3">
       <h2 className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
         Order Summary
       </h2>

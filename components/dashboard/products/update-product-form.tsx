@@ -45,6 +45,11 @@ import {
 
 const productSchema = z.object({
     name: z.string().min(1, { message: "Product name is required." }),
+    sku: z
+        .string()
+        .trim()
+        .max(40, { message: "SKU is too long." })
+        .optional(),
     description: z
         .string()
         .min(10, { message: "Description must be at least 10 characters." }),
@@ -135,6 +140,7 @@ export function UpdateProductForm({ product, brands, categories, brandCurrency =
         resolver: zodResolver(productSchema),
         defaultValues: {
             name: product.name,
+            sku: product.sku ?? "",
             description: product.description,
             price: product.price,
             weight: product.weight,
@@ -172,6 +178,7 @@ export function UpdateProductForm({ product, brands, categories, brandCurrency =
                 isActive: values.isActive,
                 colorOptions,
             };
+            if (values.sku) dataPayload.sku = values.sku;
             if (offerPrice) dataPayload.offerPrice = offerPrice;
             // Persist the toggle flag. Per §7.4 the backend derives
             // `hasVariants` from the variants array length, so to toggle OFF
@@ -311,6 +318,26 @@ export function UpdateProductForm({ product, brands, categories, brandCurrency =
                                         {errors.name.message}
                                     </p>
                                 )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="sku">SKU</Label>
+                                <Input
+                                    id="sku"
+                                    placeholder={product.sku ?? "Auto-generated, e.g. SMAR-7F3K9Q"}
+                                    {...register("sku")}
+                                    aria-invalid={!!errors.sku}
+                                />
+                                {errors.sku && (
+                                    <p className="text-[11px] font-medium text-destructive">
+                                        {errors.sku.message}
+                                    </p>
+                                )}
+                                <p className="text-[11px] text-muted-foreground">
+                                    The product's stock code (variants carry their own).
+                                    Clearing this keeps the current SKU — it never regenerates
+                                    on rename.
+                                </p>
                             </div>
 
                             <div className="space-y-2">

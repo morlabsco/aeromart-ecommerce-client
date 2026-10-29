@@ -63,6 +63,7 @@ const adminNavRoutes: NavItem[] = [
         icon: PackageIcon,
         children: [
             { title: "All Products", url: "/dashboard/admin/products/all-products" },
+            { title: "Offered Products", url: "/dashboard/admin/products/offered-products" },
             { title: "Create Product", url: "/dashboard/admin/products/create-product" },
         ],
     },

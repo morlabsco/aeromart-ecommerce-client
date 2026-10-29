@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
+import { buildSeoMetadata } from "@/lib/metadata";
 
 // AeroMart typography: Jost for Latin text with Hind Siliguri as the Bangla
 // companion — the font tokens in globals.css stack Jost first, so Bengali
@@ -21,20 +22,16 @@ const hindSiliguri = Hind_Siliguri({
 const FALLBACK_FAVICON = "/favicon.ico";
 
 export async function generateMetadata(): Promise<Metadata> {
-    // Load the settings brand so the favicon tracks the theme; fall back to
-    // the project's static favicon when settings are unavailable.
+    // The root metadata IS the storefront's SEO config (Settings → SEO):
+    // home title/description, the sub-page titleTemplate, social image
+    // (admin upload → hero slide → logo) and robots. The favicon still
+    // tracks the brand settings, with the static file as fallback.
     const settingsResult = await getSettings();
     const settings = unwrapData(settingsResult);
     const favicon = settings?.brand?.favicon || FALLBACK_FAVICON;
 
     return {
-        title: {
-            default: settings?.brand?.name || "Attor",
-            template: "%s",
-        },
-        description:
-            settings?.brand?.description ??
-            "Premium clothing for the modern individual. Discover curated collections designed for those who refuse to blend in.",
+        ...buildSeoMetadata(settings),
         icons: {
             icon: favicon,
         },

@@ -58,6 +58,8 @@ export interface Product {
   _id: string;
   name: string;
   slug: string;
+  /** Product-level stock code (auto-generated when blank; unique). */
+  sku?: string;
   description: string;
   price: number;
   /** Currency code, e.g. "usd" (default), "bdt", "eur", "gbp", "inr", "aed", "aud", "cad". */
@@ -85,6 +87,8 @@ export interface Product {
 
 export interface ProductPayload {
   name: string;
+  /** Optional stock code — auto-generated server-side when omitted. */
+  sku?: string;
   description: string;
   price: number;
   stock?: number;

@@ -25,6 +25,7 @@ export function FeaturedProducts({ products: serverProducts }: FeaturedProductsP
       products={trending}
       viewAllHref="/products"
       sectionClassName="bg-hero-surface"
+      bottomRule
     />
   )
 }

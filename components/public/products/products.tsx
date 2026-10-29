@@ -26,7 +26,7 @@ import { Pagination } from "../../../components/ui/pagination";
 import { cn } from "@/lib/utils";
 import type { Product } from "../../../lib/types";
 import type { Category, Brand } from "../../../lib/types/backend";
-import { formatCurrency } from "../../../lib/utils/currency";
+import { formatCurrency, hasActiveOffer } from "../../../lib/utils/currency";
 
 /* ---------------------------------------------------------------------------
  * Nittonova Shop page: centered breadcrumb + "All Products (N)" heading, a
@@ -132,19 +132,19 @@ function SortMenu({
         SORT_OPTIONS.find((o) => o.value === value)?.label ?? "Latest";
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative min-w-0">
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
                 aria-label="Sort products"
-                className="flex h-10 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-brand transition-colors hover:bg-brand/10"
+                className="flex h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-brand transition-colors hover:bg-brand/10"
             >
-                Sort by: {label}
+                <span className="truncate">Sort by: {label}</span>
                 <ChevronDown
                     className={cn(
-                        "size-4 transition-transform duration-200",
+                        "size-4 shrink-0 transition-transform duration-200",
                         open && "rotate-180",
                     )}
                 />
@@ -153,7 +153,7 @@ function SortMenu({
                 <div
                     role="listbox"
                     aria-label="Sort options"
-                    className="absolute right-0 top-full z-40 mt-2 w-60 animate-in fade-in slide-in-from-top-1 overflow-hidden rounded-xl border border-border/60 bg-card py-1.5 shadow-xl"
+                    className="absolute left-0 top-full z-40 mt-2 w-60 max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-1 overflow-hidden rounded-xl border border-border/60 bg-card py-1.5 shadow-xl sm:left-auto sm:right-0"
                 >
                     {SORT_OPTIONS.map((option) => (
                         <button
@@ -275,6 +275,7 @@ function ProductsPageContent({
         category: "all",
         brand: "all",
         color: "all",
+        offer: "",
         sort: "newest",
         minPrice: "",
         maxPrice: "",
@@ -286,6 +287,11 @@ function ProductsPageContent({
 
     // Header search used to push ?searchTerm=; keep it working alongside ?search=.
     const searchParam = params.search || params.searchTerm || "";
+
+    // "Special Offers" view — /products?offer=true shows only products with
+    // a live offer (active, in its date window). The home page's Special
+    // Offers shelf links here.
+    const offerActive = params.offer === "true";
 
     // Category links anywhere in the app use the slug; older links used the
     // name. Resolve whichever arrived to a canonical category name.
@@ -375,6 +381,13 @@ function ProductsPageContent({
             );
         }
 
+        // Special Offers — live offers only (expired/scheduled never show).
+        if (offerActive) {
+            result = result.filter((p) =>
+                hasActiveOffer(p.price, p.offerPrice),
+            );
+        }
+
         // Price range filter
         const minP = Number(params.minPrice) || 0;
         const maxP = Number(params.maxPrice) || Infinity;
@@ -422,6 +435,7 @@ function ProductsPageContent({
         activeCategoryName,
         params.brand,
         params.color,
+        offerActive,
         params.sort,
         params.minPrice,
         params.maxPrice,
@@ -447,6 +461,7 @@ function ProductsPageContent({
         activeCategoryName !== "all" ||
         params.brand !== "all" ||
         (params.color !== "all" && Boolean(params.color)) ||
+        offerActive ||
         Boolean(params.minPrice) ||
         Boolean(params.maxPrice) ||
         params.inStock === "true";
@@ -458,6 +473,7 @@ function ProductsPageContent({
             category: "all",
             brand: "all",
             color: "all",
+            offer: "",
             minPrice: "",
             maxPrice: "",
             inStock: "",
@@ -514,13 +530,19 @@ function ProductsPageContent({
 
     return (
         <div className="bg-hero-surface">
-            {activeCategory && (
+            {activeCategory ? (
                 <PageHero
                     eyebrow="Category"
                     title={activeCategory.name}
                     subtitle={activeCategory.description || undefined}
                 />
-            )}
+            ) : offerActive ? (
+                <PageHero
+                    eyebrow="Limited time only"
+                    title="Special Offers"
+                    subtitle="Live discounts across the store — every price here is a real, active offer."
+                />
+            ) : null}
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
                 {/* Breadcrumb + heading — centered */}
                 <nav
@@ -531,7 +553,7 @@ function ProductsPageContent({
                         Home
                     </a>
                     <span aria-hidden="true">/</span>
-                    {activeCategoryName !== "all" ? (
+                    {activeCategoryName !== "all" || offerActive ? (
                         <>
                             <a
                                 href="/products"
@@ -541,7 +563,9 @@ function ProductsPageContent({
                             </a>
                             <span aria-hidden="true">/</span>
                             <span className="font-semibold text-foreground">
-                                {activeCategoryName}
+                                {offerActive && activeCategoryName === "all"
+                                    ? "Special Offers"
+                                    : activeCategoryName}
                             </span>
                         </>
                     ) : (
@@ -555,7 +579,7 @@ function ProductsPageContent({
                     animate="show"
                     className="mt-3 text-center text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
                 >
-                    All Products{" "}
+                    {offerActive ? "Special Offers" : "All Products"}{" "}
                     <span className="font-bold text-muted-foreground">
                         ({filtered.length})
                     </span>
@@ -582,7 +606,7 @@ function ProductsPageContent({
                         Showing {rangeStart}–{rangeEnd} of {filtered.length}{" "}
                         product{filtered.length === 1 ? "" : "s"}
                     </p>
-                    <div className="flex items-center gap-3 sm:justify-end">
+                    <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                         <SortMenu
                             value={params.sort}
                             onChange={(value) =>
@@ -817,16 +841,27 @@ function ProductsPageContent({
                             </div>
                         </div>
 
-                        {/* Stock */}
-                        <Label className="flex cursor-pointer items-center gap-2.5 text-[15px] text-foreground">
-                            <Checkbox
-                                checked={params.inStock === "true"}
-                                onCheckedChange={(checked: boolean) =>
-                                    setParams({ inStock: checked ? "true" : "", page: "1" })
-                                }
-                            />
-                            In Stock Only
-                        </Label>
+                        {/* Stock + Offers */}
+                        <div className="space-y-3">
+                            <Label className="flex cursor-pointer items-center gap-2.5 text-[15px] text-foreground">
+                                <Checkbox
+                                    checked={params.inStock === "true"}
+                                    onCheckedChange={(checked: boolean) =>
+                                        setParams({ inStock: checked ? "true" : "", page: "1" })
+                                    }
+                                />
+                                In Stock Only
+                            </Label>
+                            <Label className="flex cursor-pointer items-center gap-2.5 text-[15px] text-foreground">
+                                <Checkbox
+                                    checked={params.offer === "true"}
+                                    onCheckedChange={(checked: boolean) =>
+                                        setParams({ offer: checked ? "true" : "", page: "1" })
+                                    }
+                                />
+                                On Offer Only
+                            </Label>
+                        </div>
                     </div>
 
                     {/* Big charcoal clear button */}

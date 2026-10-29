@@ -6,6 +6,9 @@ import { Mail, ArrowRight, Check } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
 
+/** Same shape the auth/contact forms use for email validation. */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 /**
  * Newsletter strip, restyled for the Nittonova theme — every color flows
  * from the centralized tokens: cream panel on the page background, white
@@ -14,11 +17,27 @@ import { Button } from "../ui/button"
  */
 export function Newsletter({ heading }: { heading?: string }) {
   const [email, setEmail] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
+    const trimmed = email.trim()
+    if (!trimmed) {
+      setError("Please enter your email address.")
+      toast.error("Email required", {
+        description: "Enter your email address to subscribe.",
+      })
+      return
+    }
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setError("That email address doesn't look right — check it and try again.")
+      toast.error("Invalid email", {
+        description: "That email address doesn't look right — check it and try again.",
+      })
+      return
+    }
+    setError(null)
     setSubmitted(true)
     toast.success("Thanks for subscribing!")
     setEmail("")
@@ -43,14 +62,24 @@ export function Newsletter({ heading }: { heading?: string }) {
             onSubmit={handleSubmit}
             className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row"
           >
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 border-border bg-card"
-              required
-            />
+            <div className="min-w-0 flex-1">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (error) setError(null)
+                }}
+                aria-invalid={!!error}
+                className="border-border bg-card"
+              />
+              {error && (
+                <p className="mt-1.5 text-left text-xs font-medium text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
             <Button
               type="submit"
               variant="brand"

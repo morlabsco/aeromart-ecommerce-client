@@ -8,13 +8,12 @@ import { resolvePaymentOrder } from "@/components/public/payment/resolve-payment
 import { PageHero } from "@/components/shared/page-hero";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
-import type { Metadata } from "next";
+import { storefrontMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Payment Failed",
-};
+export const generateMetadata = () =>
+  storefrontMetadata({ title: "Payment Failed" });
 
 export default async function PaymentFailedPage({
   searchParams,

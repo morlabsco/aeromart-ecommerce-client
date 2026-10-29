@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { getAllProducts } from "@/lib/services/product";
 import { getAllCategories } from "@/lib/services/category";
 import { getSettings } from "@/lib/services/settings";
@@ -8,6 +7,7 @@ import { toStorefrontProduct } from "@/lib/utils/product-adapter";
 import { Categories } from "../../components/home/categories"
 import { CategoryShelves } from "../../components/home/category-shelves"
 import { FeaturedProducts } from "../../components/home/featured-products"
+import { SpecialOffers } from "../../components/home/special-offers"
 import { Testimonials } from "../../components/home/testimonials"
 import { Newsletter } from "../../components/home/newsletter"
 import { FeaturesBar } from "../../components/home/features-bar"
@@ -16,19 +16,9 @@ import { HomeSkeleton } from "@/components/home/home-skeleton"
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const result = await getSettings();
-  const settings = unwrapData(result);
-  const brand = settings?.brand.name || "Attor";
-  return {
-    title: `${brand} - Premium Collection`,
-    description: settings?.brand.description || "Discover curated products crafted for the modern individual.",
-    openGraph: {
-      title: `${brand}, Premium Collection`,
-      description: settings?.brand.description,
-    },
-  };
-}
+// Home metadata comes from the root layout's SEO defaults (Settings → SEO):
+// the plain store title (no "- Premium Collection" suffix), the SEO
+// description and the social image — nothing page-specific to declare.
 
 async function HomeData() {
   const [productsResult, categoriesResult, settingsResult] = await Promise.all([
@@ -53,6 +43,7 @@ async function HomeData() {
       <Banner slides={settings?.hero.slides ?? []} />
       <Categories categories={categories} />
       <FeaturedProducts products={products} />
+      <SpecialOffers products={products} />
       <CategoryShelves categories={categories} products={products} />
       <FeaturesBar />
       {settings && (

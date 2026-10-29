@@ -13,13 +13,12 @@ import { OrderSuccess } from "@/components/public/order/order-success";
 import { resolvePaymentOrder } from "@/components/public/payment/resolve-payment-order";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
-import type { Metadata } from "next";
+import { storefrontMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Payment Successful",
-};
+export const generateMetadata = () =>
+  storefrontMetadata({ title: "Payment Successful" });
 
 async function PaymentSuccessContent({
   tranId,

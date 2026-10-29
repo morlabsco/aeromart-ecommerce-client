@@ -7,13 +7,12 @@ import { trackOrder } from "@/lib/services/order"
 import { getSettings } from "@/lib/services/settings"
 import { unwrapData } from "@/lib/services/api-client"
 import { isErrorResult } from "@/lib/utils/result"
-import type { Metadata } from "next"
+import { storefrontMetadata } from "@/lib/metadata"
 
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: "Order Placed Successfully",
-}
+export const generateMetadata = () =>
+  storefrontMetadata({ title: "Order Placed Successfully" })
 
 /**
  * Post-checkout landing: /order/success?orderId=DEXXXXXX. The order is

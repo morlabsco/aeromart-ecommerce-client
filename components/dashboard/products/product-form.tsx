@@ -47,6 +47,11 @@ const productSchema = z.object({
         .string()
         .trim()
         .min(2, { message: "Product name must be at least 2 characters." }),
+    sku: z
+        .string()
+        .trim()
+        .max(40, { message: "SKU is too long." })
+        .optional(),
     description: z
         .string()
         .trim()
@@ -136,6 +141,7 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
             const formData = new FormData();
             const payload: Record<string, unknown> = {
                 name: values.name,
+                ...(values.sku ? { sku: values.sku } : {}),
                 description: values.description,
                 price: values.price,
                 weight: values.weight,
@@ -279,6 +285,26 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
                                         {errors.name.message}
                                     </p>
                                 )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="sku">SKU (optional)</Label>
+                                <Input
+                                    id="sku"
+                                    placeholder="Auto-generated, e.g. SMAR-7F3K9Q"
+                                    {...register("sku")}
+                                    aria-invalid={!!errors.sku}
+                                />
+                                {errors.sku && (
+                                    <p className="text-[11px] font-medium text-destructive">
+                                        {errors.sku.message}
+                                    </p>
+                                )}
+                                <p className="text-[11px] text-muted-foreground">
+                                    The product's stock code (variants get their own).
+                                    Leave empty and a unique one is generated — must
+                                    not already belong to another product.
+                                </p>
                             </div>
 
                             <div className="space-y-2">

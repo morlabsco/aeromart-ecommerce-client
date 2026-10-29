@@ -1,5 +1,6 @@
 import { ProductCard } from "./product-card"
 import { SectionHeader } from "./section-header"
+import { SectionRule } from "./section-rule"
 import type { Product } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +14,9 @@ interface ProductShelfProps {
   sectionClassName?: string
   /** Accessible label; defaults to "<title> products". */
   ariaLabel?: string
+  /** Renders the segmented color rule below the shelf — the home page's
+   *  visual separator between product sections. */
+  bottomRule?: boolean
 }
 
 /**
@@ -27,22 +31,26 @@ export function ProductShelf({
   viewAllHref,
   sectionClassName,
   ariaLabel,
+  bottomRule,
 }: ProductShelfProps) {
   if (!products || products.length === 0) return null
 
   return (
-    <section
-      aria-label={ariaLabel ?? `${title} products`}
-      className={cn("py-10 sm:py-12 lg:py-14", sectionClassName)}
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader title={title} viewAllHref={viewAllHref} />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+    <>
+      <section
+        aria-label={ariaLabel ?? `${title} products`}
+        className={cn("py-10 sm:py-12 lg:py-14", sectionClassName)}
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SectionHeader title={title} viewAllHref={viewAllHref} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+      {bottomRule && <SectionRule />}
+    </>
   )
 }

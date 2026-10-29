@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { getAllProducts } from "@/lib/services/product";
 import { getAllCategories } from "@/lib/services/category";
 import { getAllBrands } from "@/lib/services/brand";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { toStorefrontProduct } from "@/lib/utils/product-adapter";
+import { storefrontMetadata } from "@/lib/metadata";
 import Products from "../../../components/public/products/products";
 
 export const dynamic = "force-dynamic";
@@ -92,13 +92,10 @@ const ProductsPage = () => {
   );
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const settingsResult = await getSettings();
-  const brand = unwrapData(settingsResult)?.brand?.name ?? null;
-  return {
-    title: brand ? `All Products - ${brand}` : "All Products",
+export const generateMetadata = () =>
+  storefrontMetadata({
+    title: "All Products",
     description: "Browse our full collection of curated products.",
-  };
-}
+  });
 
 export default ProductsPage;

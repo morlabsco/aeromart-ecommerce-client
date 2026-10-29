@@ -254,7 +254,7 @@ export function SearchBox({ autoFocus, currency, onClose, className }: SearchBox
           aria-activedescendant={
             activeIndex >= 0 ? `${listId}-opt-${activeIndex}` : undefined
           }
-          className="h-full min-w-0 flex-1 border-0 bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
         />
         <button
           type="button"

@@ -167,7 +167,7 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
               onChange={(e) => setOrderId(e.target.value.toUpperCase())}
               placeholder="ENTER ORDER ID"
               aria-label="Order ID"
-              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-sm font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/70 focus:outline-none"
+              className="h-11 w-full rounded-full border-0 bg-transparent pl-11 pr-4 text-base font-bold tracking-widest text-header-nav-foreground placeholder:font-normal placeholder:tracking-normal placeholder:text-header-nav-foreground/70 focus:outline-none md:text-sm"
             />
           </div>
           <button
@@ -356,7 +356,7 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
               </h2>
 
               <div className="mt-7 overflow-x-auto pb-1">
-                <ol className="relative flex min-w-[560px] items-start">
+                <ol className="relative flex min-w-[400px] items-start sm:min-w-[560px]">
                   {/* One continuous track from the FIRST circle center to the
                       LAST circle center — the circles sit at 0 / 33 / 66 / 100%
                       of it (first flush left, middles centered, Delivered flush
@@ -462,9 +462,9 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
               )}
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
               {/* Items + delivery */}
-              <div className="space-y-5 lg:col-span-3">
+              <div className="min-w-0 space-y-5 lg:col-span-3">
                 <div
                   className={cn(entrance, "rounded-[1.75rem] bg-card p-6 shadow-sm sm:p-8")}
                   style={{ animationDelay: "180ms" }}
@@ -541,7 +541,7 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
               </div>
 
               {/* Receipt */}
-              <div className="lg:col-span-2">
+              <div className="min-w-0 lg:col-span-2">
                 <div
                   className={cn(entrance, "relative rounded-[1.75rem] bg-card p-6 shadow-sm sm:p-8")}
                   style={{ animationDelay: "360ms" }}

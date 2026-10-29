@@ -41,13 +41,16 @@ export function CategoryShelves({ categories, products }: CategoryShelvesProps) 
 
   return (
     <>
-      {shelves.map((shelf) => (
+      {shelves.map((shelf, index) => (
         <ProductShelf
           key={shelf.slug}
           title={shelf.name}
           products={shelf.shelfProducts}
           viewAllHref={`/products?category=${shelf.slug}`}
           ariaLabel={`${shelf.name} products`}
+          /* The color rule closes the whole products zone — only after the
+             LAST shelf, not between shelves. */
+          bottomRule={index === shelves.length - 1}
         />
       ))}
     </>

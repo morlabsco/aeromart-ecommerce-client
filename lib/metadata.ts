@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
+import type { Settings } from "@/lib/types/backend";
 
 const DASHBOARD_TITLES: Record<string, string> = {
     "/dashboard/admin": "Admin Overview",
@@ -11,6 +12,7 @@ const DASHBOARD_TITLES: Record<string, string> = {
     "/dashboard/admin/orders/[id]": "Order Details",
     "/dashboard/admin/products": "Products",
     "/dashboard/admin/products/all-products": "All Products",
+    "/dashboard/admin/products/offered-products": "Offered Products",
     "/dashboard/admin/products/create-product": "Create Product",
     "/dashboard/admin/products/update-product/[id]": "Update Product",
     "/dashboard/admin/products/[id]": "Product Details",
@@ -74,7 +76,9 @@ export async function dashboardMetadata(
     const brand = await getBrandName();
 
     return {
-        title: brand ? `${base} - ${brand}` : base,
+        // absolute — dashboard titles never compose through the storefront
+        // SEO titleTemplate.
+        title: { absolute: brand ? `${base} - ${brand}` : base },
         robots: { index: false, follow: false },
         ...extra,
     };
@@ -91,7 +95,104 @@ const SETTINGS_SECTION_TITLES: Record<string, string> = {
     contact: "Contact",
     about: "About",
     "limited-offer": "Limited Offer",
+    seo: "SEO",
 };
+
+/* ------------------------------------------------------------------ */
+/* Storefront SEO (Settings → SEO section)                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Resolves the social share image with the auto fallback chain:
+ * admin-uploaded SEO image → first hero slide that has artwork → brand logo.
+ */
+export function resolveSeoImage(
+    settings: Settings | null | undefined,
+): string | undefined {
+    return (
+        settings?.seo?.ogImage ||
+        settings?.hero?.slides?.find((slide) => slide.image)?.image ||
+        settings?.brand?.logo ||
+        undefined
+    );
+}
+
+/**
+ * Builds the storefront Metadata from the Settings → SEO section with
+ * graceful fallbacks (title → brand name, description → brand description,
+ * image → hero slide → logo). Used by the root layout (home defaults) and
+ * every public page via `storefrontMetadata({ title: "About Us" })` —
+ * sub-page titles compose through the admin's titleTemplate ("%s | Brand").
+ */
+export function buildSeoMetadata(
+    settings: Settings | null | undefined,
+    overrides?: { title?: string; description?: string },
+): Metadata {
+    const brandName = settings?.brand?.name || "Attor";
+    const seo = settings?.seo;
+
+    // Home title is the plain brand name unless the admin set one; the
+    // template only applies to sub-pages and must contain %s to be valid.
+    const homeTitle = seo?.title?.trim() || brandName;
+    const rawTemplate = seo?.titleTemplate?.trim() || "";
+    const template = rawTemplate.includes("%s") ? rawTemplate : "%s";
+
+    const description =
+        overrides?.description?.trim() ||
+        seo?.description?.trim() ||
+        settings?.brand?.description ||
+        "Discover curated products crafted for the modern individual.";
+
+    const keywords = seo?.keywords
+        ?.split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+
+    const image = resolveSeoImage(settings);
+    const pageTitle = overrides?.title?.trim() || homeTitle;
+    // A sub-page title composes through the template; the home/default
+    // title stays exactly what the admin set (no suffixes added).
+    const composedTitle = template.replace("%s", pageTitle);
+
+    return {
+        title: overrides?.title
+            ? { absolute: composedTitle }
+            : { default: homeTitle, template },
+        description,
+        ...(keywords?.length ? { keywords } : {}),
+        openGraph: {
+            title: overrides?.title ? composedTitle : homeTitle,
+            description,
+            ...(image ? { images: [image] } : {}),
+            type: "website",
+        },
+        twitter: {
+            card: image ? "summary_large_image" : "summary",
+            title: overrides?.title ? composedTitle : homeTitle,
+            description,
+            ...(image ? { images: [image] } : {}),
+        },
+        ...(seo?.noindex ? { robots: { index: false, follow: false } } : {}),
+    };
+}
+
+/**
+ * Storefront page metadata — loads the settings singleton and applies the
+ * SEO section. Pass a page title to brand it through the template
+ * (e.g. storefrontMetadata({ title: "About Us" }) → "About Us | AeroMart").
+ */
+export async function storefrontMetadata(overrides?: {
+    title?: string;
+    description?: string;
+}): Promise<Metadata> {
+    let settings: Settings | null | undefined;
+    try {
+        settings = unwrapData(await getSettings());
+    } catch {
+        settings = null;
+    }
+    return buildSeoMetadata(settings, overrides);
+}
 
 /**
  * Returns metadata for a route-based Settings section page. Titles follow the
@@ -108,7 +209,8 @@ export async function settingsSectionMetadata(
     const brand = await getBrandName();
 
     return {
-        title: brand ? `${base} - ${brand}` : base,
+        // absolute — never composed through the storefront titleTemplate.
+        title: { absolute: brand ? `${base} - ${brand}` : base },
         robots: { index: false, follow: false },
         ...extra,
     };

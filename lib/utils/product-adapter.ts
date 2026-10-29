@@ -40,6 +40,7 @@ export function toStorefrontProduct(
         id: product._id,
         title: product.name,
         slug: product.slug,
+        sku: product.sku,
         description: product.description,
         fullDescription: product.description,
         price: product.price,

@@ -31,6 +31,7 @@ import { getCouponByCode } from "@/lib/services/coupon"
 import { getSettings } from "../../../lib/services/settings"
 import { stripeInit } from "@/lib/services/payment"
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone"
+import { focusFirstInvalidField, notifyInvalidFields } from "@/lib/utils/form-feedback"
 import { formatCurrency, getOfferPrice } from "../../../lib/utils/currency"
 import type { CartItem } from "../../../lib/types"
 import type { Coupon, PaymentMethod, SettingsDeliveryOption } from "../../../lib/types/backend"
@@ -410,11 +411,33 @@ export default function Checkout() {
       errs.terms = "Please accept the Terms, Privacy & Refund Policy to continue"
     }
     setErrors(errs)
-    return Object.keys(errs).length === 0
+    return errs
   }
 
   const handlePlaceOrder = async () => {
-    if (!validate()) return
+    const errs = validate()
+    if (Object.keys(errs).length > 0) {
+      // Tell the user what's missing instead of failing silently — the
+      // fields carry their inline errors + aria-invalid; this names them
+      // and brings the first one into view.
+      notifyInvalidFields(
+        Object.keys(errs),
+        {
+          name: "Customer Name",
+          email: "Email",
+          phone: "Mobile Number",
+          address: "Address",
+          district: "District",
+          bkashSender: "bKash Sender Number",
+          bkashTrxId: "bKash Transaction ID",
+          bankRef: "NPSB Reference",
+          terms: "Policy agreement",
+        },
+        "place your order",
+      )
+      focusFirstInvalidField()
+      return
+    }
 
     // A variant product must always carry its concrete SKU.
     const missingSku = items.find(
@@ -589,7 +612,7 @@ export default function Checkout() {
 
   /* ── Order summary card (shared by both steps) ── */
   const summaryCard = (
-    <div className="sticky top-20 space-y-4 rounded-2xl bg-card p-6 shadow-sm md:top-[9.5rem] lg:top-[9.75rem]">
+    <div className="sticky top-20 space-y-4 rounded-2xl bg-card p-6 shadow-sm min-[860px]:top-[9.5rem] lg:top-[9.75rem]">
       <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground">
         Order Summary
       </h3>

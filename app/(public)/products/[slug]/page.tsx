@@ -6,6 +6,7 @@ import { getSession } from "@/lib/get-session";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { toStorefrontProduct } from "@/lib/utils/product-adapter";
+import { storefrontMetadata } from "@/lib/metadata";
 import ProductDetails from "../../../../components/public/products/[slug]/product-details";
 import { notFound } from "next/navigation";
 import type { Review } from "@/lib/types/backend";
@@ -124,20 +125,28 @@ export async function generateMetadata({
   const product = products.find((p) => p.slug === slug);
 
   if (!product) {
-    return { title: "Product Not Found" };
+    return storefrontMetadata({ title: "Product Not Found" });
   }
 
-  const title = product.brand
-    ? `Product Details - ${product.brand}`
-    : `Product Details - ${product.title}`;
-
+  // The PRODUCT NAME is the page title (composed through the SEO template,
+  // e.g. "Massage Gun LM-130 | AeroMart"); social shares carry the product
+  // image, falling back to the store's SEO image.
+  const description =
+    product.description?.slice(0, 160) ?? "Product details.";
+  const metadata = await storefrontMetadata({
+    title: product.title,
+    description,
+  });
+  const image = product.images?.[0];
   return {
-    title,
-    description: product.description?.slice(0, 160) ?? "Product details.",
+    ...metadata,
     openGraph: {
-      title,
-      description: product.description?.slice(0, 160),
-      images: product.images?.length ? [{ url: product.images[0] }] : [],
+      ...(metadata.openGraph ?? {}),
+      images: image ? [image] : metadata.openGraph?.images,
+    },
+    twitter: {
+      ...(metadata.twitter ?? {}),
+      images: image ? [image] : metadata.twitter?.images,
     },
   };
 }

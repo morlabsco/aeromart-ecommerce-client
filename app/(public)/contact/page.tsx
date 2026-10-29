@@ -1,17 +1,13 @@
-import type { Metadata } from "next";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
+import { storefrontMetadata } from "@/lib/metadata";
 import Contact from "../../../components/public/contact/contact";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const settingsResult = await getSettings();
-  const settings = unwrapData(settingsResult);
-  const brand = settings?.brand?.name ?? null;
-  return {
-    title: brand ? `Contact Us - ${brand}` : "Contact Us",
+export const generateMetadata = () =>
+  storefrontMetadata({
+    title: "Contact Us",
     description: "Get in touch with our team, we're here to help.",
-  };
-}
+  });
 
 const Page = async () => {
   const settingsResult = await getSettings();

@@ -70,6 +70,7 @@ export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetail
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
                         {product.slug}
+                        {product.sku ? ` · SKU: ${product.sku}` : ""}
                         {product.brand?.name
                             ? ` · ${product.brand.name}`
                             : ""}
