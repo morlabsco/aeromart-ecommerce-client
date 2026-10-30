@@ -52,8 +52,8 @@ Build each section from its **cropped** reference — full-page shots are for co
 
 | File | Section | Status |
 |---|---|---|
-| `nittonova-dashboard-page-large-device-overview.png` | Customer dashboard overview | ⬜ TODO |
-| `nittonova-dashboard-page-large-device-profile.png.png` | Customer dashboard profile page (note: file has a doubled `.png` extension) | ⬜ TODO |
+| `nittonova-dashboard-page-large-device-overview.png` | Dashboard v4 — shell + overview (sidebar, quick-view bar, stat cards, sales chart, recent activity) | ✅ DONE — 2026-10-30 (v4 foundation; user approved going with it) | Customer dashboard overview | ⬜ TODO |
+| `nittonova-dashboard-page-large-device-profile.png.png` | Dashboard v4 — profile page (summary card + account details + password) | ✅ DONE — 2026-10-30 | Customer dashboard profile page (note: file has a doubled `.png` extension) | ⬜ TODO |
 
 ## Auth & policy
 

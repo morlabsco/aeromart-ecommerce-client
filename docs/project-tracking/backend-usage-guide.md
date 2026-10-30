@@ -2298,6 +2298,70 @@ When sending these fields (e.g. `category` on product create), send the **plain 
 
 ---
 
+## 19. Newsletter Module
+
+Parent route: `/api/v1/newsletter`
+
+Captures the storefront subscribe form's emails. Kept deliberately minimal —
+one unique `email` (lowercase, trimmed) + timestamps; unsubscribing is a delete.
+
+Model fields: `email` (unique, lowercase, trim), timestamps.
+
+### 19.1 POST /api/v1/newsletter, Subscribe (public)
+
+Idempotent by design — subscribing an address that is already on the list
+returns **200-style success with `alreadySubscribed: true`** instead of an
+error, so the storefront form never punishes a double opt-in. Logs an
+activity entry on first subscribe.
+
+**Request:**
+```
+POST /api/v1/newsletter
+Content-Type: application/json
+
+{ "email": "test@example.com" }
+```
+
+**Response (201, new):**
+```json
+{
+  "success": true,
+  "message": "Thanks for subscribing!",
+  "data": { "_id": "…", "email": "test@example.com", "alreadySubscribed": false }
+}
+```
+
+**Response (already subscribed):** `"You are already subscribed — welcome back!"` with `alreadySubscribed: true`.
+**Error:** 400 validation for an invalid email.
+
+### 19.2 GET /api/v1/newsletter, List subscribers (admin)
+
+Protected, `admin`. Standard list query params (`searchTerm` matches `email`,
+plus `page`, `limit`, `sort`, `fields`).
+
+**Request:**
+```
+GET /api/v1/newsletter?searchTerm=gmail&limit=20&sort=-createdAt
+Authorization: Bearer <adminAccessToken>
+```
+
+**Response (200):** `{ success, message, meta: { page, limit, total, totalPage }, data: [ { _id, email, createdAt, updatedAt } ] }`
+
+### 19.3 DELETE /api/v1/newsletter/:subscriberId, Remove subscriber (admin)
+
+Protected, `admin`. Hard delete (the address can subscribe again any time).
+Logs a delete activity entry.
+
+**Request:**
+```
+DELETE /api/v1/newsletter/6ae383040a0b1567392ed380
+Authorization: Bearer <adminAccessToken>
+```
+
+**Response (200):** `{ success: true, message: "Subscriber removed successfully", data: { …removed doc } }`
+
+---
+
 ## Appendix, Complete endpoint summary
 
 | # | Method | Route | Auth | Multipart |

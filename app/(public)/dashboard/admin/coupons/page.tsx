@@ -8,8 +8,8 @@ import { getAllCoupons } from "@/lib/services/coupon";
 import { unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { CouponsTable } from "@/components/dashboard/coupons/coupons";
-import { CouponsSkeleton } from "@/components/dashboard/coupons/coupons-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ async function CouponsContent() {
 
 export default function CouponsPage() {
     return (
-        <Suspense fallback={<CouponsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <CouponsContent />
         </Suspense>
     );

@@ -8,8 +8,8 @@ import { getAllCategories } from "@/lib/services/category";
 import { unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { CategoriesTable } from "@/components/dashboard/categories/categories";
-import { CategoriesSkeleton } from "@/components/dashboard/categories/categories-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ async function CategoriesContent() {
 
 export default function CategoriesPage() {
     return (
-        <Suspense fallback={<CategoriesSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <CategoriesContent />
         </Suspense>
     );

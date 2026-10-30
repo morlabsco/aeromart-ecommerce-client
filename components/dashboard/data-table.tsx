@@ -188,9 +188,10 @@ export function DashboardDataTable<TData, TValue>({
                 </DropdownMenu>
             </div>
 
-            <div className="rounded-lg border overflow-hidden">
-                <Table>
-                    <TableHeader className="bg-muted/50">
+            <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+                <div className="overflow-x-auto">
+                <Table className="min-w-[720px]">
+                    <TableHeader className="bg-muted/40 [&_tr]:border-b [&_tr]:border-border/60 [&_th]:h-11 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted-foreground">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
@@ -248,6 +249,7 @@ export function DashboardDataTable<TData, TValue>({
                                     data-state={
                                         row.getIsSelected() && "selected"
                                     }
+                                    className="transition-colors hover:bg-muted/40"
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
@@ -265,55 +267,56 @@ export function DashboardDataTable<TData, TValue>({
                                     colSpan={columns.length}
                                     className="h-32 text-center text-muted-foreground"
                                 >
-                                    No results found.
+                                    No results found — try a different search.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
+                </div>
             </div>
 
-            <div className="flex items-center justify-between">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                    {table.getFilteredRowModel().rows.length} row
+                    {table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
+                    {table.getFilteredSelectedRowModel().rows.length > 0 &&
+                        ` · ${table.getFilteredSelectedRowModel().rows.length} selected`}
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
                     <div className="text-sm text-muted-foreground">
                         Page {table.getState().pagination.pageIndex + 1} of{" "}
-                        {table.getPageCount()}
+                        {Math.max(table.getPageCount(), 1)}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center overflow-hidden rounded-lg border border-border/60">
                         <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-none border-0 p-0 first:rounded-l-lg last:rounded-r-lg hover:bg-muted"
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
                             <ChevronsLeftIcon className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-none border-0 p-0 first:rounded-l-lg last:rounded-r-lg hover:bg-muted"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
                             <ChevronLeftIcon className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-none border-0 p-0 first:rounded-l-lg last:rounded-r-lg hover:bg-muted"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
                             <ChevronRightIcon className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                                table.setPageIndex(table.getPageCount() - 1)
-                            }
+                            variant="ghost"
+                            className="h-8 w-8 rounded-none border-0 p-0 first:rounded-l-lg last:rounded-r-lg hover:bg-muted"
+                            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >
                             <ChevronsRightIcon className="h-4 w-4" />

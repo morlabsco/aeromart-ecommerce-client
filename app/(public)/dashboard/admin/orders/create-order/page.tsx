@@ -8,8 +8,8 @@ import { getAllCoupons } from "@/lib/services/coupon";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapList, unwrapData } from "@/lib/services/api-client";
 import { CreateOrderForm } from "@/components/dashboard/orders/order-form";
-import { FormSkeleton } from "@/components/dashboard/shared/form-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +40,7 @@ async function CreateOrderContent() {
 
 export default function CreateOrderPage() {
     return (
-        <Suspense fallback={<FormSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <CreateOrderContent />
         </Suspense>
     );

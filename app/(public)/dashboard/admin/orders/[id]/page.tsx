@@ -5,9 +5,9 @@ import { Suspense } from "react";
 import { getOrderById } from "@/lib/services/order";
 import { isErrorResult } from "@/lib/utils/result";
 import { OrderDetails } from "@/components/dashboard/orders/order-details";
-import { OrderDetailsSkeleton } from "@/components/dashboard/orders/order-details-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function OrderDetailsPage({
 }) {
     const { id } = await params;
     return (
-        <Suspense fallback={<OrderDetailsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="detail" />}>
             <OrderDetailsContent orderId={id} />
         </Suspense>
     );

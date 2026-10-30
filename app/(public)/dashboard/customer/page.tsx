@@ -7,8 +7,8 @@ import { getMyProfile } from "@/lib/services/user";
 import { getMyOrders } from "@/lib/services/order";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
-import { CustomerOverview } from "@/components/dashboard/customer/overview";
-import { CustomerOverviewSkeleton } from "@/components/dashboard/customer/overview-skeleton";
+import { CustomerOverviewV4 } from "@/components/dashboard/v4/customer-overview";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ async function CustomerOverviewContent() {
         unwrapData(settingsResult)?.brand?.currency ?? "usd";
 
     return (
-        <CustomerOverview
+        <CustomerOverviewV4
             profile={profile}
             orders={orders}
             brandCurrency={brandCurrency}
@@ -46,7 +46,7 @@ async function CustomerOverviewContent() {
 
 export default function CustomerOverviewPage() {
     return (
-        <Suspense fallback={<CustomerOverviewSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <CustomerOverviewContent />
         </Suspense>
     );

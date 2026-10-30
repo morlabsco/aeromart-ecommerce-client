@@ -6,8 +6,8 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
 import { SettingsPageShell } from "@/components/dashboard/settings/settings-page-shell";
 import { BrandSettingsContent } from "@/components/dashboard/settings/brand-settings-content";
-import { SettingsSkeleton } from "@/components/dashboard/settings/settings-skeleton";
 import { settingsSectionMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ async function BrandContent() {
 
 export default function BrandSettingsPage() {
     return (
-        <Suspense fallback={<SettingsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <BrandContent />
         </Suspense>
     );

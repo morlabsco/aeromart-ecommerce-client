@@ -8,8 +8,8 @@ import { getAllOrders } from "@/lib/services/order";
 import { unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { OrdersTable } from "@/components/dashboard/orders/orders";
-import { OrdersSkeleton } from "@/components/dashboard/orders/orders-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ async function OrdersContent() {
 
 export default function OrdersPage() {
     return (
-        <Suspense fallback={<OrdersSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <OrdersContent />
         </Suspense>
     );

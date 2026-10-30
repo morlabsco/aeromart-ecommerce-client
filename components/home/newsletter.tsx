@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Mail, ArrowRight, Check } from "lucide-react"
+import { Loader2, Mail, ArrowRight, Check } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
+import { subscribeToNewsletter } from "@/lib/services/newsletter"
+import { isErrorResult } from "@/lib/utils/result"
 
 /** Same shape the auth/contact forms use for email validation. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -14,11 +16,14 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * from the centralized tokens: cream panel on the page background, white
  * icon circle with a brand-orange glyph, bold heading with the signature
  * orange dash, a standard field and an orange pill subscribe button.
+ * Subscribes through the real /newsletter endpoint (stored for the admin's
+ * Newsletter manager); re-subscribing is a friendly no-op.
  */
 export function Newsletter({ heading }: { heading?: string }) {
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [subscribing, setSubscribing] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,10 +43,23 @@ export function Newsletter({ heading }: { heading?: string }) {
       return
     }
     setError(null)
-    setSubmitted(true)
-    toast.success("Thanks for subscribing!")
-    setEmail("")
-    setTimeout(() => setSubmitted(false), 3000)
+    setSubscribing(true)
+    void subscribeToNewsletter(trimmed).then((result) => {
+      setSubscribing(false)
+      if (isErrorResult(result)) {
+        setError(result.message)
+        toast.error("Couldn't subscribe right now", {
+          description: result.message,
+        })
+        return
+      }
+      setSubmitted(true)
+      toast.success(result.data?.alreadySubscribed
+        ? "You're already on the list — welcome back!"
+        : "Thanks for subscribing!")
+      setEmail("")
+      setTimeout(() => setSubmitted(false), 3000)
+    })
   }
 
   return (
@@ -85,8 +103,13 @@ export function Newsletter({ heading }: { heading?: string }) {
               variant="brand"
               size="xl"
               className="w-full px-8 sm:w-auto"
+              disabled={subscribing}
             >
-              {submitted ? (
+              {subscribing ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Subscribing…
+                </>
+              ) : submitted ? (
                 <>
                   <Check className="size-4" /> Subscribed
                 </>

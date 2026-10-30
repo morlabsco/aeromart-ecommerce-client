@@ -6,8 +6,8 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
 import { SettingsPageShell } from "@/components/dashboard/settings/settings-page-shell";
 import { SectionEditorContent } from "@/components/dashboard/settings/section-editor-content";
-import { SettingsSkeleton } from "@/components/dashboard/settings/settings-skeleton";
 import { settingsSectionMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ async function HeroContent() {
 
 export default function HeroSettingsPage() {
     return (
-        <Suspense fallback={<SettingsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <HeroContent />
         </Suspense>
     );

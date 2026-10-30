@@ -8,21 +8,14 @@ import { getMeta } from "@/lib/services/meta";
 import { getAllOrders } from "@/lib/services/order";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
-import { formatCurrency } from "@/lib/utils/currency";
-import { DashboardOverview } from "@/components/dashboard/overview/overview";
-import { OverviewSkeleton } from "@/components/dashboard/overview/overview-skeleton";
+import { dashboardMetadata } from "@/lib/metadata";
+import { DashboardOverviewV4 } from "@/components/dashboard/v4/overview";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-    const settingsResult = await getSettings();
-    const brand =
-        unwrapData(settingsResult)?.brand?.name ?? null;
-    return {
-        title: brand ? `Admin Overview - ${brand}` : "Admin Overview",
-        description: "Dashboard overview with key metrics and charts.",
-        robots: { index: false, follow: false },
-    };
+    return dashboardMetadata("/dashboard/admin");
 }
 
 async function OverviewContent() {
@@ -38,7 +31,7 @@ async function OverviewContent() {
         unwrapData(settingsResult)?.brand?.currency ?? "usd";
 
     return (
-        <DashboardOverview
+        <DashboardOverviewV4
             meta={meta}
             orders={orders}
             brandCurrency={brandCurrency}
@@ -48,7 +41,7 @@ async function OverviewContent() {
 
 export default function Page() {
     return (
-        <Suspense fallback={<OverviewSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <OverviewContent />
         </Suspense>
     );

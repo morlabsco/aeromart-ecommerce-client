@@ -4,10 +4,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getMyProfile } from "@/lib/services/user";
 import { unwrapData } from "@/lib/services/api-client";
-import { ProfilePageContent } from "@/components/dashboard/settings/profile-content";
-import { ProfileSkeleton } from "@/components/dashboard/settings/profile-skeleton";
+import { DashboardProfileV4 } from "@/components/dashboard/v4/profile";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +25,12 @@ async function ProfileContent() {
         return <DetailError message={message} backHref="/dashboard/customer" />;
     }
 
-    return <ProfilePageContent profile={profile} />;
+    return <DashboardProfileV4 profile={profile} />;
 }
 
 export default function CustomerProfilePage() {
     return (
-        <Suspense fallback={<ProfileSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="detail" />}>
             <ProfileContent />
         </Suspense>
     );

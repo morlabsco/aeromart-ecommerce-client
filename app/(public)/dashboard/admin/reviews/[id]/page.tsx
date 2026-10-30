@@ -5,9 +5,9 @@ import { Suspense } from "react";
 import { getReviewById } from "@/lib/services/review";
 import { isErrorResult } from "@/lib/utils/result";
 import { ReviewDetails } from "@/components/dashboard/reviews/review-details";
-import { ReviewsSkeleton } from "@/components/dashboard/reviews/reviews-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function ReviewPage({
 }) {
     const { id } = await params;
     return (
-        <Suspense fallback={<ReviewsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="detail" />}>
             <ReviewContent reviewId={id} />
         </Suspense>
     );

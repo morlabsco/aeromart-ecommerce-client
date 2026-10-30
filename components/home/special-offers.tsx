@@ -32,7 +32,6 @@ export function SpecialOffers({ products: serverProducts }: SpecialOffersProps =
       products={offered}
       viewAllHref="/products?offer=true"
       ariaLabel="Special offers"
-      bottomRule
     />
   )
 }

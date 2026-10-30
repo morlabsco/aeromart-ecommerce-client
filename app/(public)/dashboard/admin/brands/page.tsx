@@ -8,8 +8,8 @@ import { getAllBrands } from "@/lib/services/brand";
 import { unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { BrandsTable } from "@/components/dashboard/brands/brands";
-import { BrandsSkeleton } from "@/components/dashboard/brands/brands-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ async function BrandsContent() {
 
 export default function BrandsPage() {
     return (
-        <Suspense fallback={<BrandsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <BrandsContent />
         </Suspense>
     );

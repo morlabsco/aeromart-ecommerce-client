@@ -32,6 +32,7 @@ const DASHBOARD_TITLES: Record<string, string> = {
     "/dashboard/admin/brands/update-brand/[id]": "Update Brand",
     "/dashboard/admin/brands/[id]": "Brand Details",
     "/dashboard/admin/coupons": "Coupons",
+    "/dashboard/admin/newsletter": "Newsletter",
     "/dashboard/admin/coupons/all-coupons": "All Coupons",
     "/dashboard/admin/coupons/create-coupon": "Create Coupon",
     "/dashboard/admin/coupons/update-coupon/[id]": "Update Coupon",

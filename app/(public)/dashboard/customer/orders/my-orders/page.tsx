@@ -7,9 +7,9 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { MyOrdersTable } from "@/components/dashboard/customer/my-orders";
-import { CustomerOrdersSkeleton } from "@/components/dashboard/customer/my-orders-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,7 @@ async function MyOrdersContent() {
 
 export default function MyOrdersPage() {
     return (
-        <Suspense fallback={<CustomerOrdersSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <MyOrdersContent />
         </Suspense>
     );

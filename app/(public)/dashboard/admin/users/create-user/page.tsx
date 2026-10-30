@@ -4,8 +4,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CreateUserForm } from "@/components/dashboard/users/user-form";
-import { FormSkeleton } from "@/components/dashboard/shared/form-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function CreateUserPage() {
     return (
-        <Suspense fallback={<FormSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <CreateUserForm />
         </Suspense>
     );

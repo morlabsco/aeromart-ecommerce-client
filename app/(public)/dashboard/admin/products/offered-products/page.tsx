@@ -7,8 +7,8 @@ import { getAllProducts } from "@/lib/services/product";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { OfferedProductsTable } from "@/components/dashboard/products/offered-products";
-import { ProductsSkeleton } from "@/components/dashboard/products/products-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ async function OfferedProductsContent() {
 
 export default function OfferedProductsPage() {
     return (
-        <Suspense fallback={<ProductsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <OfferedProductsContent />
         </Suspense>
     );

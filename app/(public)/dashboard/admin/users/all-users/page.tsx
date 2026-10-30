@@ -7,8 +7,8 @@ import { getAllUsers } from "@/lib/services/user";
 import { unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { UsersTable } from "@/components/dashboard/users/users";
-import { UsersSkeleton } from "@/components/dashboard/users/users-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ async function UsersContent() {
 
 export default function AllUsersPage() {
     return (
-        <Suspense fallback={<UsersSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="table" />}>
             <UsersContent />
         </Suspense>
     );

@@ -5,9 +5,9 @@ import { Suspense } from "react";
 import { getActivityById } from "@/lib/services/activity";
 import { isErrorResult } from "@/lib/utils/result";
 import { ActivityDetails } from "@/components/dashboard/activities/activity-details";
-import { ActivitiesSkeleton } from "@/components/dashboard/activities/activities-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function ActivityPage({
 }) {
     const { id } = await params;
     return (
-        <Suspense fallback={<ActivitiesSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="detail" />}>
             <ActivityContent activityId={id} />
         </Suspense>
     );

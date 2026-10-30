@@ -6,8 +6,8 @@ import { Suspense } from "react";
 import { getAllCategories } from "@/lib/services/category";
 import { unwrapList } from "@/lib/services/api-client";
 import { CreateCategoryForm } from "@/components/dashboard/categories/category-form";
-import { FormSkeleton } from "@/components/dashboard/shared/form-skeleton";
 import { dashboardMetadata } from "@/lib/metadata";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ async function CreateCategoryContent() {
 
 export default function CreateCategoryPage() {
     return (
-        <Suspense fallback={<FormSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <CreateCategoryContent />
         </Suspense>
     );

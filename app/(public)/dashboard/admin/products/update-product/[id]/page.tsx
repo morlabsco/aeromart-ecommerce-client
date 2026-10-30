@@ -10,8 +10,8 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { UpdateProductForm } from "@/components/dashboard/products/update-product-form";
-import { FormSkeleton } from "@/components/dashboard/shared/form-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +72,7 @@ export default async function UpdateProductPage({
 }) {
     const { id } = await params;
     return (
-        <Suspense fallback={<FormSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="form" />}>
             <UpdateProductContent productId={id} />
         </Suspense>
     );

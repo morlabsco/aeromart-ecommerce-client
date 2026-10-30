@@ -14,3 +14,4 @@ export * from "./modules/review";
 export * from "./modules/payment";
 export * from "./modules/settings";
 export * from "./modules/activity";
+export * from "./modules/newsletter";

@@ -7,8 +7,8 @@ import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { ProductDetails } from "@/components/dashboard/products/product-details";
-import { ProductDetailsSkeleton } from "@/components/dashboard/products/product-details-skeleton";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
+import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ export default async function ProductDetailsPage({
 }) {
     const { id } = await params;
     return (
-        <Suspense fallback={<ProductDetailsSkeleton />}>
+        <Suspense fallback={<PageSkeleton variant="detail" />}>
             <ProductDetailsContent productId={id} />
         </Suspense>
     );
