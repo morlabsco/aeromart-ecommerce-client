@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { updateSettingsSection } from "@/lib/services/settings";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Settings, SettingsSeo } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 /** OG/social image upload constraints (multer accepts any image type). */
 const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
@@ -113,7 +114,7 @@ export function SeoSettingsContent({ settings }: SeoSettingsContentProps) {
             );
             setSaving(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "SEO settings updated successfully");
@@ -329,7 +330,7 @@ export function SeoSettingsContent({ settings }: SeoSettingsContentProps) {
                                         });
                                         setSaving(false);
                                         if (isErrorResult(result)) {
-                                            toast.error(result.message);
+                                            toast.error(serverErrorMessage(result));
                                             return;
                                         }
                                         toast.success("Share image removed — auto fallback active");

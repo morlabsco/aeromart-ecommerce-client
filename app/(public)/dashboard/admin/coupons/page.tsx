@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function CouponsContent() {
-    const result = await getAllCoupons({ limit: 10, sort: "-createdAt" });
+    const result = await getAllCoupons({ limit: 200, sort: "-createdAt" });
     const coupons = unwrapList(result);
     const meta = isErrorResult(result) ? undefined : result.meta;
 

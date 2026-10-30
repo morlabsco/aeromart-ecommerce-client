@@ -13,6 +13,7 @@ import type { ApiMeta, Coupon } from "@/lib/types/backend";
 import { deleteCoupon, updateCoupon } from "@/lib/services/coupon";
 import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -186,7 +187,7 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
         startTransition(async () => {
             const result = await deleteCoupon(couponToDelete._id);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 setCouponToDelete(null);
                 return;
             }

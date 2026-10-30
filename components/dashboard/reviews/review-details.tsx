@@ -25,6 +25,7 @@ import { StarRating } from "@/components/shared/star-rating";
 import { deleteReview, toggleReviewFlag } from "@/lib/services/review";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Review } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 export function ReviewDetails({ review }: { review: Review }) {
     const router = useRouter();
@@ -43,7 +44,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                 review.isFlagged ? undefined : flagReason.trim()
             );
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(
@@ -58,7 +59,7 @@ export function ReviewDetails({ review }: { review: Review }) {
             const result = await deleteReview(review._id);
             setConfirmDelete(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Review deleted");

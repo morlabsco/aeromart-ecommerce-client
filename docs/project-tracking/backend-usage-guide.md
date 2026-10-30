@@ -755,11 +755,11 @@ Authorization: Bearer <adminAccessToken>
 
 Parent route: `/api/v1/order`
 
-Order model fields: `orderId` (auto-generated, unguessable `DEXXXXXXXX`, e.g. `DEY2H7ULPD`), `user` (ObjectId → User, or `null` for guest orders), `products[]` (`{product, quantity, unitPrice, variant?}`, `variant: { sku, attributes }` snapshot when a product variant was chosen), `coupon`, `totalAmount`, `offerDiscount` (savings from active product `offerPrice`s), `discount` (**coupon-only**), `totalDiscount` (`offerDiscount + discount`), `deliveryCharge`, `deliveryOptionName`, `finalAmount`, `currency`, `status`, `shippingAddress`, `recipientName`, `phoneNo`, `notes` (optional), `paymentMethod` (`COD` | `Online`), `paymentStatus` (`Pending` | `Paid` | `Failed`), `paymentProvider` (`stripe`/`sslcommerz`/`bkash`), gateway tracking fields (`stripeSessionId`, `sslSessionKey`, `transactionId`), FX fields (`fxRate`, `fxBaseCurrency`), timestamps.
+Order model fields: `orderId` (auto-generated, unguessable `AMXXXXXXXX`, e.g. `AMY2H7ULPD` — "AM" = AeroMart; the original `DE` prefix predates the rebrand), `user` (ObjectId → User, or `null` for guest orders), `products[]` (`{product, quantity, unitPrice, baseUnitPrice?, variant?}` — `unitPrice` is the CHARGED price (offer-adjusted), `baseUnitPrice` snapshots the pre-offer price so receipts can strike it through; it is absent on orders placed before 30/10/2026, fall back to `unitPrice`; `variant: { sku, attributes }` snapshot when a product variant was chosen), `coupon`, `totalAmount`, `offerDiscount` (savings from active product `offerPrice`s), `discount` (**coupon-only**), `totalDiscount` (`offerDiscount + discount`), `deliveryCharge`, `deliveryOptionName`, `finalAmount`, `currency`, `status`, `shippingAddress`, `recipientName`, `phoneNo`, `notes` (optional), `paymentMethod` (`COD` | `Online`), `paymentStatus` (`Pending` | `Paid` | `Failed`), `paymentProvider` (`stripe`/`sslcommerz`/`bkash`), gateway tracking fields (`stripeSessionId`, `sslSessionKey`, `transactionId`), FX fields (`fxRate`, `fxBaseCurrency`), timestamps.
 
-**All money fields are computed server-side**, the client never sends `totalAmount`, `discount`, `offerDiscount`, `totalDiscount`, `finalAmount`, `unitPrice`, or `deliveryCharge`. `deliveryCharge` is resolved from the chosen `deliveryOptionName` (brand settings). `currency` is inherited from the products (all products in an order must share the same currency, else 400).
+**All money fields are computed server-side**, the client never sends `totalAmount`, `discount`, `offerDiscount`, `totalDiscount`, `finalAmount`, `unitPrice`, or `deliveryCharge`. `deliveryCharge` is resolved from the chosen `deliveryOptionName` (brand settings). `currency` is the store's LIVE brand currency (settings singleton) — per-product currency stamps are legacy display data and are intentionally NOT compared (the old same-currency check used to reject valid mixed-catalog orders).
 
-**Pricing:** `totalAmount` is the subtotal after offer discounts (unit prices already reflect active `offerPrice`s). `discount` = coupon savings only. `offerDiscount` = the savings from active product offers vs base prices. `totalDiscount = offerDiscount + discount`. `finalAmount = totalAmount - totalDiscount + deliveryCharge`.
+**Pricing (fixed 30/10/2026 — the offer used to be subtracted TWICE):** `totalAmount` is the subtotal after offer discounts (unit prices already reflect active `offerPrice`s). `discount` = coupon savings only. `offerDiscount` = the savings from active product offers vs base prices. `totalDiscount = offerDiscount + discount` (display field). **`finalAmount = totalAmount - discount + deliveryCharge`** — the coupon only; subtracting `totalDiscount` would double-count the offer (the old formula over-discounted every order with an active offer). Receipts render: `base subtotal (= totalAmount + offerDiscount) − offerDiscount − coupon + delivery = finalAmount`.
 
 **Variants:** when a product `hasVariants: true`, the order line **must** include `variant: { sku }` (400 if missing). Price/stock come from that variant (`variant.price ?? product.price`, with `offerPrice` applied on top); stock decrement/restore targets the variant's stock (`variants.$.stock`) when a variant is chosen.
 
@@ -929,7 +929,9 @@ Content-Type: application/json
 
 ### 8.5 GET /api/v1/order/track-order/:orderId, Track order (public)
 
-Public, no auth. Looks up **only by the human-friendly `orderId`** (e.g. `DEY2H7ULPD`), the Mongo `_id` is not accepted. Returns delivery + payment tracking insights for a "track your order" page.
+Public, no auth. Looks up **only by the human-friendly `orderId`** (e.g. `AMY2H7ULPD`), the Mongo `_id` is not accepted. Returns delivery + payment tracking insights for a "track your order" page.
+
+> **Totals semantics (30/10/2026):** in this payload `totalAmount` is the subtotal BEFORE offer discounts (Σ `baseUnitPrice × qty`) and `postOfferSubtotal` is what the items actually cost after offers. Render receipts as `totalAmount − offerDiscount − discount + deliveryCharge = finalAmount`.
 
 **Request:**
 ```
@@ -950,6 +952,7 @@ GET /api/v1/order/track-order/DEY2H7ULPD
     "paymentProvider": "stripe",
     "currency": "usd",
     "totalAmount": 1599.98,
+    "postOfferSubtotal": 1599.98,
     "offerDiscount": 0,
     "discount": 0,
     "totalDiscount": 0,
@@ -960,8 +963,9 @@ GET /api/v1/order/track-order/DEY2H7ULPD
     "shippingAddress": "123 Main Street, Dhaka",
     "notes": "Please call before delivery",
     "placedBy": "John Doe",
+    "coupon": null,
     "products": [
-      { "productId": "664f1a2b...", "name": "Smartphone X", "image": "https://...", "quantity": 2, "unitPrice": 799.99, "total": 1599.98, "variant": { "sku": "SMAR-BLACK-M-7F3K9Q", "attributes": { "Color": "Black", "Size": "M" } } }
+      { "productId": "664f1a2b...", "name": "Smartphone X", "image": "https://...", "quantity": 2, "unitPrice": 799.99, "baseUnitPrice": 999.99, "total": 1599.98, "variant": { "sku": "SMAR-BLACK-M-7F3K9Q", "attributes": { "Color": "Black", "Size": "M" } } }
     ],
     "statusHistory": [
       { "status": "Pending", "at": "2026-07-15T10:00:00.000Z" },
@@ -1004,10 +1008,11 @@ Use `?by=transactionId` on the payment success page to fetch the invoice straigh
     "customer": { "name": "John Doe", "email": "customer@example.com", "phoneNo": "+1 (555) 123-4567", "address": "123 Main Street, Dhaka" },
     "recipient": { "name": "John Doe", "phoneNo": "+1 (555) 123-4567", "shippingAddress": "123 Main Street, Dhaka", "notes": "" },
     "payment": { "method": "Online", "provider": "stripe", "transactionId": "cs_test_abc123...", "status": "Paid" },
+    "coupon": null,
     "items": [
-      { "productId": "664f1a2b...", "name": "Smartphone X", "image": "https://...", "quantity": 2, "unitPrice": 799.99, "total": 1599.98, "variant": { "sku": "SMAR-BLACK-M-7F3K9Q", "attributes": { "Color": "Black", "Size": "M" } } }
+      { "productId": "664f1a2b...", "name": "Smartphone X", "image": "https://...", "quantity": 2, "unitPrice": 799.99, "baseUnitPrice": 999.99, "total": 1599.98, "variant": { "sku": "SMAR-BLACK-M-7F3K9Q", "attributes": { "Color": "Black", "Size": "M" } } }
     ],
-    "totals": { "subtotal": 1599.98, "offerDiscount": 0, "discount": 0, "totalDiscount": 0, "deliveryCharge": 50, "finalAmount": 1649.98 }
+    "totals": { "subtotal": 1999.98, "offerDiscount": 400, "discount": 0, "totalDiscount": 400, "deliveryCharge": 50, "finalAmount": 1649.98 }
   }
 }
 ```
@@ -1922,6 +1927,7 @@ The Settings module is a **single singleton document** (`_id: "singleton"`) that
   "about": { "story": "...", "mission": "...", "image": "/demo/clothing/about.jpg", "stats": [{ "label": "Founded", "value": "2020" }, { "label": "Collections", "value": "50+" }] },
   "limitedOffer": { "enabled": false, "badge": "Limited Time", "title": "Seasonal Sale", "subtitle": "Up to 30% off selected items", "ctaText": "Shop Now", "ctaLink": "/products", "image": "", "endsAt": "" },
   "seo": { "title": "", "titleTemplate": "", "description": "", "keywords": "", "ogImage": "", "noindex": false },
+  "policy": { "returnRefund": "" },
   "createdAt": "2026-01-01T00:00:00.000Z",
   "updatedAt": "2026-01-01T00:00:00.000Z"
 }
@@ -1977,7 +1983,22 @@ Only provided brand fields are updated (unprovided ones keep their value). `curr
 
 ### 15.3 PATCH /api/v1/settings/:section, Update one section (admin)
 
-Protected, `admin`. Sections: `theme`, `hero`, `testimonials`, `navbar`, `footer`, `contact`, `about`, `limitedOffer`, `seo`. **Multipart** (`data` JSON + optional `images` files for hero/testimonials/about/limitedOffer/seo; plain JSON for the rest). Each section has its own schema; unknown section → 400, invalid body → 400. Writes invalidate the cache. **Replacing/removing an image in hero/testimonials/about/limitedOffer/seo destroys the old file from Cloudinary** (best-effort, after the DB write).
+Protected, `admin`. Sections: `theme`, `hero`, `testimonials`, `navbar`, `footer`, `contact`, `about`, `limitedOffer`, `seo`, `policy`. **Multipart** (`data` JSON + optional `images` files for hero/testimonials/about/limitedOffer/seo; plain JSON for the rest). Each section has its own schema; unknown section → 400, invalid body → 400. Writes invalidate the cache. **Replacing/removing an image in hero/testimonials/about/limitedOffer/seo destroys the old file from Cloudinary** (best-effort, after the DB write).
+
+**Policy section notes:**
+- Shape: `{ returnRefund: string }` — rich HTML produced by the dashboard editor (TipTap), max 200,000 chars.
+- An EMPTY string means "render the built-in default Return & Refund page" (the typed builder in the app). Saved HTML overrides only the page BODY — the hero banner + contact panel stay.
+- The section is PRESERVED by preset/full/empty resets (it is absent from every reset payload, like `seo`); older singleton documents get `{ returnRefund: "" }` normalized on read.
+
+**Request (policy):**
+```
+PATCH /api/v1/settings/policy
+Authorization: Bearer <adminAccessToken>
+Content-Type: multipart/form-data
+
+Form fields:
+  data: {"returnRefund":"<h2>…</h2><p>…</p>"}
+```
 
 **Request (hero, plain JSON):**
 ```
@@ -2086,7 +2107,7 @@ The Activity module is the platform's **audit log**. Every important write acros
 
 ### 16.1 GET /api/v1/activity, Get all activities
 
-Protected, `admin`. Newest first.
+Protected, `admin`. Newest first. `performedBy` is **populated** on every read (`name`, `email`, `role`, `photoUrl`) so the audit UI can show WHO did it; `null` means the entry was recorded automatically (system — e.g. a payment callback) or the user account no longer exists.
 
 **Query params:** `searchTerm` (searches `module`, `type`, `message`, `reference`), `page`, `limit`, `sort`, `fields`, plus filters: `module`, `type`, `performedBy`, `reference`.
 
@@ -2110,7 +2131,13 @@ Authorization: Bearer <adminAccessToken>
       "message": "Order DE07D08M0001U was created",
       "referenceId": "666a1a2b3c4d5e6f7a8b9c0d",
       "reference": "DE07D08M0001U",
-      "performedBy": "664f1a2b3c4d5e6f7a8b9c0d",
+      "performedBy": {
+        "_id": "664f1a2b3c4d5e6f7a8b9c0d",
+        "name": "John Doe",
+        "email": "customer@example.com",
+        "role": "customer",
+        "photoUrl": null
+      },
       "metadata": { "finalAmount": 1649.98, "isGuest": false },
       "createdAt": "2026-08-07T10:00:00.000Z",
       "updatedAt": "2026-08-07T10:00:00.000Z"

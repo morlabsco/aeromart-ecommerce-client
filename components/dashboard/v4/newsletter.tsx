@@ -27,6 +27,7 @@ import {
 import { deleteSubscriber } from "@/lib/services/newsletter";
 import { isErrorResult } from "@/lib/utils/result";
 import type { NewsletterSubscriber } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 /* ---------------------------------------------------------------------------
  * Dashboard v4 — Newsletter manager. Every storefront subscription in one
@@ -138,7 +139,7 @@ export function NewsletterManager({
         startTransition(async () => {
             const result = await deleteSubscriber(removing._id);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 setRemoving(null);
                 return;
             }

@@ -8,6 +8,8 @@ export interface OrderProductItem {
   };
   quantity: number;
   unitPrice: number;
+  /** Pre-offer unit price snapshot; legacy orders may lack it (→ unitPrice). */
+  baseUnitPrice?: number;
   /** Present when the order line was placed with a specific product variant. */
   variant?: {
     sku: string;
@@ -35,6 +37,8 @@ export interface Order {
     _id: string;
     name: string;
     email: string;
+    /** Populated by the server (quick customer detail in tables). */
+    photoUrl?: string | null;
   } | null;
   products: OrderProductItem[];
   coupon: string | null;
@@ -80,7 +84,11 @@ export interface OrderTrackingProduct {
   name: string;
   image: string;
   quantity: number;
+  /** Charged unit price — ALREADY offer-adjusted. */
   unitPrice: number;
+  /** Pre-offer unit price snapshot (the struck-through "original"). Legacy
+   *  orders fall back to unitPrice (no strike shown). */
+  baseUnitPrice: number;
   total: number;
   /** Present when the order line was placed with a specific product variant. */
   variant?: {
@@ -102,7 +110,14 @@ export interface OrderTracking {
   paymentMethod: PaymentMethod;
   paymentProvider: PaymentProvider;
   currency: string;
+  /** Applied coupon code (null when none). */
+  coupon: string | null;
+  /** Subtotal BEFORE offer discounts (Σ base × qty) — the receipt's
+   *  "Subtotal" row. totalAmount − offerDiscount − discount + delivery =
+   *  finalAmount must always hold. */
   totalAmount: number;
+  /** Subtotal AFTER offer discounts (what was actually charged for items). */
+  postOfferSubtotal: number;
   /** Savings from active product offers vs base prices. */
   offerDiscount: number;
   /** Coupon savings only. */
@@ -149,7 +164,10 @@ export interface OrderInvoiceItem {
   name: string;
   image: string;
   quantity: number;
+  /** Charged unit price — ALREADY offer-adjusted. */
   unitPrice: number;
+  /** Pre-offer unit price snapshot (legacy orders fall back to unitPrice). */
+  baseUnitPrice: number;
   total: number;
   /** Present when the order line was placed with a specific product variant. */
   variant?: {
@@ -164,11 +182,14 @@ export interface OrderInvoice {
   status: OrderStatus;
   currency: string;
   issuedAt: string;
+  /** Applied coupon code (null when none). */
+  coupon: string | null;
   customer: OrderInvoiceCustomer;
   recipient: OrderInvoiceRecipient;
   payment: OrderInvoicePayment;
   items: OrderInvoiceItem[];
   totals: {
+    /** Subtotal BEFORE offer discounts (Σ base × qty). */
     subtotal: number;
     /** Savings from active product offers. */
     offerDiscount: number;

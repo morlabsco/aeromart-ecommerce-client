@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { createOrder } from "@/lib/services/order";
+import { DistrictCombobox } from "@/components/public/checkout/district-combobox";
+import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
+import { cn } from "@/lib/utils";
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone";
 import { formatCurrency, getOfferPrice } from "@/lib/utils/currency";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import type {
     Coupon,
     PaymentMethod,
@@ -74,6 +78,9 @@ export function CreateOrderForm({
     const [coupon, setCoupon] = useState("");
     const [couponMode, setCouponMode] = useState<"select" | "custom">("select");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+    const [layout, setLayout] = useState<FormLayout>("two");
+    const [district, setDistrict] = useState("");
+    const [pickerQuery, setPickerQuery] = useState("");
     const isCustomer = pathname.startsWith("/dashboard/customer");
 
     const {
@@ -146,14 +153,29 @@ export function CreateOrderForm({
         return product.stock;
     };
 
-    const addLine = () => {
-        const first = products[0];
-        if (!first) return;
+    /** Adds a product line from the picker (offers apply on display). */
+    const addLine = (product: Product) => {
         setLines((prev) => [
             ...prev,
-            { productId: first._id, quantity: 1, unitPrice: first.price },
+            { productId: product._id, quantity: 1, unitPrice: product.price },
         ]);
     };
+
+    /** Picker results — name, product SKU or any variant SKU match. */
+    const pickerResults = (() => {
+        const q = pickerQuery.trim().toLowerCase();
+        if (q.length < 2) return [];
+        return products
+            .filter(
+                (p) =>
+                    p.name.toLowerCase().includes(q) ||
+                    (p.sku ?? "").toLowerCase().includes(q) ||
+                    (p.variants ?? []).some((v) =>
+                        v.sku.toLowerCase().includes(q),
+                    ),
+            )
+            .slice(0, 8);
+    })();
 
     const updateLine = (index: number, updates: Partial<OrderLine>) => {
         setLines((prev) =>
@@ -280,12 +302,14 @@ export function CreateOrderForm({
                 recipientName: values.recipientName,
                 phoneNo: values.phoneNo,
                 notes: values.notes || undefined,
-                shippingAddress: values.shippingAddress,
+                shippingAddress: district
+                    ? `${values.shippingAddress}, ${district}`
+                    : values.shippingAddress,
                 paymentMethod,
             });
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 
@@ -296,6 +320,7 @@ export function CreateOrderForm({
             setCoupon("");
             setCouponMode("select");
             setPaymentMethod("COD");
+            setDistrict("");
             router.push(
                 isCustomer
                     ? "/dashboard/customer/orders/my-orders"
@@ -309,14 +334,23 @@ export function CreateOrderForm({
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">Create Order</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Place a new customer order
-                </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Create Order</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Place a new customer order
+                    </p>
+                </div>
+                <FormLayoutToggle value={layout} onChange={setLayout} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+                className={
+                    layout === "two"
+                        ? "grid grid-cols-1 items-start gap-6 lg:grid-cols-2"
+                        : "grid grid-cols-1 gap-6"
+                }
+            >
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">Order Items</CardTitle>
@@ -342,124 +376,106 @@ export function CreateOrderForm({
                                     key={index}
                                     className="space-y-3 rounded-md border p-3"
                                 >
-                                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                                        <div className="flex-1 space-y-2 min-w-0">
-                                            <Label>Product</Label>
-                                            <Select
-                                                value={line.productId}
-                                                onValueChange={(value) =>
-                                                    updateLine(index, {
-                                                        productId: String(
-                                                            value ?? ""
-                                                        ),
-                                                    })
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full cursor-pointer">
-                                                    <SelectValue placeholder="Select product">
-                                                        {(value) =>
-                                                            products.find(
-                                                                (p) =>
-                                                                    p._id ===
-                                                                    String(value)
-                                                            )?.name ??
-                                                            (value
-                                                                ? String(value)
-                                                                : null)
-                                                        }
-                                                    </SelectValue>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {products.length === 0 && (
-                                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                                            No products available
-                                                        </div>
-                                                    )}
-                                                    {products.map((p) => {
-                                                        const sale = getOfferPrice(
-                                                            p.price,
-                                                            p.offerPrice ??
-                                                                null
-                                                        );
-                                                        const hasOffer =
-                                                            sale !== null &&
-                                                            sale < p.price;
-                                                        return (
-                                                            <SelectItem
-                                                                key={p._id}
-                                                                value={p._id}
-                                                                label={p.name}
-                                                                className="cursor-pointer"
-                                                            >
-                                                                {p.name},{" "}
-                                                                {hasOffer ? (
-                                                                    <>
-                                                                        <span className="line-through text-muted-foreground">
-                                                                            {formatCurrency(
-                                                                                p.price,
-                                                                                p.currency ??
-                                                                                    brandCurrency
-                                                                            )}
-                                                                        </span>{" "}
-                                                                        {formatCurrency(
-                                                                            sale!,
-                                                                            p.currency ??
-                                                                                brandCurrency
-                                                                        )}
-                                                                    </>
-                                                                ) : (
-                                                                    formatCurrency(
-                                                                        p.price,
-                                                                        p.currency ??
-                                                                            brandCurrency
-                                                                    )
-                                                                )}
-                                                            </SelectItem>
-                                                        );
-                                                    })}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="w-full sm:w-24 space-y-2">
-                                            <Label htmlFor={`qty-${index}`}>
-                                                Qty (max {maxStock})
-                                            </Label>
-                                            <Input
-                                                id={`qty-${index}`}
-                                                type="number"
-                                                min="1"
-                                                max={Math.max(1, maxStock)}
-                                                value={line.quantity}
-                                                onChange={(e) =>
-                                                    changeQuantity(
-                                                        index,
-                                                        Number(e.target.value)
-                                                    )
-                                                }
-                                            />
-                                            {line.quantity >= maxStock && (
-                                                <p className="text-[10px] font-medium text-destructive">
-                                                    Max stock reached
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-sm font-bold text-muted-foreground">
+                                                {product?.imageUrls?.[0] ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={product.imageUrls[0].url}
+                                                        alt={product?.name ?? ""}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    (product?.name ?? "?").charAt(0)
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold">
+                                                    {product?.name ?? "Unknown product"}
                                                 </p>
-                                            )}
+                                                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                                                    {product?.sku && (
+                                                        <span className="font-mono">
+                                                            {product.sku}
+                                                        </span>
+                                                    )}
+                                                    <span>
+                                                        {isVariantProduct
+                                                            ? "Select a variant below"
+                                                            : `Stock: ${maxStock}`}
+                                                    </span>
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="text-right flex items-start justify-between gap-2 sm:block">
-                                            <div className="space-y-0.5">
-                                                <p className="text-sm font-medium tabular-nums pt-0.5">
+                                        <div className="flex items-end gap-3">
+                                            <div className="w-28 space-y-1.5">
+                                                <Label htmlFor={`qty-${index}`}>
+                                                    Qty
+                                                </Label>
+                                                <div className="flex h-9 items-center rounded-lg border border-input">
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Decrease quantity"
+                                                        onClick={() =>
+                                                            changeQuantity(
+                                                                index,
+                                                                line.quantity - 1,
+                                                            )
+                                                        }
+                                                        className="flex h-full w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                                                    >
+                                                        <Minus className="size-3.5" />
+                                                    </button>
+                                                    <input
+                                                        id={`qty-${index}`}
+                                                        type="number"
+                                                        min={1}
+                                                        max={Math.max(1, maxStock)}
+                                                        value={line.quantity}
+                                                        onChange={(e) =>
+                                                            changeQuantity(
+                                                                index,
+                                                                Number(e.target.value),
+                                                            )
+                                                        }
+                                                        aria-label={`Quantity for ${product?.name ?? "item"}`}
+                                                        className="h-full min-w-0 flex-1 border-x border-input bg-transparent text-center text-sm tabular-nums outline-none"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Increase quantity"
+                                                        onClick={() =>
+                                                            changeQuantity(
+                                                                index,
+                                                                line.quantity + 1,
+                                                            )
+                                                        }
+                                                        className="flex h-full w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                                                    >
+                                                        <Plus className="size-3.5" />
+                                                    </button>
+                                                </div>
+                                                {line.quantity >= maxStock && (
+                                                    <p className="text-[10px] font-medium text-destructive">
+                                                        Max stock reached
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 space-y-0.5 text-right">
+                                                <p className="text-sm font-semibold tabular-nums">
                                                     {formatCurrency(
-                                                        effectiveUnitPrice(
-                                                            line
-                                                        ) * line.quantity,
-                                                        brandCurrency
+                                                        effectiveUnitPrice(line) *
+                                                            line.quantity,
+                                                        brandCurrency,
                                                     )}
                                                 </p>
                                                 {hasOfferOnLine(line) && (
                                                     <p className="text-xs text-muted-foreground line-through">
                                                         {formatCurrency(
-                                                            baseUnitPrice(
-                                                                line
-                                                            ) * line.quantity,
-                                                            brandCurrency
+                                                            baseUnitPrice(line) *
+                                                                line.quantity,
+                                                            brandCurrency,
                                                         )}
                                                     </p>
                                                 )}
@@ -468,16 +484,15 @@ export function CreateOrderForm({
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                onClick={() =>
-                                                    removeLine(index)
-                                                }
+                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                                onClick={() => removeLine(index)}
                                                 aria-label="Remove item"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </div>
+
 
                                     {hasOfferOnLine(line) && (
                                         <div className="flex items-center gap-2 rounded-md bg-success/10 border border-success/30 px-3 py-1.5">
@@ -688,17 +703,118 @@ export function CreateOrderForm({
                             );
                         })}
 
-                        <Button type="button" variant="outline" onClick={addLine}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Product
-                        </Button>
+                        {/* ── Product picker: search by name, SKU or variant SKU ── */}
+                        <div className="space-y-2 rounded-lg border border-dashed p-3">
+                            <div className="relative">
+                                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    value={pickerQuery}
+                                    onChange={(e) => setPickerQuery(e.target.value)}
+                                    placeholder="Search products by name or SKU to add…"
+                                    className="pl-9"
+                                    aria-label="Search products to add"
+                                />
+                            </div>
+                            {pickerQuery.trim().length < 2 ? (
+                                <p className="px-1 py-1.5 text-xs text-muted-foreground">
+                                    Type at least 2 characters — matches product
+                                    names, product SKUs and variant SKUs.
+                                </p>
+                            ) : pickerResults.length === 0 ? (
+                                <p className="px-1 py-1.5 text-xs text-muted-foreground">
+                                    No products match “{pickerQuery}”.
+                                </p>
+                            ) : (
+                                <div className="max-h-64 space-y-1 overflow-y-auto">
+                                    {pickerResults.map((product) => {
+                                        const sale = getOfferPrice(
+                                            product.price,
+                                            product.offerPrice ?? null,
+                                        );
+                                        const hasOffer =
+                                            sale !== null && sale < product.price;
+                                        const outOfStock =
+                                            !product.hasVariants &&
+                                            product.stock <= 0;
+                                        return (
+                                            <button
+                                                key={product._id}
+                                                type="button"
+                                                disabled={outOfStock}
+                                                onClick={() => {
+                                                    addLine(product);
+                                                    setPickerQuery("");
+                                                }}
+                                                className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border/60 bg-card p-2.5 text-left transition-colors hover:border-brand/40 hover:bg-brand/5 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-xs font-bold text-muted-foreground">
+                                                    {product.imageUrls?.[0] ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img
+                                                            src={product.imageUrls[0].url}
+                                                            alt=""
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        product.name.charAt(0)
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {product.name}
+                                                    </p>
+                                                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                                                        {product.sku && (
+                                                            <span className="font-mono">
+                                                                {product.sku}
+                                                            </span>
+                                                        )}
+                                                        {hasOffer ? (
+                                                            <span>
+                                                                <span className="line-through">
+                                                                    {formatCurrency(product.price, brandCurrency)}
+                                                                </span>{" "}
+                                                                {formatCurrency(sale!, brandCurrency)}
+                                                            </span>
+                                                        ) : (
+                                                            <span>
+                                                                {formatCurrency(product.price, brandCurrency)}
+                                                            </span>
+                                                        )}
+                                                        <span>
+                                                            ·{" "}
+                                                            {product.hasVariants
+                                                                ? `${product.variants?.length ?? 0} variants`
+                                                                : outOfStock
+                                                                  ? "Out of stock"
+                                                                  : `${product.stock} in stock`}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                                <Plus className="h-4 w-4 shrink-0 text-brand" />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
 
                         <div className="flex items-center justify-between border-t pt-3">
-                            <span className="text-sm text-muted-foreground">Subtotal</span>
+                            <span className="text-sm text-muted-foreground">
+                                Subtotal (base)
+                            </span>
                             <span className="font-semibold tabular-nums">
-                                {formatCurrency(subtotal, brandCurrency)}
+                                {formatCurrency(baseSubtotal, brandCurrency)}
                             </span>
                         </div>
+                        {offerDiscount > 0 && (
+                            <div className="flex items-center justify-between text-sm text-success">
+                                <span>Offer discount</span>
+                                <span className="font-semibold tabular-nums">
+                                    −{formatCurrency(offerDiscount, brandCurrency)}
+                                </span>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -743,10 +859,12 @@ export function CreateOrderForm({
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="shippingAddress">Shipping Address</Label>
-                                <Textarea
+                                <Label htmlFor="shippingAddress">
+                                    Address (road / house / area)
+                                </Label>
+                                <Input
                                     id="shippingAddress"
-                                    placeholder="123 Main Street, Dhaka"
+                                    placeholder="Road No. 12, House 4, Ambarkhana"
                                     {...register("shippingAddress")}
                                     aria-invalid={!!errors.shippingAddress}
                                 />
@@ -755,6 +873,17 @@ export function CreateOrderForm({
                                         {errors.shippingAddress.message}
                                     </p>
                                 )}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>District</Label>
+                                <DistrictCombobox
+                                    value={district}
+                                    onChange={setDistrict}
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    Appended to the address so it reads
+                                    “Road…, District”.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -987,10 +1116,10 @@ export function CreateOrderForm({
                             <div className="space-y-1.5 rounded-md bg-muted/50 px-4 py-3">
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Subtotal
+                                        Subtotal (base)
                                     </span>
                                     <span className="font-medium tabular-nums">
-                                        {formatCurrency(subtotal, brandCurrency)}
+                                        {formatCurrency(baseSubtotal, brandCurrency)}
                                     </span>
                                 </div>
                                 {offerDiscount > 0 && (
@@ -1019,14 +1148,23 @@ export function CreateOrderForm({
                                         </span>
                                     </div>
                                 )}
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        Delivery
+                                    </span>
+                                    <span className="font-medium tabular-nums">
+                                        {deliveryCharge === 0
+                                            ? "Free"
+                                            : formatCurrency(deliveryCharge, brandCurrency)}
+                                    </span>
+                                </div>
                                 <div className="flex items-center justify-between border-t pt-1.5">
                                     <span className="text-sm font-medium">
-                                        Total (delivery + tax added
-                                        server-side)
+                                        Total
                                     </span>
                                     <span className="text-lg font-bold tabular-nums">
                                         {formatCurrency(
-                                            finalSubtotal,
+                                            finalSubtotal + deliveryCharge,
                                             brandCurrency
                                         )}
                                     </span>

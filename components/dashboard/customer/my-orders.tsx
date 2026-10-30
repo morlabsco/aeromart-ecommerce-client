@@ -92,7 +92,7 @@ export function MyOrdersTable({ orders, meta, brandCurrency = "usd" }: MyOrdersT
                 enableSorting: true,
                 cell: ({ row }) => (
                     <span className="font-medium tabular-nums">
-                        {formatCurrency(row.original.finalAmount, row.original.currency ?? currency)}
+                        {formatCurrency(row.original.finalAmount, currency ?? row.original.currency)}
                     </span>
                 ),
             },

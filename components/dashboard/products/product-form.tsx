@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/dashboard/shared/rich-text-editor";
 import { Switch } from "@/components/ui/switch";
 import {
     Select,
@@ -35,6 +35,8 @@ import type {
 import { FeatureListEditor } from "@/components/dashboard/shared/feature-list-editor";
 import { KeyValueListEditor } from "@/components/dashboard/shared/key-value-list-editor";
 import { ProductImageUploader } from "@/components/dashboard/shared/product-image-uploader";
+import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import {
     AttributesEditor,
     ColorOptionsEditor,
@@ -86,6 +88,7 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
     const router = useRouter();
     const [submitting, setSubmitting] = useState(false);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [layout, setLayout] = useState<FormLayout>("two");
     const [brandId, setBrandId] = useState<string>("");
     const [categoryId, setCategoryId] = useState<string>("");
     const [keyFeatures, setKeyFeatures] = useState<string[]>([]);
@@ -230,7 +233,7 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
             const result = await createProduct(formData);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 
@@ -255,14 +258,23 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">Create Product</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Add a new product to your catalog
-                </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Create Product</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Add a new product to your catalog
+                    </p>
+                </div>
+                <FormLayoutToggle value={layout} onChange={setLayout} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+                className={
+                    layout === "two"
+                        ? "grid grid-cols-1 items-start gap-6 lg:grid-cols-2"
+                        : "grid grid-cols-1 gap-6"
+                }
+            >
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">Product Details</CardTitle>
@@ -308,12 +320,16 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    placeholder="Short description of the product"
-                                    {...register("description")}
-                                    aria-invalid={!!errors.description}
+                                <Label>Description</Label>
+                                <RichTextEditor
+                                    value={watch("description") ?? ""}
+                                    onChange={(html) =>
+                                        setValue("description", html, {
+                                            shouldValidate: true,
+                                        })
+                                    }
+                                    placeholder="Write the product description — format text, add lists, tables, images…"
+                                    label="Product description"
                                 />
                                 {errors.description && (
                                     <p className="text-[11px] font-medium text-destructive">

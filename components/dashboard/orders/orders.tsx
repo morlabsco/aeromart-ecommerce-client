@@ -2,11 +2,13 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { DashboardDataTable } from "@/components/dashboard/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Eye, Pencil } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Eye, Pencil, UserRound } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ApiMeta, Order } from "@/lib/types/backend";
 import { updateOrderStatus } from "@/lib/services/order";
@@ -18,10 +20,116 @@ import { paymentMethodLabel } from "@/lib/utils/format";
 interface OrdersTableProps {
     orders: Order[];
     meta?: ApiMeta;
+    /** Live brand currency — every price renders in it (stale order stamps
+     * are only a fallback; the storefront follows the same rule). */
+    brandCurrency?: string;
 }
 
-export function OrdersTable({ orders, meta }: OrdersTableProps) {
+/** Customer cell — signed-in orders show the account (popover quick detail),
+ * guest orders show the delivery recipient. */
+function CustomerCell({ order }: { order: Order }) {
+    const user = order.user;
+    const name = user?.name || order.recipientName || "Guest";
+    const sub = user?.email || order.phoneNo || "";
+    const initials = (name || "G")
+        .split(" ")
+        .map((part) => part[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+    return (
+        <Popover>
+            <PopoverTrigger
+                render={
+                    <button
+                        type="button"
+                        className="flex min-w-0 max-w-[220px] cursor-pointer items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                        aria-label={`Customer: ${name}`}
+                    />
+                }
+            >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-extrabold text-brand">
+                    {user?.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={user.photoUrl} alt="" className="size-7 rounded-full object-cover" />
+                    ) : (
+                        initials
+                    )}
+                </span>
+                <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{name}</span>
+                    {sub && (
+                        <span className="block truncate text-xs text-muted-foreground">
+                            {sub}
+                        </span>
+                    )}
+                </span>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-0">
+                <div className="flex items-center gap-3 border-b border-border/60 p-3.5">
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-xs font-extrabold text-brand">
+                        {user?.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={user.photoUrl} alt="" className="size-10 rounded-full object-cover" />
+                        ) : (
+                            initials
+                        )}
+                    </span>
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-foreground">{name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {user ? (user.email || "No email") : "Guest checkout"}
+                        </p>
+                    </div>
+                </div>
+                <dl className="space-y-2 p-3.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">Type</dt>
+                        <dd>
+                            <Badge variant="neutral">{user ? "Registered" : "Guest"}</Badge>
+                        </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="shrink-0 text-muted-foreground">Recipient</dt>
+                        <dd className="min-w-0 truncate text-right font-medium">
+                            {order.recipientName || "—"}
+                        </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="shrink-0 text-muted-foreground">Phone</dt>
+                        <dd className="min-w-0 truncate text-right font-medium">
+                            {order.phoneNo || "—"}
+                        </dd>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                        <dt className="shrink-0 text-muted-foreground">Address</dt>
+                        <dd className="min-w-0 text-right text-xs leading-relaxed text-muted-foreground">
+                            {order.shippingAddress || "—"}
+                        </dd>
+                    </div>
+                </dl>
+                {user && (
+                    <div className="border-t border-border/60 p-3.5">
+                        <Button
+                            variant="brandOutline"
+                            size="sm"
+                            className="w-full"
+                            render={<Link href={`/dashboard/admin/users/${user._id}`} />}
+                        >
+                            View Customer Profile
+                        </Button>
+                    </div>
+                )}
+            </PopoverContent>
+        </Popover>
+    );
+}
+
+export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTableProps) {
     const router = useRouter();
+    const currency = brandCurrency;
     const totalRevenue = orders.reduce((sum, o) => sum + o.finalAmount, 0);
     const pendingOrders = orders.filter((o) => o.status === "Pending").length;
     const paidOrders = orders.filter((o) => o.paymentStatus === "Paid").length;
@@ -36,11 +144,11 @@ export function OrdersTable({ orders, meta }: OrdersTableProps) {
         },
         {
             label: "Revenue",
-            value: formatCurrency(totalRevenue, orders[0]?.currency),
+            value: formatCurrency(totalRevenue, currency),
             icon: DollarSign,
             trend: `Avg ${formatCurrency(
                 orders.length > 0 ? totalRevenue / orders.length : 0,
-                orders[0]?.currency
+                currency
             )}/order`,
             up: true,
         },
@@ -73,15 +181,12 @@ export function OrdersTable({ orders, meta }: OrdersTableProps) {
                 ),
             },
             {
-                accessorKey: "user",
+                id: "customer",
+                accessorFn: (row) =>
+                    `${row.user?.name ?? ""} ${row.user?.email ?? ""} ${row.recipientName ?? ""}`.toLowerCase(),
                 header: "Customer",
                 enableSorting: true,
-                cell: ({ row }) => (
-                    <div>
-                        <p className="text-sm font-medium">{row.original.user?.name ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground">{row.original.user?.email}</p>
-                    </div>
-                ),
+                cell: ({ row }) => <CustomerCell order={row.original} />,
             },
             {
                 accessorKey: "finalAmount",
@@ -89,7 +194,7 @@ export function OrdersTable({ orders, meta }: OrdersTableProps) {
                 enableSorting: true,
                 cell: ({ row }) => (
                     <span className="font-medium tabular-nums">
-                        {formatCurrency(row.original.finalAmount, row.original.currency)}
+                        {formatCurrency(row.original.finalAmount, currency)}
                     </span>
                 ),
             },
@@ -224,8 +329,8 @@ export function OrdersTable({ orders, meta }: OrdersTableProps) {
             <DashboardDataTable
                 columns={columns}
                 data={orders}
-                searchKey="user"
-                searchPlaceholder="Search by customer..."
+                searchKey="customer"
+                searchPlaceholder="Search by customer, phone or recipient..."
                 pageSize={8}
             />
         </div>

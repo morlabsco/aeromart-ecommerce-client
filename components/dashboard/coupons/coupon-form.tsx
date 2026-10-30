@@ -25,6 +25,7 @@ import {
 import { createCoupon } from "@/lib/services/coupon";
 import { parseLocalDate, toLocalDateString } from "@/lib/utils/date";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const couponSchema = z
     .object({
@@ -93,7 +94,7 @@ export function CreateCouponForm() {
             });
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

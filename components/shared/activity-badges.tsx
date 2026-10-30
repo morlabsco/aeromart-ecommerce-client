@@ -37,6 +37,15 @@ export function ActivityModuleBadge({ module }: { module: string }) {
     )
 }
 
+/** Single-word Proper Case ("create" → "Create") so badges read consistently. */
+function properCase(value: string): string {
+    return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
 export function ActivityTypeBadge({ type }: { type: string }) {
-    return <Badge variant={TYPE_VARIANT[type] ?? "neutral"}>{type}</Badge>
+    return (
+        <Badge variant={TYPE_VARIANT[type] ?? "neutral"}>
+            {properCase(type)}
+        </Badge>
+    )
 }

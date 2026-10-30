@@ -55,7 +55,7 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
 
 export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetailsProps) {
     const [selectedImage, setSelectedImage] = useState(0);
-    const currency = product.currency ?? brandCurrency;
+    const currency = brandCurrency ?? product.currency;
 
     const images = [...(product.imageUrls ?? [])]
         .sort((a, b) => a.order - b.order)

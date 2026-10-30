@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { updateBrand } from "@/lib/services/brand";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Brand } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const brandSchema = z.object({
     name: z.string().min(1, { message: "Brand name is required." }),
@@ -58,7 +59,7 @@ export function UpdateBrandForm({ brand }: UpdateBrandFormProps) {
             const result = await updateBrand(brand._id, formData);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

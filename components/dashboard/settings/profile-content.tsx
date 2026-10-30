@@ -23,8 +23,9 @@ import { updateUserProfile } from "@/lib/services/user";
 import { changePassword } from "@/lib/services/auth";
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone";
 import { isErrorResult } from "@/lib/utils/result";
-import { DateOfBirthInput } from "./date-of-birth-input";
+import { DateOfBirthInput } from "@/components/dashboard/shared/date-of-birth-input";
 import type { User } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const profileSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -119,7 +120,7 @@ export function ProfilePageContent({ profile }: ProfilePageContentProps) {
 
                 const result = await updateUserProfile(formData);
                 if (isErrorResult(result)) {
-                    toast.error(result.message);
+                    toast.error(serverErrorMessage(result));
                     return;
                 }
                 toast.success(result.message ?? "Profile updated successfully");
@@ -136,7 +137,7 @@ export function ProfilePageContent({ profile }: ProfilePageContentProps) {
                     newPassword: values.newPassword,
                 });
                 if (isErrorResult(result)) {
-                    toast.error(result.message);
+                    toast.error(serverErrorMessage(result));
                     return;
                 }
                 toast.success(result.message ?? "Password changed successfully");

@@ -493,8 +493,22 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                               {product.variant.sku}
                             </p>
                           )}
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {product.quantity} × {formatCurrency(product.unitPrice, money)}
+                          <p className="mt-0.5 flex flex-wrap items-baseline gap-1 text-xs text-muted-foreground">
+                            <span>
+                              {product.quantity} ×{" "}
+                              {product.baseUnitPrice > product.unitPrice ? (
+                                <>
+                                  <span className="mr-1 line-through decoration-muted-foreground/60">
+                                    {formatCurrency(product.baseUnitPrice, money)}
+                                  </span>
+                                  <span className="font-semibold text-foreground">
+                                    {formatCurrency(product.unitPrice, money)}
+                                  </span>
+                                </>
+                              ) : (
+                                formatCurrency(product.unitPrice, money)
+                              )}
+                            </span>
                           </p>
                         </div>
                         <p className="text-sm font-semibold tabular-nums text-foreground">

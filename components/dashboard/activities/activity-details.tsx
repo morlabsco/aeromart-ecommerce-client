@@ -23,6 +23,7 @@ import { clearSingleActivity } from "@/lib/services/activity";
 import { isErrorResult } from "@/lib/utils/result";
 import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 import type { Activity, ActivityModule, ActivityType } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 interface ActivityDetailsProps {
     activity: Activity;
@@ -38,7 +39,7 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
             const result = await clearSingleActivity(activity._id);
             setConfirmClear(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Activity cleared");
@@ -101,18 +102,80 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
                             </p>
                         </div>
                         <div className="rounded-lg border p-4">
-                            <p className="text-xs text-muted-foreground">Performed By</p>
-                            <p className="text-sm font-medium mt-1">
-                                {activity.performedBy || "—"}
-                            </p>
-                        </div>
-                        <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Recorded At</p>
                             <p className="text-sm font-medium mt-1">
                                 {new Date(activity.createdAt).toLocaleString()}
                             </p>
                         </div>
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* ── Who did it — populated performer details ── */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Performed By</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {activity.performedBy ? (
+                        <div className="flex flex-wrap items-center gap-4">
+                            {activity.performedBy.photoUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={activity.performedBy.photoUrl}
+                                    alt={activity.performedBy.name || "User"}
+                                    className="size-12 shrink-0 rounded-full object-cover"
+                                />
+                            ) : (
+                                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand/10 text-sm font-extrabold text-brand">
+                                    {(activity.performedBy.name || activity.performedBy.email || "U")
+                                        .split(" ")
+                                        .map((p) => p[0])
+                                        .filter(Boolean)
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase()}
+                                </span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-sm font-bold text-foreground">
+                                        {activity.performedBy.name || "Unnamed user"}
+                                    </p>
+                                    <Badge variant="neutral">
+                                        {(activity.performedBy.role || "unknown")
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                            (activity.performedBy.role || "").slice(1)}
+                                    </Badge>
+                                </div>
+                                <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                                    {activity.performedBy.email || "No email on file"}
+                                </p>
+                                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                                    User ID: {activity.performedBy._id}
+                                </p>
+                            </div>
+                            <Button
+                                variant="brandOutline"
+                                render={
+                                    <Link
+                                        href={`/dashboard/admin/users/${activity.performedBy._id}`}
+                                    />
+                                }
+                            >
+                                View User Profile
+                            </Button>
+                        </div>
+                    ) : (
+                        <p className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-extrabold">
+                                SYS
+                            </span>
+                            System — recorded automatically by the backend, no user
+                            account was involved.
+                        </p>
+                    )}
                 </CardContent>
             </Card>
 

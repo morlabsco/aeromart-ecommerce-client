@@ -23,6 +23,7 @@ import {
 import { updateCategory } from "@/lib/services/category";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Category } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const categorySchema = z.object({
     name: z.string().min(1, { message: "Category name is required." }),
@@ -81,7 +82,7 @@ export function UpdateCategoryForm({ category, categories }: UpdateCategoryFormP
             const result = await updateCategory(category._id, formData);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

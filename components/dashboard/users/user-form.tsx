@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/services/user";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const userSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -46,7 +47,7 @@ export function CreateUserForm() {
             });
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

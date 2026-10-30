@@ -13,6 +13,15 @@ export type ActivityModule =
 
 export type ActivityType = "create" | "update" | "delete" | "status" | "preset";
 
+/** Who performed an activity — populated server-side (null = automated/system). */
+export interface ActivityPerformer {
+  _id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  photoUrl?: string | null;
+}
+
 export interface Activity {
   _id: string;
   module: ActivityModule;
@@ -20,7 +29,7 @@ export interface Activity {
   message: string;
   referenceId: string;
   reference: string;
-  performedBy: string;
+  performedBy: ActivityPerformer | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;

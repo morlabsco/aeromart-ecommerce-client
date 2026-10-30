@@ -16,8 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { changePassword } from "@/lib/services/auth";
+import {
+    DateOfBirthInput,
+    getDateOfBirthError,
+} from "@/components/dashboard/shared/date-of-birth-input";
 import { updateUserProfile } from "@/lib/services/user";
-import { notifyInvalidFields } from "@/lib/utils/form-feedback";
+import { notifyInvalidFields, serverErrorMessage} from "@/lib/utils/form-feedback";
 import { isErrorResult } from "@/lib/utils/result";
 import type { User } from "@/lib/types/backend";
 
@@ -72,8 +76,14 @@ export function DashboardProfileV4({ profile }: { profile: User }) {
         if (!name.trim()) errs.name = "Name is required";
         if (phone && !/^[\d+\-\s()]{6,20}$/.test(phone.trim()))
             errs.phone = "Enter a valid phone number";
+        const dobError = getDateOfBirthError(dateOfBirth);
+        if (dobError) errs.dateOfBirth = "Birthday";
         if (Object.keys(errs).length) {
-            notifyInvalidFields(Object.keys(errs), { name: "Name", phone: "Phone" }, "save your profile");
+            notifyInvalidFields(
+                Object.keys(errs),
+                { name: "Name", phone: "Phone", dateOfBirth: "Birthday" },
+                "save your profile",
+            );
             return;
         }
 
@@ -94,7 +104,7 @@ export function DashboardProfileV4({ profile }: { profile: User }) {
             const result = await updateUserProfile(formData);
             setSavingProfile(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Profile updated successfully");
@@ -131,7 +141,7 @@ export function DashboardProfileV4({ profile }: { profile: User }) {
             });
             setSavingPassword(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Password changed successfully");
@@ -313,11 +323,10 @@ export function DashboardProfileV4({ profile }: { profile: User }) {
                             <Label htmlFor="profile-dob" className="flex items-center gap-1.5">
                                 <CalendarDays className="size-3.5" /> Birthday
                             </Label>
-                            <Input
+                            <DateOfBirthInput
                                 id="profile-dob"
-                                type="date"
                                 value={dateOfBirth}
-                                onChange={(e) => setDateOfBirth(e.target.value)}
+                                onChange={setDateOfBirth}
                             />
                         </div>
                         <div className="space-y-1.5">

@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function UsersContent() {
-    const result = await getAllUsers({ limit: 10, sort: "-createdAt" });
+    const result = await getAllUsers({ limit: 200, sort: "-createdAt" });
     const users = unwrapList(result);
     const meta = isErrorResult(result) ? undefined : result.meta;
 

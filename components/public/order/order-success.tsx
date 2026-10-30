@@ -183,8 +183,22 @@ export function OrderSummaryCard({
                     .join(" · ")}
                 </p>
               )}
-              <p className="mt-0.5 text-[13px] text-muted-foreground">
-                {item.quantity} × {formatCurrency(item.unitPrice, money)}
+              <p className="mt-0.5 flex flex-wrap items-baseline gap-1.5 text-[13px] text-muted-foreground">
+                <span>
+                  {item.quantity} ×{" "}
+                  {item.baseUnitPrice > item.unitPrice ? (
+                    <>
+                      <span className="mr-1 line-through decoration-muted-foreground/60">
+                        {formatCurrency(item.baseUnitPrice, money)}
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {formatCurrency(item.unitPrice, money)}
+                      </span>
+                    </>
+                  ) : (
+                    formatCurrency(item.unitPrice, money)
+                  )}
+                </span>
               </p>
             </div>
             <span className="text-[15px] font-bold tabular-nums text-foreground">
@@ -194,7 +208,8 @@ export function OrderSummaryCard({
         ))}
       </ul>
 
-      {/* Totals */}
+      {/* Totals — subtotal is BEFORE offer discounts, so the math reads:
+          subtotal − offer − coupon + delivery = total (never double-subtracts). */}
       <div className="mt-6 space-y-2.5 border-t border-border pt-4 text-[15px]">
         <div className="flex justify-between text-muted-foreground">
           <span>Subtotal</span>
@@ -202,11 +217,19 @@ export function OrderSummaryCard({
             {formatCurrency(order.totalAmount, money)}
           </span>
         </div>
-        {order.totalDiscount > 0 && (
+        {order.offerDiscount > 0 && (
           <div className="flex justify-between text-success">
-            <span>Discount</span>
+            <span>Offer Discount</span>
             <span className="tabular-nums">
-              −{formatCurrency(order.totalDiscount, money)}
+              −{formatCurrency(order.offerDiscount, money)}
+            </span>
+          </div>
+        )}
+        {order.discount > 0 && (
+          <div className="flex justify-between text-success">
+            <span>Coupon Discount{order.coupon ? ` (${order.coupon})` : ""}</span>
+            <span className="tabular-nums">
+              −{formatCurrency(order.discount, money)}
             </span>
           </div>
         )}

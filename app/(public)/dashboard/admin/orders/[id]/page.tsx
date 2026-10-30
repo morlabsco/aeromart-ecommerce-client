@@ -3,6 +3,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getOrderById } from "@/lib/services/order";
+import { getSettings } from "@/lib/services/settings";
+import { unwrapData } from "@/lib/services/api-client";
 import { isErrorResult } from "@/lib/utils/result";
 import { OrderDetails } from "@/components/dashboard/orders/order-details";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
@@ -16,12 +18,16 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function OrderDetailsContent({ orderId }: { orderId: string }) {
-    const result = await getOrderById(orderId);
+    const [result, settingsResult] = await Promise.all([
+        getOrderById(orderId),
+        getSettings(),
+    ]);
     if (isErrorResult(result) || !result.data) {
         const message = isErrorResult(result) ? result.message : "Order not found!";
         return <DetailError message={message} backHref="/dashboard/admin/orders" />;
     }
-    return <OrderDetails order={result.data} />;
+    const brandCurrency = unwrapData(settingsResult)?.brand?.currency ?? "usd";
+    return <OrderDetails order={result.data} brandCurrency={brandCurrency} />;
 }
 
 export default async function OrderDetailsPage({

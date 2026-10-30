@@ -23,7 +23,12 @@ export function invoiceToTracking(
     paymentMethod: invoice.payment.method,
     paymentProvider: invoice.payment.provider ?? null,
     currency: invoice.currency,
+    coupon: invoice.coupon,
+    // Both payloads expose the subtotal BEFORE offer discounts (receipts
+    // show: subtotal − offer − coupon + delivery = total).
     totalAmount: invoice.totals.subtotal,
+    postOfferSubtotal:
+      invoice.totals.subtotal - invoice.totals.offerDiscount,
     offerDiscount: invoice.totals.offerDiscount,
     discount: invoice.totals.discount,
     totalDiscount: invoice.totals.totalDiscount,

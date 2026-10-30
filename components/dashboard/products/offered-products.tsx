@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardDataTable } from "@/components/dashboard/data-table";
@@ -40,6 +41,7 @@ import {
     TimerOff,
     Trash2,
     TrendingUp,
+    Zap,
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -50,6 +52,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { getOfferStatus, offerSaleInfo } from "@/lib/utils/offer";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Product, ProductOfferPrice } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 /** Offer lifecycle → Badge variant + label. */
 const STATUS_BADGE: Record<
@@ -147,7 +150,7 @@ export function OfferedProductsTable({
             const result = await updateProductOffer(product._id, offer);
             setSaving(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(
@@ -221,12 +224,12 @@ export function OfferedProductsTable({
                                 <p className="truncate text-xs text-muted-foreground">
                                     {formatCurrency(
                                         row.original.price,
-                                        row.original.currency ?? currency,
+                                        currency ?? row.original.currency,
                                     )}
                                     {info
                                         ? ` → ${formatCurrency(
                                               info.salePrice,
-                                              row.original.currency ?? currency,
+                                              currency ?? row.original.currency,
                                           )} (−${info.percent}%)`
                                         : ""}
                                 </p>
@@ -246,7 +249,7 @@ export function OfferedProductsTable({
                             <Tag className="h-3 w-3" />
                             {offer.type === "percentage"
                                 ? `${offer.value}% off`
-                                : `${formatCurrency(offer.value, row.original.currency ?? currency)} off`}
+                                : `${formatCurrency(offer.value, currency ?? row.original.currency)} off`}
                         </Badge>
                     );
                 },
@@ -368,17 +371,28 @@ export function OfferedProductsTable({
                         need to open each product.
                     </p>
                 </div>
-                <Button
-                    onClick={() => {
-                        setAdding(true);
-                        setSearchTerm("");
-                        setResults([]);
-                        setPicked(null);
-                        setNewOffer(null);
-                    }}
-                >
-                    <Plus className="h-4 w-4" /> Add Offer
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setAdding(true);
+                            setSearchTerm("");
+                            setResults([]);
+                            setPicked(null);
+                            setNewOffer(null);
+                        }}
+                    >
+                        <Zap className="h-4 w-4" /> Quick Add Offer
+                    </Button>
+                    <Button
+                        variant="brand"
+                        render={
+                            <Link href="/dashboard/admin/products/offered-products/add" />
+                        }
+                    >
+                        <Plus className="h-4 w-4" /> Add Offer
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -470,9 +484,9 @@ export function OfferedProductsTable({
                     }
                 }}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Add an offer</DialogTitle>
+                        <DialogTitle>Quick add an offer</DialogTitle>
                         <DialogDescription>
                             Search your catalog, pick a product and set its
                             discount.
@@ -492,7 +506,7 @@ export function OfferedProductsTable({
                                     aria-label="Search products"
                                 />
                             </div>
-                            <div className="max-h-72 space-y-1 overflow-y-auto">
+                            <div className="max-h-64 space-y-1 overflow-y-auto">
                                 {searching && (
                                     <p className="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground">
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -546,7 +560,7 @@ export function OfferedProductsTable({
                                             <p className="text-xs text-muted-foreground">
                                                 {formatCurrency(
                                                     product.price,
-                                                    product.currency ?? currency,
+                                                    currency ?? product.currency,
                                                 )}
                                                 {product.offerPrice
                                                     ? " · already has an offer (editing it)"
@@ -567,7 +581,7 @@ export function OfferedProductsTable({
                                     <p className="text-xs text-muted-foreground">
                                         {formatCurrency(
                                             picked.price,
-                                            picked.currency ?? currency,
+                                            currency ?? picked.currency,
                                         )}
                                     </p>
                                 </div>

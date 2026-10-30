@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function ReviewsContent() {
-    const result = await getAllReviews({ limit: 20, sort: "-createdAt" });
+    const result = await getAllReviews({ limit: 200, sort: "-createdAt" });
     if (result instanceof Error) {
         return <DetailError message={result.message} backHref="/dashboard/admin" />;
     }

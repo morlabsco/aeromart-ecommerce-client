@@ -17,6 +17,7 @@ import {
 import { updateOrderStatus } from "@/lib/services/order";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Order, OrderStatus } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const STATUS_OPTIONS: OrderStatus[] = [
     "Pending",
@@ -42,7 +43,7 @@ export function UpdateOrderForm({ order }: UpdateOrderFormProps) {
             const result = await updateOrderStatus(order._id, status);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

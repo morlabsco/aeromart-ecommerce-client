@@ -13,6 +13,7 @@ import type { ApiMeta, Brand } from "@/lib/types/backend";
 import { deleteBrand, toggleBrandStatus } from "@/lib/services/brand";
 import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,7 +70,7 @@ export function BrandsTable({ brands, meta }: BrandsTableProps) {
         startTransition(async () => {
             const result = await deleteBrand(brandToDelete._id);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 setBrandToDelete(null);
                 return;
             }

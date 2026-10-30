@@ -188,6 +188,13 @@ const styles = StyleSheet.create({
     tdText: {
         fontSize: 9.5,
     },
+    /** Struck-through pre-offer price above the charged unit price. */
+    priceStrike: {
+        fontSize: 8,
+        color: "#a1a1aa",
+        textDecoration: "line-through",
+        marginBottom: 1,
+    },
     tdName: {
         fontSize: 9.5,
         fontWeight: "bold",
@@ -407,9 +414,25 @@ export function InvoiceDocument({ invoice, brand, currency }: InvoiceDocumentPro
                                 <Text style={[styles.tdText, styles.colQty]}>
                                     {item.quantity}
                                 </Text>
-                                <Text style={[styles.tdText, styles.colPrice]}>
-                                    {formatPdfMoney(item.unitPrice, money)}
-                                </Text>
+                                <View style={styles.colPrice}>
+                                    {(item.baseUnitPrice ?? item.unitPrice) >
+                                        item.unitPrice && (
+                                        <Text
+                                            style={[
+                                                styles.tdText,
+                                                styles.priceStrike,
+                                            ]}
+                                        >
+                                            {formatPdfMoney(
+                                                item.baseUnitPrice,
+                                                money,
+                                            )}
+                                        </Text>
+                                    )}
+                                    <Text style={styles.tdText}>
+                                        {formatPdfMoney(item.unitPrice, money)}
+                                    </Text>
+                                </View>
                                 <Text style={[styles.tdText, styles.colTotal]}>
                                     {formatPdfMoney(item.total, money)}
                                 </Text>
@@ -448,18 +471,6 @@ export function InvoiceDocument({ invoice, brand, currency }: InvoiceDocumentPro
                                 -
                                 {formatPdfMoney(
                                     invoice.totals.discount,
-                                    money,
-                                )}
-                            </Text>
-                        </View>
-                    )}
-                    {invoice.totals?.totalDiscount > 0 && (
-                        <View style={[styles.totalRow, styles.totalRowMuted]}>
-                            <Text>Total Discount</Text>
-                            <Text>
-                                -
-                                {formatPdfMoney(
-                                    invoice.totals.totalDiscount,
                                     money,
                                 )}
                             </Text>

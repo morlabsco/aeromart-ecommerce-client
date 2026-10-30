@@ -19,6 +19,7 @@ import type {
     SettingsSectionKey,
 } from "@/lib/types/backend";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 interface SectionEditorContentProps {
     settings: Settings;
@@ -40,7 +41,7 @@ export function SectionEditorContent({
         startTransition(async () => {
             const result = await updateSettingsSection(section, payload, images);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Settings updated successfully");

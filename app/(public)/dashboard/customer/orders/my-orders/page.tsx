@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 async function MyOrdersContent() {
     const [result, settingsResult] = await Promise.all([
-        getMyOrders({ limit: 20, sort: "-createdAt" }),
+        getMyOrders({ limit: 200, sort: "-createdAt" }),
         getSettings(),
     ]);
     if (isErrorResult(result)) {

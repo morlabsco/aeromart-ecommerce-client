@@ -34,10 +34,125 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { DateRange } from "react-day-picker";
-import type { ApiMeta, Activity, ActivityModule, ActivityType } from "@/lib/types/backend";
+import type { ApiMeta, Activity, ActivityModule, ActivityType, ActivityPerformer } from "@/lib/types/backend";
 import { clearActivities, clearSingleActivity } from "@/lib/services/activity";
 import { isErrorResult } from "@/lib/utils/result";
 import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
+import Link from "next/link";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
+
+/** Proper-cased role for chips ("admin" → "Admin"). */
+function roleLabel(role?: string) {
+    if (!role) return "Unknown role";
+    return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+/** Table cell: the performer as an avatar chip; tapping opens a quick-detail
+ * popover (name, email, role, user id) — no page hop needed. */
+function PerformerCell({ performer }: { performer: ActivityPerformer | null }) {
+    if (!performer) {
+        return (
+            <span
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground"
+                title="Recorded automatically — no user account involved"
+            >
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-extrabold text-muted-foreground">
+                    SYS
+                </span>
+                System
+            </span>
+        );
+    }
+
+    const name = performer.name || performer.email || "Unknown user";
+    const initials = name
+        .split(" ")
+        .map((p) => p[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+    return (
+        <Popover>
+            <PopoverTrigger
+                render={
+                    <button
+                        type="button"
+                        className="flex cursor-pointer items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                        aria-label={`Who: ${name}`}
+                    />
+                }
+            >
+                {performer.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={performer.photoUrl}
+                        alt=""
+                        className="size-6 shrink-0 rounded-full object-cover"
+                    />
+                ) : (
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[9px] font-extrabold text-brand">
+                        {initials}
+                    </span>
+                )}
+                <span className="max-w-[140px] truncate text-sm font-medium text-foreground">
+                    {name}
+                </span>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-0">
+                <div className="flex items-center gap-3 border-b border-border/60 p-3.5">
+                    {performer.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={performer.photoUrl}
+                            alt=""
+                            className="size-10 shrink-0 rounded-full object-cover"
+                        />
+                    ) : (
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-extrabold text-brand">
+                            {initials}
+                        </span>
+                    )}
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-foreground">
+                            {performer.name || "Unnamed user"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {performer.email || "No email"}
+                        </p>
+                    </div>
+                </div>
+                <dl className="space-y-2 p-3.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">Role</dt>
+                        <dd>
+                            <Badge variant="neutral">{roleLabel(performer.role)}</Badge>
+                        </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <dt className="text-muted-foreground">User ID</dt>
+                        <dd className="max-w-[150px] truncate font-mono text-xs text-muted-foreground">
+                            {performer._id}
+                        </dd>
+                    </div>
+                </dl>
+                <div className="border-t border-border/60 p-3.5">
+                    <Button
+                        variant="brandOutline"
+                        size="sm"
+                        className="w-full"
+                        render={
+                            <Link href={`/dashboard/admin/users/${performer._id}`} />
+                        }
+                    >
+                        View User Profile
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
 
 interface ActivitiesTableProps {
     activities: Activity[];
@@ -123,6 +238,14 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                 ),
             },
             {
+                accessorKey: "performedBy",
+                header: "Performed By",
+                enableSorting: false,
+                cell: ({ row }) => (
+                    <PerformerCell performer={row.original.performedBy} />
+                ),
+            },
+            {
                 accessorKey: "reference",
                 header: "Reference",
                 enableSorting: true,
@@ -178,7 +301,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
             const result = await clearSingleActivity(confirmSingle._id);
             setConfirmSingle(null);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Activity cleared");
@@ -202,7 +325,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
             setRangeOpen(false);
             setRange(undefined);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(
@@ -221,7 +344,7 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
             setRangeOpen(false);
             setRange(undefined);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(

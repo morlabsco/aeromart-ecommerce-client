@@ -647,8 +647,15 @@ export default function Checkout() {
                 × {item.quantity}
               </p>
             </div>
-            <span className="text-xs font-bold tabular-nums text-foreground">
-              {formatCurrency(lineUnitPrice(item) * item.quantity, currency)}
+            <span className="flex flex-col items-end gap-0.5">
+              {lineBasePrice(item) > lineUnitPrice(item) && (
+                <span className="text-[11px] tabular-nums text-muted-foreground line-through decoration-muted-foreground/60">
+                  {formatCurrency(lineBasePrice(item) * item.quantity, currency)}
+                </span>
+              )}
+              <span className="text-xs font-bold tabular-nums text-foreground">
+                {formatCurrency(lineUnitPrice(item) * item.quantity, currency)}
+              </span>
             </span>
           </div>
         ))}
@@ -656,7 +663,11 @@ export default function Checkout() {
       <div className="space-y-2 border-t border-border pt-4 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Subtotal ({itemCount()} items)</span>
-          <span className="tabular-nums">{formatCurrency(subtotal(), currency)}</span>
+          {/* Base prices (before offers) — the offer line below is the actual
+              deduction; subtotal() alone is already offer-adjusted. */}
+          <span className="tabular-nums">
+            {formatCurrency(subtotal() + offerDiscount, currency)}
+          </span>
         </div>
         {offerDiscount > 0 && (
           <div className="flex justify-between text-success">

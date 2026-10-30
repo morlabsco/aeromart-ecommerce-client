@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { createBrand } from "@/lib/services/brand";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const brandSchema = z.object({
     name: z.string().min(1, { message: "Brand name is required." }),
@@ -55,7 +56,7 @@ export function CreateBrandForm() {
             const result = await createBrand(formData);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

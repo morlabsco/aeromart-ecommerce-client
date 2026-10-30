@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { DashboardSidebar } from "./sidebar";
 import { DashboardTopbar } from "./topbar";
 import { cn } from "@/lib/utils";
-import type { SettingsBrand } from "@/lib/types/backend";
 
 /* ---------------------------------------------------------------------------
  * Dashboard v4 shell — Nittonova dashboard reference (cropped):
@@ -18,9 +17,11 @@ import type { SettingsBrand } from "@/lib/types/backend";
  *     └────────────┘  └──────────────────────────────────┘
  *
  * Two SEPARATE rounded panels with a gap between them; the quick-view bar
- * (breadcrumb + title + bell + avatar) sits on top of the RIGHT section
- * only. Below lg the sidebar becomes an off-canvas drawer behind the
- * quick-view bar's hamburger.
+ * (title + bell + avatar) sits on top of the RIGHT section only. Below lg
+ * the sidebar becomes an off-canvas drawer behind the quick-view bar's
+ * hamburger. On desktop the sidebar collapses to an icon rail (state kept
+ * in localStorage; the content pages title themselves, so the quick-view
+ * bar carries a single static "Dashboard" title).
  * ------------------------------------------------------------------------- */
 
 interface DashboardUser {
@@ -32,13 +33,53 @@ interface DashboardUser {
 
 interface DashboardShellProps {
     user: DashboardUser | null;
-    brand: SettingsBrand | null;
     children: React.ReactNode;
 }
 
-export function DashboardShell({ user, brand, children }: DashboardShellProps) {
+const COLLAPSE_STORAGE_KEY = "aeromart:dashboard-sidebar-collapsed";
+
+/** lg-and-up (where the sidebar is a static panel, not the drawer). */
+function useIsDesktop() {
+    const [isDesktop, setIsDesktop] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia("(min-width: 1024px)");
+        const update = () => setIsDesktop(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+    return isDesktop;
+}
+
+export function DashboardShell({ user, children }: DashboardShellProps) {
     const pathname = usePathname();
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    const isDesktop = useIsDesktop();
+
+    // Restore the collapse preference, then persist every change. The rail
+    // only ever applies to the static desktop panel — the mobile drawer
+    // always renders expanded.
+    useEffect(() => {
+        try {
+            setCollapsed(
+                window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1",
+            );
+        } catch {
+            // private mode etc. — collapse just isn't persisted
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(
+                COLLAPSE_STORAGE_KEY,
+                collapsed ? "1" : "0",
+            );
+        } catch {
+            // ignore
+        }
+    }, [collapsed]);
 
     // Close the drawer whenever the route changes (a nav tap closes it).
     useEffect(() => {
@@ -55,20 +96,25 @@ export function DashboardShell({ user, brand, children }: DashboardShellProps) {
     }, [drawerOpen]);
 
     const isCustomer = user?.role === "customer";
-    const title = titleForPath(pathname, isCustomer);
+    const railMode = collapsed && isDesktop;
 
     return (
         <div className="flex min-h-[640px] flex-col gap-5 lg:flex-row lg:gap-6">
             {/* ── Left: charcoal sidebar panel (static on lg, drawer below) ── */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0",
+                    "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:transition-[width]",
+                    railMode ? "lg:w-[4.75rem]" : "lg:w-64",
                     drawerOpen ? "translate-x-0" : "-translate-x-full",
                 )}
             >
                 {/* rounded panel shell on lg; full-bleed drawer on mobile */}
                 <div className="h-full overflow-hidden rounded-none shadow-xl lg:rounded-2xl">
-                    <DashboardSidebar user={user} brand={brand} />
+                    <DashboardSidebar
+                        user={user}
+                        collapsed={railMode}
+                        onToggleCollapse={() => setCollapsed((c) => !c)}
+                    />
                 </div>
             </aside>
 
@@ -85,7 +131,7 @@ export function DashboardShell({ user, brand, children }: DashboardShellProps) {
             {/* ── Right section: quick-view bar + content canvas ── */}
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
                 <DashboardTopbar
-                    title={title}
+                    title={isCustomer ? "My Account" : "Dashboard"}
                     user={user}
                     onOpenSidebar={() => setDrawerOpen(true)}
                 />
@@ -95,33 +141,4 @@ export function DashboardShell({ user, brand, children }: DashboardShellProps) {
             </div>
         </div>
     );
-}
-
-/* Page titles for the quick-view bar — the active route in human words
- * (falls back to "Dashboard" / "My Account"). */
-const TITLES: { prefix: string; label: string }[] = [
-    { prefix: "/dashboard/admin/products/offered-products", label: "Offered Products" },
-    { prefix: "/dashboard/admin/products", label: "Products" },
-    { prefix: "/dashboard/admin/orders", label: "Orders" },
-    { prefix: "/dashboard/admin/users", label: "Users" },
-    { prefix: "/dashboard/admin/categories", label: "Categories" },
-    { prefix: "/dashboard/admin/brands", label: "Brands" },
-    { prefix: "/dashboard/admin/coupons", label: "Coupons" },
-    { prefix: "/dashboard/admin/newsletter", label: "Newsletter" },
-    { prefix: "/dashboard/admin/reviews", label: "Reviews" },
-    { prefix: "/dashboard/admin/activities", label: "Activities" },
-    { prefix: "/dashboard/admin/settings", label: "Settings" },
-    { prefix: "/dashboard/admin/profile", label: "Profile" },
-    { prefix: "/dashboard/customer/orders", label: "My Orders" },
-    { prefix: "/dashboard/customer/reviews", label: "My Reviews" },
-    { prefix: "/dashboard/customer/profile", label: "Profile" },
-];
-
-function titleForPath(pathname: string, isCustomer: boolean): string {
-    for (const entry of TITLES) {
-        if (pathname === entry.prefix || pathname.startsWith(`${entry.prefix}/`)) {
-            return entry.label;
-        }
-    }
-    return isCustomer ? "My Account" : "Dashboard";
 }

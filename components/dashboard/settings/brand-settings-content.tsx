@@ -21,6 +21,7 @@ import { updateBrandSettings } from "@/lib/services/settings";
 import { NICHE_LABELS, NICHE_OPTIONS } from "@/lib/settings-niches";
 import { isErrorResult } from "@/lib/utils/result";
 import type { SettingsBrand, SettingsDeliveryOption } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 /** Currency codes the storefront can display (see lib/utils/currency.ts). */
 const CURRENCY_OPTIONS = [
@@ -156,7 +157,7 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
             );
             setSaving(false);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(result.message ?? "Brand updated successfully");

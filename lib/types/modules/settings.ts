@@ -181,6 +181,15 @@ export interface SettingsSeo {
   noindex: boolean;
 }
 
+/**
+ * Editable policy pages (dashboard → Settings → Return & Refund). An empty
+ * `returnRefund` string renders the built-in default page — the dashboard
+ * editor's HTML only OVERRIDES it while present.
+ */
+export interface SettingsPolicy {
+  returnRefund: string;
+}
+
 export interface Settings {
   _id: string;
   brand: SettingsBrand;
@@ -194,6 +203,8 @@ export interface Settings {
   limitedOffer: SettingsLimitedOffer;
   /** Optional until older settings docs are saved with the SEO section. */
   seo?: SettingsSeo;
+  /** Optional until older settings docs are saved with the policy section. */
+  policy?: SettingsPolicy;
   createdAt: string;
   updatedAt: string;
 }
@@ -207,4 +218,5 @@ export type SettingsSectionKey =
   | "contact"
   | "about"
   | "limitedOffer"
-  | "seo";
+  | "seo"
+  | "policy";

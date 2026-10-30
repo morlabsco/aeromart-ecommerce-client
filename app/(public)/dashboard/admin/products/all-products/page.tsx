@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 async function AllProductsContent() {
     const [result, settingsResult] = await Promise.all([
-        getAllProducts({ limit: 10, sort: "-createdAt" }),
+        getAllProducts({ limit: 200, sort: "-createdAt" }),
         getSettings(),
     ]);
     const products = unwrapList(result);

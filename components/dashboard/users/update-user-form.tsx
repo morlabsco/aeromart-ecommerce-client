@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { toggleUserStatus } from "@/lib/services/user";
 import { isErrorResult } from "@/lib/utils/result";
 import type { User } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 interface UpdateUserFormProps {
     user: User;
@@ -28,7 +29,7 @@ export function UpdateUserForm({ user }: UpdateUserFormProps) {
             const result = await toggleUserStatus(user._id);
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

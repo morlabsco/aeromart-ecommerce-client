@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 interface InstantStatusSelectProps<T extends string> {
     value: T;
@@ -45,7 +46,7 @@ export function InstantStatusSelect<T extends string>({
         startTransition(async () => {
             const result = await onUpdate(next);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             setCurrent(next);

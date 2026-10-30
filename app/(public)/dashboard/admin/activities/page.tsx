@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function ActivitiesContent() {
-    const result = await getAllActivities({ limit: 20, sort: "-createdAt" });
+    const result = await getAllActivities({ limit: 200, sort: "-createdAt" });
     if (isErrorResult(result)) {
         return <DetailError message={result.message} backHref="/dashboard/admin" />;
     }

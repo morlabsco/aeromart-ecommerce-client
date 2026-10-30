@@ -12,10 +12,14 @@ import type { Order } from "@/lib/types/backend";
 import { paymentMethodLabel } from "@/lib/utils/format";
 
 interface OrderDetailsProps {
+    /** Live brand currency — prices render in it, the order's own (possibly
+     * stale) stamp is only a fallback. */
+    brandCurrency?: string;
     order: Order;
 }
 
-export function OrderDetails({ order }: OrderDetailsProps) {
+export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps) {
+    const currency = brandCurrency ?? order.currency;
     return (
         <div className="space-y-6">
             <div className="flex items-start justify-between">
@@ -74,12 +78,27 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                                             )}
                                         </p>
                                     )}
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        {item.quantity} × {formatCurrency(item.unitPrice, order.currency)}
+                                    <p className="mt-0.5 flex flex-wrap items-baseline gap-1.5 text-xs text-muted-foreground">
+                                        <span>
+                                            {item.quantity} ×{" "}
+                                            {(item.baseUnitPrice ?? item.unitPrice) >
+                                            item.unitPrice ? (
+                                                <>
+                                                    <span className="mr-1 line-through decoration-muted-foreground/60">
+                                                        {formatCurrency(item.baseUnitPrice ?? item.unitPrice, currency)}
+                                                    </span>
+                                                    <span className="font-semibold text-foreground">
+                                                        {formatCurrency(item.unitPrice, currency)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                formatCurrency(item.unitPrice, currency)
+                                            )}
+                                        </span>
                                     </p>
                                 </div>
                                 <p className="text-sm font-medium tabular-nums">
-                                    {formatCurrency(item.quantity * item.unitPrice, order.currency)}
+                                    {formatCurrency(item.quantity * item.unitPrice, currency)}
                                 </p>
                             </div>
                         ))}
@@ -94,13 +113,17 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-medium">{formatCurrency(order.totalAmount, order.currency)}</span>
+                            {/* Base prices (before offers) — totalAmount is the
+                                post-offer subtotal. */}
+                            <span className="font-medium">
+                                {formatCurrency(order.totalAmount + order.offerDiscount, currency)}
+                            </span>
                         </div>
                         {order.offerDiscount > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Offer discount</span>
                                 <span className="font-medium text-success">
-                                    -{formatCurrency(order.offerDiscount, order.currency)}
+                                    -{formatCurrency(order.offerDiscount, currency)}
                                 </span>
                             </div>
                         )}
@@ -108,30 +131,23 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Coupon discount</span>
                                 <span className="font-medium text-success">
-                                    -{formatCurrency(order.discount, order.currency)}
+                                    -{formatCurrency(order.discount, currency)}
                                 </span>
                             </div>
                         )}
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Total discount</span>
-                            <span className="font-medium">
-                                {order.totalDiscount > 0 ? "-" : ""}
-                                {formatCurrency(order.totalDiscount, order.currency)}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
                             <span className="text-muted-foreground">Delivery</span>
-                            <span className="font-medium">{formatCurrency(order.deliveryCharge, order.currency)}</span>
+                            <span className="font-medium">{formatCurrency(order.deliveryCharge, currency)}</span>
                         </div>
                         <div className="flex justify-between border-t pt-2">
                             <span className="font-medium">Final</span>
-                            <span className="font-bold">{formatCurrency(order.finalAmount, order.currency)}</span>
+                            <span className="font-bold">{formatCurrency(order.finalAmount, currency)}</span>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <OrderPaymentActions order={order} />
+            <OrderPaymentActions order={order} brandCurrency={brandCurrency} />
 
             <Card>
                 <CardHeader>

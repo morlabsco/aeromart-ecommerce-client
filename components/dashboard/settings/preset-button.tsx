@@ -29,6 +29,7 @@ import {
 } from "@/lib/services/settings";
 import { NICHE_OPTIONS } from "@/lib/settings-niches";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 /** Special option: resets every section to empty (no theme). */
 const EMPTY_OPTION = { value: "empty", label: "Empty (no theme)" };
@@ -65,7 +66,7 @@ export function PresetButton() {
                 ? await applySettingsPreset(selected)
                 : await resetSettings(selected);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
             toast.success(

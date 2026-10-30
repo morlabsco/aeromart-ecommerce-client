@@ -26,6 +26,7 @@ import { updateCoupon } from "@/lib/services/coupon";
 import { parseLocalDate, toLocalDateString } from "@/lib/utils/date";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Coupon } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const couponSchema = z
     .object({
@@ -97,7 +98,7 @@ export function UpdateCouponForm({ coupon }: UpdateCouponFormProps) {
             });
 
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 return;
             }
 

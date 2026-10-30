@@ -14,6 +14,7 @@ import { deleteProduct, toggleProductStatus } from "@/lib/services/product";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 import { formatCurrency } from "@/lib/utils/currency";
 import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -65,7 +66,7 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
             value: formatCurrency(
                 products.reduce((sum, p) => sum + p.price, 0) /
                     (products.length || 1),
-                products[0]?.currency ?? currency
+                currency ?? products[0]?.currency
             ),
             icon: Package,
             trend: `From ${products.length} products`,
@@ -116,7 +117,7 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                 enableSorting: true,
                 cell: ({ row }) => (
                     <span className="font-medium tabular-nums">
-                        {formatCurrency(row.original.price, row.original.currency ?? currency)}
+                        {formatCurrency(row.original.price, currency ?? row.original.currency)}
                     </span>
                 ),
             },
@@ -220,7 +221,7 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
         startTransition(async () => {
             const result = await deleteProduct(productToDelete._id);
             if (isErrorResult(result)) {
-                toast.error(result.message);
+                toast.error(serverErrorMessage(result));
                 setProductToDelete(null);
                 return;
             }

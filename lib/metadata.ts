@@ -97,6 +97,7 @@ const SETTINGS_SECTION_TITLES: Record<string, string> = {
     about: "About",
     "limited-offer": "Limited Offer",
     seo: "SEO",
+    "return-refund": "Return & Refund",
 };
 
 /* ------------------------------------------------------------------ */

@@ -178,6 +178,12 @@ export default async function RefundPolicyPage() {
   const whatsapp = phone.replace(/[^\d+]/g, "").replace(/^\+/, "")
   const sections = buildSections(brandName)
 
+  // Dashboard editor override — when the admin has saved custom policy HTML
+  // (Settings → Return & Refund), it replaces the built-in intro + numbered
+  // cards inside the SAME shell (hero, contact panel). Empty = the shipped
+  // default page, so the built-in design is never lost.
+  const override = settings?.policy?.returnRefund?.trim() || ""
+
   return (
     <div className="bg-hero-surface">
       <PageHero
@@ -187,6 +193,16 @@ export default async function RefundPolicyPage() {
       />
 
       <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+        {override ? (
+          /* ── Admin-authored policy (Settings → Return & Refund) ── */
+          <div className="rounded-[1.75rem] bg-card p-6 shadow-sm sm:p-8">
+            <div
+              className="rich-description text-[15px] leading-[1.9]"
+              dangerouslySetInnerHTML={{ __html: override }}
+            />
+          </div>
+        ) : (
+          <>
         {/* ── Intro commitment card ─────────────────────────────── */}
         <div className="rounded-[1.75rem] bg-card p-6 shadow-sm sm:p-8">
           <div className="flex items-start gap-4">
@@ -306,6 +322,8 @@ export default async function RefundPolicyPage() {
             </section>
           ))}
         </div>
+          </>
+        )}
 
         {/* ── Contact panel — wired to the live brand details ──── */}
         <div className="relative mt-5 overflow-hidden rounded-[1.75rem] bg-header-nav px-6 py-10 sm:px-10">

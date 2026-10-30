@@ -24,6 +24,7 @@ import {
     Loader2,
 } from "lucide-react";
 import type { Order } from "@/lib/types/backend";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
 
 const PROVIDERS = [
     {
@@ -49,10 +50,13 @@ const PROVIDERS = [
 type ProviderId = (typeof PROVIDERS)[number]["id"];
 
 interface OrderPaymentActionsProps {
+    /** Live brand currency for amount display. */
+    brandCurrency?: string;
     order: Order;
 }
 
-export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
+export function OrderPaymentActions({ order, brandCurrency = "usd" }: OrderPaymentActionsProps) {
+    const currency = brandCurrency ?? order.currency;
     const [provider, setProvider] = useState<ProviderId>("stripe");
     const [isPending, startTransition] = useTransition();
     const [gatewayUrl, setGatewayUrl] = useState<string | null>(null);
@@ -69,7 +73,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
                 if (provider === "stripe") {
                     result = await stripeInit(order._id, {
                         amount: order.finalAmount,
-                        currency: order.currency || "usd",
+                        currency: currency || "usd",
                     });
                 } else if (provider === "sslcommerz") {
                     result = await sslCommerzInit(order._id, {
@@ -99,7 +103,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
                     });
                 }
                 if (isErrorResult(result)) {
-                    toast.error(result.message);
+                    toast.error(serverErrorMessage(result));
                     return;
                 }
                 const url = result.data?.gatewayUrl;
@@ -186,7 +190,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
 
                 <div className="flex items-center justify-end gap-2">
                     <span className="text-sm text-muted-foreground">
-                        {formatCurrency(order.finalAmount, order.currency)}
+                        {formatCurrency(order.finalAmount, currency)}
                     </span>
                     <Button
                         type="button"
@@ -212,7 +216,7 @@ export function OrderPaymentActions({ order }: OrderPaymentActionsProps) {
                                 Payment link ready
                             </div>
                             <span className="text-xs text-muted-foreground tabular-nums">
-                                {formatCurrency(order.finalAmount, order.currency)}
+                                {formatCurrency(order.finalAmount, currency)}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">

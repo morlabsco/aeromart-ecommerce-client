@@ -47,14 +47,11 @@ export function DashboardTopbar({
                 >
                     <Menu className="size-5" />
                 </button>
-                <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-muted-foreground">
-                        Dashboard
-                    </p>
-                    <h1 className="truncate text-base font-bold leading-tight tracking-tight text-foreground sm:text-lg">
-                        {title}
-                    </h1>
-                </div>
+                {/* One static shell title — each content section titles
+                 * itself, so repeating the page name here is redundant. */}
+                <h1 className="min-w-0 truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+                    {title}
+                </h1>
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
