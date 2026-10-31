@@ -13,6 +13,13 @@ import {
     Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
     AlertDialog,
@@ -73,6 +80,7 @@ export function NewsletterManager({
     const [isPending, startTransition] = useTransition();
     const [query, setQuery] = useState("");
     const [removing, setRemoving] = useState<NewsletterSubscriber | null>(null);
+    const [quickView, setQuickView] = useState<NewsletterSubscriber | null>(null);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -224,9 +232,14 @@ export function NewsletterManager({
                                     className="border-b border-border/40 transition-colors last:border-0 hover:bg-muted/40"
                                 >
                                     <td className="px-5 py-3.5">
-                                        <span className="font-mono font-medium text-foreground">
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuickView(subscriber)}
+                                            className="cursor-pointer truncate font-mono font-medium text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                                            aria-label={`View ${subscriber.email}`}
+                                        >
                                             {subscriber.email}
-                                        </span>
+                                        </button>
                                     </td>
                                     <td className="px-5 py-3.5 tabular-nums text-muted-foreground">
                                         {new Date(subscriber.createdAt).toLocaleString(
@@ -333,6 +346,81 @@ export function NewsletterManager({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        
+            {/* ── Subscriber quick view ── */}
+            {quickView && (
+                <Dialog open onOpenChange={(open) => !open && setQuickView(null)}>
+                    <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
+                        <DialogHeader>
+                            <DialogTitle>Subscriber</DialogTitle>
+                            <DialogDescription>
+                                Newsletter subscription details.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                            <div className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    Email
+                                </p>
+                                <p className="mt-1 break-all font-mono text-sm font-semibold text-foreground">
+                                    {quickView.email}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div className="rounded-lg border border-border/60 px-4 py-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Subscribed
+                                    </p>
+                                    <p className="mt-1 text-sm font-medium">
+                                        {new Date(quickView.createdAt).toLocaleString(
+                                            "en-GB",
+                                            {
+                                                day: "numeric",
+                                                month: "short",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            },
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border border-border/60 px-4 py-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Subscriber ID
+                                    </p>
+                                    <p className="mt-1 break-all font-mono text-xs font-medium">
+                                        {quickView._id}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(quickView.email);
+                                        toast.success("Email copied");
+                                    }}
+                                >
+                                    <Copy className="size-3.5" /> Copy Email
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        window.open(
+                                            `mailto:${quickView.email}`,
+                                            "_blank",
+                                        );
+                                    }}
+                                >
+                                    <Mail className="size-3.5" /> Compose Email
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+</div>
     );
 }

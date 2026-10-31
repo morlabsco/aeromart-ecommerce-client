@@ -21,6 +21,8 @@ import {
   Check,
   Zap,
   MessageSquareOff,
+  ImagePlus,
+  X,
 } from "lucide-react"
 import { useCartStore, useUIStore } from "@/lib/store/app-store"
 import { Button } from "@/components/ui/button"
@@ -28,9 +30,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ProductCard } from "@/components/shared/product-card"
 import { StarRating } from "@/components/shared/star-rating"
+import { ReviewPhotos } from "@/components/shared/review-photos"
+import {
+  deriveVariantAxes,
+  defaultAttributelessSku,
+  resolveVariantSku,
+} from "@/lib/utils/product-variants"
 import { WhatsAppIcon } from "@/components/shared/brand-icons"
 import { toast } from "sonner"
-import { createReview } from "@/lib/services/review"
+import { createReview, createReviewWithPhotos } from "@/lib/services/review"
 import { formatCurrency, getOfferPrice } from "@/lib/utils/currency"
 import type { Product } from "@/lib/types"
 import type { Review } from "@/lib/types/backend"
@@ -157,6 +165,19 @@ export default function ProductDetails({
   const [submittingReview, setSubmittingReview] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
 
+  // Optional review photos (max 3, ≤3MB each, images only).
+  const [reviewPhotos, setReviewPhotos] = useState<File[]>([])
+  const [reviewPhotoPreviews, setReviewPhotoPreviews] = useState<string[]>([])
+  const reviewPhotoInputRef = useRef<HTMLInputElement>(null)
+
+  // Keep the object-URL previews in lockstep with the selected files — the
+  // created URLs are tracked so the SAME ones get revoked (no leaks).
+  useEffect(() => {
+    const urls = reviewPhotos.map((file) => URL.createObjectURL(file))
+    setReviewPhotoPreviews(urls)
+    return () => urls.forEach((url) => URL.revokeObjectURL(url))
+  }, [reviewPhotos])
+
   const handleSubmitReview = async () => {
     if (!productId) return
     if (reviewRating < 1 || reviewRating > 5) {
@@ -170,11 +191,21 @@ export default function ProductDetails({
     setReviewError(null)
     setSubmittingReview(true)
     try {
-      const result = await createReview({
-        rating: reviewRating,
-        description: reviewText.trim(),
-        product: productId,
-      })
+      const result =
+        reviewPhotos.length > 0
+          ? await createReviewWithPhotos(
+              {
+                rating: reviewRating,
+                description: reviewText.trim(),
+                product: productId,
+              },
+              reviewPhotos,
+            )
+          : await createReview({
+              rating: reviewRating,
+              description: reviewText.trim(),
+              product: productId,
+            })
       if (isErrorResult(result)) {
         setReviewError(result.message)
         toast.error(result.message)
@@ -183,10 +214,49 @@ export default function ProductDetails({
       toast.success("Review submitted! Thank you.")
       setReviewRating(0)
       setReviewText("")
+      setReviewPhotos([])
       router.refresh()
     } finally {
       setSubmittingReview(false)
     }
+  }
+
+  /** Add photos from the picker — validated: images only, ≤3MB, max 3 total. */
+  const handleAddReviewPhotos = (files: FileList | null) => {
+    if (!files?.length) return
+    const incoming = Array.from(files)
+    const rejected: string[] = []
+
+    const accepted = incoming.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        rejected.push(`"${file.name}" is not an image.`)
+        return false
+      }
+      if (file.size > 3 * 1024 * 1024) {
+        rejected.push(`"${file.name}" is larger than 3MB.`)
+        return false
+      }
+      return true
+    })
+
+    setReviewPhotos((prev) => {
+      const room = Math.max(0, 3 - prev.length)
+      const next = [...prev, ...accepted.slice(0, room)]
+      if (accepted.length > room) {
+        rejected.push("You can attach up to 3 photos per review.")
+      }
+      return next
+    })
+
+    if (rejected.length) {
+      setReviewError(rejected[0])
+      toast.error(rejected[0])
+    } else {
+      setReviewError(null)
+    }
+
+    // Allow re-selecting the same file after removal.
+    if (reviewPhotoInputRef.current) reviewPhotoInputRef.current.value = ""
   }
 
   if (!product) {
@@ -211,22 +281,19 @@ export default function ProductDetails({
   const salePrice = getOfferPrice(product.price, product.offerPrice)
   const hasOffer = salePrice !== null && salePrice < product.price
 
-  const axes = (product.variants ?? []).map((axis) => ({
-    ...axis,
-    options: axis.options.filter((option) =>
-      (product.variantSkus ?? []).some(
-        (s) => s.attributes[axis.name] === option && s.stock > 0
-      )
-    ),
-  }))
+  // Pickable axes (shared derivation , see lib/utils/product-variants.ts):
+  // in-stock options with an all-out-of-stock fallback, synthesized axes for
+  // lost declarations, attribute-less rows handled by the default SKU below.
+  const axes = deriveVariantAxes(product)
 
-  // The concrete SKU matching the current selection, if complete.
+  // The concrete SKU matching the current selection, if complete. Products
+  // whose SKU rows carry no attributes (legacy/manual rows) have no picker at
+  // all — the first in-stock SKU stands in as the default so stock, price and
+  // the cart always resolve (this was the "Only undefined available" bug).
   const selectedSku =
     axes.length > 0 && axes.every((a) => selectedVariants[a.name])
-      ? product.variantSkus?.find((s) =>
-          axes.every((a) => s.attributes[a.name] === selectedVariants[a.name])
-        )
-      : undefined
+      ? resolveVariantSku(product, selectedVariants)
+      : defaultAttributelessSku(product)
 
   const variantSelected = axes.length === 0 || Boolean(selectedSku)
 
@@ -282,6 +349,18 @@ export default function ProductDetails({
     setSelectedImage(0)
   }, [selectedSku?.sku])
 
+  // Default to the first in-stock combination so Add to Cart / Buy Now work
+  // straight away — the customer can still switch to any other option.
+  useEffect(() => {
+    const first =
+      (product.variantSkus ?? []).find(
+        (s) => s.stock > 0 && Object.keys(s.attributes ?? {}).length > 0
+      ) ?? (product.variantSkus ?? [])[0]
+    setSelectedVariants(first?.attributes ? { ...first.attributes } : {})
+    setQuantity(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id])
+
   const stepImage = (dir: 1 | -1) =>
     setSelectedImage((i) =>
       galleryImages.length === 0
@@ -290,21 +369,41 @@ export default function ProductDetails({
     )
 
   const guardAndAdd = () => {
-    if (!variantSelected) {
+    let variants = selectedVariants
+    let sku = selectedSku
+
+    // Incomplete selection? Fall back to the first in-stock combination
+    // instead of bouncing the customer (and reflect it in the picker).
+    if (axes.length > 0 && !sku) {
+      const fallback = (product.variantSkus ?? []).find(
+        (s) =>
+          s.stock > 0 &&
+          axes.every((a) => s.attributes?.[a.name] !== undefined)
+      )
+      if (fallback?.attributes) {
+        variants = { ...fallback.attributes }
+        sku = fallback
+        setSelectedVariants(variants)
+      }
+    }
+
+    if (axes.length > 0 && !sku) {
       toast.error("Please select all options to continue.")
       return null
     }
     const result = addItem(
       product,
       quantity,
-      Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined,
-      selectedSku?.sku
+      Object.keys(variants).length > 0 ? variants : undefined,
+      sku?.sku
     )
     if (!result.ok || result.capped) {
       toast.error(
         result.available === 0
           ? `"${product.title}" is out of stock`
-          : `Only ${result.available} of "${product.title}" are available`
+          : Number.isFinite(result.available)
+            ? `Only ${result.available} of "${product.title}" are available`
+            : `"${product.title}" is currently unavailable`
       )
       return null
     }
@@ -487,16 +586,22 @@ export default function ProductDetails({
               )}
             </div>
 
-            {/* Spec bullets */}
+            {/* Key features — ALL of them, in a decorated cream panel (2-col
+                on larger screens so long lists stay compact and scannable). */}
             {product.keyFeatures && product.keyFeatures.length > 0 && (
-              <ul className="space-y-1.5 text-sm text-muted-foreground">
-                {product.keyFeatures.slice(0, 5).map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-brand" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+              <div className="rounded-xl bg-hero-surface p-4 sm:p-5">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                  Key Features
+                </p>
+                <ul className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm text-foreground sm:grid-cols-2">
+                  {product.keyFeatures.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                      <span className="leading-snug">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {/* ── Variant picker ── */}
@@ -514,65 +619,61 @@ export default function ProductDetails({
                           {selectedVariants[axis.name] || "Select"}
                         </span>
                       </h3>
-                      {isColor ? (
-                        <div className="flex flex-wrap gap-2">
-                          {axis.options.map((option) => {
-                            const color =
-                              product.colorOptions?.find(
+                      <div className="flex flex-wrap gap-2">
+                        {axis.options.map((option) => {
+                          const active = selectedVariants[axis.name] === option
+                          // A color axis renders swatches ONLY when a hex is
+                          // actually configured for the option — options
+                          // without one fall back to labeled pills so they
+                          // stay visible and clickable (never a gray dot).
+                          const hex = isColor
+                            ? product.colorOptions?.find(
                                 (c) =>
                                   c.name.toLowerCase() === option.toLowerCase()
-                              )?.hex ?? "#ccc"
-                            const active = selectedVariants[axis.name] === option
+                              )?.hex
+                            : undefined
+                          const select = () =>
+                            setSelectedVariants((prev) => ({
+                              ...prev,
+                              [axis.name]: option,
+                            }))
+                          if (isColor && hex) {
                             return (
                               <button
                                 key={option}
                                 type="button"
-                                onClick={() =>
-                                  setSelectedVariants((prev) => ({
-                                    ...prev,
-                                    [axis.name]: option,
-                                  }))
-                                }
+                                onClick={select}
                                 title={option}
                                 aria-label={`Color ${option}`}
+                                aria-pressed={active}
                                 className={cn(
                                   "size-9 cursor-pointer rounded-full border-2 transition-all duration-200",
                                   active
                                     ? "scale-110 border-brand ring-2 ring-brand/30"
                                     : "border-border hover:border-foreground/40"
                                 )}
-                                style={{ backgroundColor: color }}
+                                style={{ backgroundColor: hex }}
                               />
                             )
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {axis.options.map((option) => {
-                            const active = selectedVariants[axis.name] === option
-                            return (
-                              <button
-                                key={option}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedVariants((prev) => ({
-                                    ...prev,
-                                    [axis.name]: option,
-                                  }))
-                                }
-                                className={cn(
-                                  "cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold transition-all duration-200",
-                                  active
-                                    ? "border-brand bg-brand/10 text-brand"
-                                    : "border-border text-muted-foreground hover:border-brand/50 hover:text-foreground"
-                                )}
-                              >
-                                {option}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                          }
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={select}
+                              aria-pressed={active}
+                              className={cn(
+                                "cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold transition-all duration-200",
+                                active
+                                  ? "border-brand bg-brand/10 text-brand"
+                                  : "border-border text-muted-foreground hover:border-brand/50 hover:text-foreground"
+                              )}
+                            >
+                              {option}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                   )
                 })}
@@ -722,21 +823,7 @@ export default function ProductDetails({
                 {product.fullDescription &&
                   product.fullDescription !== product.description &&
                   renderDescription(product.fullDescription)}
-                {product.keyFeatures && product.keyFeatures.length > 0 && (
-                  <div>
-                    <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">
-                      Key Features
-                    </h3>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      {product.keyFeatures.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2.5">
-                          <Check className="mt-0.5 size-4 shrink-0 text-brand" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {/* Key features live in the buy box above — not repeated here. */}
               </div>
             )}
           </div>
@@ -849,6 +936,61 @@ export default function ProductDetails({
                   />
                 </div>
 
+                {/* Optional photos (max 3) */}
+                <div className="space-y-2">
+                  <Label className="block text-xs font-semibold text-foreground">
+                    Photos{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (optional, up to 3)
+                    </span>
+                  </Label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {reviewPhotoPreviews.map((url, i) => (
+                      <span
+                        key={url}
+                        className="group relative inline-block overflow-hidden rounded-lg border border-border bg-muted"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Selected photo ${i + 1}`}
+                          className="size-16 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReviewPhotos((prev) => prev.filter((_, idx) => idx !== i))
+                          }
+                          aria-label={`Remove photo ${i + 1}`}
+                          className="absolute right-1 top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-scrim/70 text-white transition-colors hover:bg-destructive"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                    {reviewPhotos.length < 3 && (
+                      <>
+                        <input
+                          ref={reviewPhotoInputRef}
+                          id="review-photos"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => handleAddReviewPhotos(e.target.files)}
+                        />
+                        <Label
+                          htmlFor="review-photos"
+                          className="flex size-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+                        >
+                          <ImagePlus className="size-5" />
+                          <span className="text-[10px] font-semibold">Add</span>
+                        </Label>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {reviewError && (
                   <p className="text-sm text-destructive">{reviewError}</p>
                 )}
@@ -920,6 +1062,7 @@ export default function ProductDetails({
                     <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                       {review.description}
                     </p>
+                    <ReviewPhotos photoUrls={review.photoUrls} />
                   </div>
                 ))}
               </div>

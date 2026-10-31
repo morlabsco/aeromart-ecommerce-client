@@ -24,6 +24,8 @@ import { Label } from "../../../components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DistrictCombobox } from "../../../components/public/checkout/district-combobox"
+import { UpazilaCombobox } from "../../../components/public/checkout/upazila-combobox"
+import { deriveVariantAxes, resolveVariantSku } from "@/lib/utils/product-variants"
 import { cn } from "../../../lib/utils"
 import { toast } from "sonner"
 import { createOrder } from "@/lib/services/order"
@@ -88,17 +90,34 @@ function toDeliveryChoices(options: SettingsDeliveryOption[] | undefined): Deliv
     }))
 }
 
-/** Computes the discount amount a coupon gives on a subtotal. */
-function useCouponDiscount(coupon: Coupon | null, subtotalAmount: number): number {
+/** The subtotal a coupon applies to , product-scoped coupons only count
+ *  their selected products' lines (mirrors the server's applyCoupon). */
+function couponBaseAmount(
+  coupon: Coupon | null,
+  items: CartItem[],
+  subtotalAmount: number
+): number {
   if (!coupon) return 0
+  const scoped = coupon.applicableProducts ?? []
+  if (scoped.length === 0) return subtotalAmount
+  return items
+    .filter((item) => scoped.includes(item.product.id))
+    .reduce((sum, item) => sum + lineUnitPrice(item) * item.quantity, 0)
+}
+
+/** Computes the discount amount a coupon gives on the cart. */
+function useCouponDiscount(
+  coupon: Coupon | null,
+  items: CartItem[],
+  subtotalAmount: number
+): number {
+  if (!coupon) return 0
+  const base = couponBaseAmount(coupon, items, subtotalAmount)
   const raw =
     coupon.discountType === "percentage"
-      ? (subtotalAmount * coupon.discountValue) / 100
+      ? (base * coupon.discountValue) / 100
       : coupon.discountValue
-  return Math.min(
-    Math.max(0, raw),
-    coupon.maxDiscountAmount > 0 ? coupon.maxDiscountAmount : raw
-  )
+  return Math.min(Math.max(0, raw), coupon.maxDiscountAmount > 0 ? coupon.maxDiscountAmount : raw, base)
 }
 
 /** Effective unit price of a cart line: variant price, then offer, then base. */
@@ -187,14 +206,10 @@ function VariantSwitcher({
   item: CartItem
   onSwap: (nextSku: string, nextVariant: Record<string, string>) => void
 }) {
-  const axes = (item.product.variants ?? []).map((axis) => ({
-    ...axis,
-    options: axis.options.filter((option) =>
-      (item.product.variantSkus ?? []).some(
-        (s) => s.attributes[axis.name] === option && s.stock > 0
-      )
-    ),
-  }))
+  // Shared axis derivation (lib/utils/product-variants.ts) — synthesized
+  // axes for lost declarations, and options stay visible when everything is
+  // out of stock (this was the "color can't be selected" bug at checkout).
+  const axes = deriveVariantAxes(item.product)
 
   const [selection, setSelection] = useState<Record<string, string>>(
     item.variant ?? {}
@@ -202,9 +217,7 @@ function VariantSwitcher({
 
   const resolvedSku =
     axes.length > 0 && axes.every((a) => selection[a.name])
-      ? item.product.variantSkus?.find((s) =>
-          axes.every((a) => s.attributes[a.name] === selection[a.name])
-        )
+      ? resolveVariantSku(item.product, selection)
       : undefined
 
   const sameSku = resolvedSku?.sku === item.variantSku
@@ -272,6 +285,7 @@ export default function Checkout() {
     phone: "",
     address: "",
     district: "",
+    upazila: "",
     notes: "",
   })
   // References the customer submits for manual payments (bKash / bank) so
@@ -320,7 +334,7 @@ export default function Checkout() {
   const isPickup = deliveryCharge === 0
 
   // Discounted total after applying the coupon, plus delivery charge.
-  const discount = useCouponDiscount(appliedCoupon, subtotal())
+  const discount = useCouponDiscount(appliedCoupon, items, subtotal())
   // Savings from active product offers already reflected in the subtotal.
   const offerDiscount = offerDiscountFor(items)
   const finalTotal = Math.max(0, subtotal() - discount + deliveryCharge)
@@ -369,8 +383,18 @@ export default function Checkout() {
         return
       }
       const coupon = result.data
-      if (subtotal() < coupon.minOrderAmount) {
-        toast.error(`Minimum order amount for this coupon is ${formatCurrency(coupon.minOrderAmount, currency)}`)
+      const base = couponBaseAmount(coupon, items, subtotal())
+      const scoped = coupon.applicableProducts ?? []
+      if (scoped.length > 0 && base <= 0) {
+        toast.error("This coupon only applies to specific products , none of them are in your cart")
+        return
+      }
+      if (base < coupon.minOrderAmount) {
+        toast.error(
+          scoped.length > 0
+            ? `Your selected products total ${formatCurrency(base, currency)} , this coupon needs at least ${formatCurrency(coupon.minOrderAmount, currency)}`
+            : `Minimum order amount for this coupon is ${formatCurrency(coupon.minOrderAmount, currency)}`
+        )
         return
       }
       setAppliedCoupon(coupon)
@@ -397,6 +421,7 @@ export default function Checkout() {
     if (!isPickup) {
       if (!form.address.trim()) errs.address = "Address is required"
       if (!form.district.trim()) errs.district = "Please select your district"
+      if (!form.upazila.trim()) errs.upazila = "Please select your upazila"
     }
     // Manual payments need their verification references.
     if (paymentMethod === "bkash-manual") {
@@ -428,6 +453,7 @@ export default function Checkout() {
           phone: "Mobile Number",
           address: "Address",
           district: "District",
+          upazila: "Upazila",
           bkashSender: "bKash Sender Number",
           bkashTrxId: "bKash Transaction ID",
           bankRef: "NPSB Reference",
@@ -457,7 +483,7 @@ export default function Checkout() {
 
     const shippingAddress = isPickup
       ? "Store Pickup"
-      : [form.address.trim(), form.district.trim(), "Bangladesh"]
+      : [form.address.trim(), form.upazila.trim(), form.district.trim(), "Bangladesh"]
           .filter(Boolean)
           .join(", ")
 
@@ -493,7 +519,12 @@ export default function Checkout() {
         phoneNo: form.phone,
         shippingAddress,
         notes,
-        paymentMethod: paymentMethod === "COD" ? "COD" : "Online",
+        paymentMethod:
+          paymentMethod === "COD"
+            ? "COD"
+            : paymentMethod === "stripe"
+              ? "Online"
+              : paymentMethod,
       })
 
       if (isErrorResult(orderResult)) {
@@ -962,6 +993,37 @@ export default function Checkout() {
                 <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
                   <SectionTitle>02 · Delivery Address</SectionTitle>
                   <div className="space-y-5">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-foreground">
+                        District
+                      </Label>
+                      <DistrictCombobox
+                        value={form.district}
+                        onChange={(district) =>
+                          // Switching the district invalidates the upazila —
+                          // reset it so a stale choice can never ship.
+                          setForm({ ...form, district, upazila: "" })
+                        }
+                        invalid={!!errors.district}
+                      />
+                      {errors.district && (
+                        <p className="text-xs text-destructive">{errors.district}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Upazila
+                      </Label>
+                      <UpazilaCombobox
+                        district={form.district}
+                        value={form.upazila}
+                        onChange={(upazila) => setForm({ ...form, upazila })}
+                        invalid={!!errors.upazila}
+                      />
+                      {errors.upazila && (
+                        <p className="text-xs text-destructive">{errors.upazila}</p>
+                      )}
+                    </div>
                     {field(
                       "address",
                       "Address",
@@ -969,19 +1031,6 @@ export default function Checkout() {
                       "text",
                       "Road No. / Apartment / House No. / Street / Area / Ward"
                     )}
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-foreground">
-                        District
-                      </Label>
-                      <DistrictCombobox
-                        value={form.district}
-                        onChange={(district) => setForm({ ...form, district })}
-                        invalid={!!errors.district}
-                      />
-                      {errors.district && (
-                        <p className="text-xs text-destructive">{errors.district}</p>
-                      )}
-                    </div>
                     {field(
                       "notes",
                       "Special Notes",

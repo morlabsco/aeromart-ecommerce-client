@@ -1,8 +1,12 @@
 // Small display-formatting helpers shared across the storefront.
 
-/** Backend short codes → customer-friendly labels (code kept for clarity). */
+/** Backend short codes → customer-friendly labels (code kept for clarity).
+ *  Manual methods are matched case-insensitively ("bkash-manual"). */
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   COD: "Cash on Delivery (COD)",
+  ONLINE: "Online Payment",
+  "BKASH-MANUAL": "bKash (Manual)",
+  "BANK-MANUAL": "Bank Transfer (Manual)",
 }
 
 /**

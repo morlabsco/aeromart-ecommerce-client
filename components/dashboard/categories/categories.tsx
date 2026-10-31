@@ -14,6 +14,8 @@ import { deleteCategory, toggleCategoryStatus } from "@/lib/services/category";
 import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { TableLink } from "@/components/dashboard/shared/table-link";
+import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,6 +36,8 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+    // Deletes are admin-only — managers create/update but never delete.
+    const canDelete = useCanDelete();
 
     const activeCategories = categories.filter((c) => c.isActive).length;
     const subCategories = categories.filter((c) => c.parent).length;
@@ -82,9 +86,11 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                                 row.original.name.charAt(0)
                             )}
                         </div>
-                        <div>
-                            <p className="font-medium text-sm">{row.original.name}</p>
-                            <p className="text-xs text-muted-foreground">{row.original.slug}</p>
+                        <div className="min-w-0">
+                            <TableLink href={`/dashboard/admin/categories/${row.original._id}`} className="text-sm">
+                                {row.original.name}
+                            </TableLink>
+                            <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
                         </div>
                     </div>
                 ),
@@ -144,7 +150,8 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`/dashboard/admin/categories/update-category/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
+                        {canDelete && (
+<Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
@@ -153,11 +160,12 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
+                        )}
                     </div>
                 ),
             },
         ],
-        []
+        [canDelete]
     );
 
     const confirmDelete = () => {

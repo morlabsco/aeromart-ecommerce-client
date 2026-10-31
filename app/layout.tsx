@@ -3,6 +3,7 @@ import { Jost, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PageProgress } from "@/components/layout/page-progress";
 import { cn } from "@/lib/utils";
 import { getSettings } from "@/lib/services/settings";
 import { unwrapData } from "@/lib/services/api-client";
@@ -49,6 +50,7 @@ export default function RootLayout({
             className={cn("h-full", "antialiased", "font-sans", jost.variable, hindSiliguri.variable)}
         >
             <head>
+                <PageProgress />
                 <ThemeProvider />
             </head>
             <body className="min-h-full flex flex-col">

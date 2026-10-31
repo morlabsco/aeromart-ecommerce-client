@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
+import { NotificationsPopover } from "./notifications-popover";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -55,24 +56,9 @@ export function DashboardTopbar({
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {/* Notifications → the admin activity log (customers skip
-                    it — their dashboard has no activities module). */}
-                {user?.role !== "customer" && (
-                <Link
-                    href="/dashboard/admin/activities"
-                    aria-label="Notifications"
-                    title="Recent activity"
-                    className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                    <Bell className="size-4.5" />
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            "absolute right-2 top-2 size-2 rounded-full bg-brand ring-2 ring-card",
-                        )}
-                    />
-                </Link>
-                )}
+                {/* Notifications quick view — recent activity in a popover
+                    (customers skip it — no activities module on their side). */}
+                {user?.role !== "customer" && <NotificationsPopover />}
                 <Link
                     href={profileHref}
                     aria-label="Your profile"

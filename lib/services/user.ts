@@ -28,6 +28,21 @@ export const registerUser = async (
   }
 };
 
+export const createUserByAdmin = async (
+  payload: { name: string; email: string; password: string; role?: string; phoneNo?: string }
+): Promise<ServiceResult<User>> => {
+  try {
+    const result = await apiRequest<User>("/user", {
+      method: "POST",
+      body: payload,
+    });
+    revalidateTag("USER", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 export const getAllUsers = async (
   query: ListQuery = {}
 ): Promise<ServiceResult<User[]>> => {

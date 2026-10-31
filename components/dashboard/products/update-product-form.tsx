@@ -88,12 +88,17 @@ export function UpdateProductForm({ product, brands, categories, brandCurrency =
     const [layout, setLayout] = useState<FormLayout>("two");
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imageChanges, setImageChanges] = useState<{
-        keep: { publicId: string; order: number }[];
+        keep: { publicId: string; url?: string; order: number }[];
         removed: string[];
     }>({
         keep: (product.imageUrls ?? [])
             .sort((a, b) => a.order - b.order)
-            .map((img, i) => ({ publicId: img.publicId, order: i })),
+            .map((img, i) => ({
+                publicId: img.publicId,
+                // Legacy/external images have no publicId — keep them by url.
+                url: img.publicId ? undefined : img.url,
+                order: i,
+            })),
         removed: [],
     });
     const [brandId, setBrandId] = useState<string>(

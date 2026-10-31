@@ -5,6 +5,7 @@ import { MessageSquare, Package } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ReviewPhotos } from "@/components/shared/review-photos";
 import { StarRating } from "@/components/shared/star-rating";
 import type { Review } from "@/lib/types/backend";
 
@@ -103,6 +104,7 @@ export function MyReviews({ reviews }: { reviews: Review[] }) {
                                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                                     &ldquo;{review.description}&rdquo;
                                 </p>
+                                <ReviewPhotos photoUrls={review.photoUrls} />
                             </CardContent>
                         </Card>
                     ))}

@@ -9,6 +9,8 @@ export interface Coupon {
   discountValue: number;
   minOrderAmount: number;
   maxDiscountAmount: number;
+  /** Product ids this coupon is scoped to , empty/undefined = whole order. */
+  applicableProducts?: string[];
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -23,6 +25,7 @@ export interface CouponPayload {
   discountValue: number;
   minOrderAmount?: number;
   maxDiscountAmount?: number;
+  applicableProducts?: string[];
   startDate: string;
   endDate: string;
   isActive?: boolean;

@@ -355,8 +355,14 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                 Delivery progress
               </h2>
 
-              <div className="mt-7 overflow-x-auto pb-1">
-                <ol className="relative flex min-w-[400px] items-start sm:min-w-[560px]">
+              <div className="mt-7 overflow-x-auto">
+                {/* The ol carries px/pt padding so the current node's pulse
+                    ring has room to breathe INSIDE the box — the ring never
+                    reaches the scroll container's edge, so it can't flicker a
+                    horizontal scrollbar on small screens and can't get clipped
+                    under the card's top edge while it blinks. Track/circle
+                    geometry is offset by the same padding (34px = 12 + 22). */}
+                <ol className="relative flex min-w-[400px] items-start px-3 pt-3 sm:min-w-[560px]">
                   {/* One continuous track from the FIRST circle center to the
                       LAST circle center — the circles sit at 0 / 33 / 66 / 100%
                       of it (first flush left, middles centered, Delivered flush
@@ -364,15 +370,15 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                       Delivered circle terminates the bar at the very end. */}
                   <span
                     aria-hidden="true"
-                    className="absolute top-[22px] right-[22px] left-[22px] h-0.5 rounded-full bg-border"
+                    className="absolute top-[34px] right-[34px] left-[34px] h-0.5 rounded-full bg-border"
                   />
                   {/* Brand progress overlay — fills the exact fraction of the
                       journey covered so far (0 → 1 → 2 → 3 of 3 segments). */}
                   <span
                     aria-hidden="true"
-                    className="absolute top-[22px] left-[22px] h-0.5 rounded-full bg-brand transition-[width] duration-700 ease-out"
+                    className="absolute top-[34px] left-[34px] h-0.5 rounded-full bg-brand transition-[width] duration-700 ease-out"
                     style={{
-                      width: `calc((100% - 44px) * ${Math.max(currentStep, 0) / (STEP_META.length - 1)})`,
+                      width: `calc((100% - 68px) * ${Math.max(currentStep, 0) / (STEP_META.length - 1)})`,
                     }}
                   />
                   {STEP_META.map((step, index) => {
@@ -407,7 +413,10 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                             <span className="size-2.5 rounded-full bg-muted-foreground/25" />
                           )}
                           {isCurrent && !isCancelled && (
-                            <span aria-hidden="true" className="absolute inset-0 animate-ping rounded-full border-2 border-brand/50" />
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-0 animate-rail-pulse rounded-full border-2 border-brand/50 motion-reduce:animate-none"
+                            />
                           )}
                         </span>
                         <p

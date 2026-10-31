@@ -4,11 +4,28 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DashboardDataTable } from "@/components/dashboard/data-table";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Eye, Pencil, UserRound } from "lucide-react";
+import { TrendingUp, TrendingDown, ShoppingCart, DollarSign, Eye, Pencil, UserRound, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { deleteOrder } from "@/lib/services/order";
+import { isErrorResult } from "@/lib/utils/result";
+import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ApiMeta, Order } from "@/lib/types/backend";
 import { updateOrderStatus } from "@/lib/services/order";
@@ -129,6 +146,25 @@ function CustomerCell({ order }: { order: Order }) {
 
 export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTableProps) {
     const router = useRouter();
+    // Deletes are admin-only — managers never delete orders.
+    const canDelete = useCanDelete();
+    const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const confirmDeleteOrder = () => {
+        if (!orderToDelete) return;
+        setDeleting(true);
+        deleteOrder(orderToDelete._id).then((result) => {
+            setDeleting(false);
+            if (isErrorResult(result)) {
+                toast.error(serverErrorMessage(result));
+                return;
+            }
+            toast.success(result.message ?? "Order deleted");
+            setOrderToDelete(null);
+            router.refresh();
+        });
+    };
     const currency = brandCurrency;
     const totalRevenue = orders.reduce((sum, o) => sum + o.finalAmount, 0);
     const pendingOrders = orders.filter((o) => o.status === "Pending").length;
@@ -175,9 +211,9 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                 header: "Order ID",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span className="font-mono text-sm font-medium">
+                    <TableLink href={`/dashboard/admin/orders/${row.original._id}`} mono>
                         {row.original.orderId || row.original._id.slice(-8)}
-                    </span>
+                    </TableLink>
                 ),
             },
             {
@@ -273,11 +309,22 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update order ${row.original._id}`} render={<a href={`/dashboard/admin/orders/update-order/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
+                        {canDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setOrderToDelete(row.original)}
+                            aria-label={`Delete order ${row.original.orderId}`}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                        )}
                     </div>
                 ),
             },
         ],
-        []
+        [canDelete]
     );
 
     return (
@@ -333,6 +380,41 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                 searchPlaceholder="Search by customer, phone or recipient..."
                 pageSize={8}
             />
-        </div>
+        
+            {/* ── Delete confirmation (admin only) ── */}
+            <AlertDialog
+                open={!!orderToDelete}
+                onOpenChange={(open) => !open && setOrderToDelete(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Permanently delete{" "}
+                            <span className="font-mono font-semibold">
+                                {orderToDelete?.orderId}
+                            </span>
+                            ? Its reserved stock is returned to the catalog. This
+                            cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                confirmDeleteOrder();
+                            }}
+                            disabled={deleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {deleting ? "Deleting..." : "Delete Order"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+</div>
     );
 }

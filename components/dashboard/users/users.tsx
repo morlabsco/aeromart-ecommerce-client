@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardDataTable } from "@/components/dashboard/data-table";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,9 +71,11 @@ export function UsersTable({ users, meta }: UsersTableProps) {
                                 .join("")
                                 .slice(0, 2)}
                         </div>
-                        <div>
-                            <p className="text-sm font-medium">{row.original.name}</p>
-                            <p className="text-xs text-muted-foreground">{row.original.email}</p>
+                        <div className="min-w-0">
+                            <TableLink href={`/dashboard/admin/users/${row.original._id}`} className="text-sm">
+                                {row.original.name}
+                            </TableLink>
+                            <p className="truncate text-xs text-muted-foreground">{row.original.email}</p>
                         </div>
                     </div>
                 ),

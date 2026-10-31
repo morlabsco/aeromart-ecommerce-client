@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardSidebar } from "./sidebar";
 import { DashboardTopbar } from "./topbar";
+import { DashboardUserProvider } from "./dashboard-user";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -99,6 +100,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
     const railMode = collapsed && isDesktop;
 
     return (
+        <DashboardUserProvider user={user}>
         <div className="flex min-h-[640px] flex-col gap-5 lg:flex-row lg:gap-6">
             {/* ── Left: charcoal sidebar panel (static on lg, drawer below) ── */}
             <aside
@@ -140,5 +142,6 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
                 </div>
             </div>
         </div>
+        </DashboardUserProvider>
     );
 }

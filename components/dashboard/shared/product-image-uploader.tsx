@@ -29,7 +29,7 @@ interface ProductImageUploaderProps {
   onChange: (files: File[]) => void;
   /** Reports which existing images to keep (with new order) and which to remove. */
   onExistingChange?: (payload: {
-    keep: { publicId: string; order: number }[];
+    keep: { publicId: string; url?: string; order: number }[];
     removed: string[];
   }) => void;
   maxImages?: number;
@@ -117,6 +117,9 @@ export function ProductImageUploader({
             onExistingChange({
                 keep: visible.map((img, i) => ({
                     publicId: img.publicId,
+                    // Legacy/external images carry no publicId — the url is
+                    // their identity, so it must ride along.
+                    url: img.publicId ? undefined : img.url,
                     order: i,
                 })),
                 removed: Array.from(removed),

@@ -484,7 +484,7 @@ export function OfferedProductsTable({
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Quick add an offer</DialogTitle>
                         <DialogDescription>
@@ -506,7 +506,7 @@ export function OfferedProductsTable({
                                     aria-label="Search products"
                                 />
                             </div>
-                            <div className="max-h-64 space-y-1 overflow-y-auto">
+                            <div className="max-h-[420px] space-y-1 overflow-y-auto">
                                 {searching && (
                                     <p className="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground">
                                         <Loader2 className="h-4 w-4 animate-spin" />

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { DashboardDataTable } from "@/components/dashboard/data-table";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,9 +63,9 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
                 header: "Product",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span className="font-medium text-sm">
+                    <TableLink href={`/dashboard/admin/reviews/${row.original._id}`} className="text-sm">
                         {row.original.product?.name ?? "—"}
-                    </span>
+                    </TableLink>
                 ),
             },
             {

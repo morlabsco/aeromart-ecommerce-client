@@ -18,6 +18,8 @@ export interface Review {
   isFlagged: boolean;
   flaggedReason: string;
   isVerifiedPurchase: boolean;
+  /** Optional customer-uploaded photos (Cloudinary URLs, max 3). */
+  photoUrls?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -26,4 +28,5 @@ export interface ReviewPayload {
   rating: number;
   description: string;
   product: string;
+  photoUrls?: string[];
 }

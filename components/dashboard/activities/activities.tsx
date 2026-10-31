@@ -40,6 +40,7 @@ import { isErrorResult } from "@/lib/utils/result";
 import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 import Link from "next/link";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 
 /** Proper-cased role for chips ("admin" → "Admin"). */
 function roleLabel(role?: string) {
@@ -232,9 +233,12 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                 header: "Message",
                 enableSorting: false,
                 cell: ({ row }) => (
-                    <span className="text-sm line-clamp-1 max-w-[360px]">
+                    <TableLink
+                        href={`/dashboard/admin/activities/${row.original._id}`}
+                        className="text-sm font-normal line-clamp-1 max-w-[360px]"
+                    >
                         {row.original.message}
-                    </span>
+                    </TableLink>
                 ),
             },
             {

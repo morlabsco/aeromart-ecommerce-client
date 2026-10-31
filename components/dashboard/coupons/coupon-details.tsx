@@ -71,6 +71,14 @@ export function CouponDetails({ coupon }: CouponDetailsProps) {
                             </p>
                         </div>
                         <div className="rounded-lg border p-4">
+                            <p className="text-xs text-muted-foreground">Applies To</p>
+                            <p className="text-sm font-medium mt-1">
+                                {coupon.applicableProducts && coupon.applicableProducts.length > 0
+                                    ? `${coupon.applicableProducts.length} selected product${coupon.applicableProducts.length === 1 ? "" : "s"} only`
+                                    : "The whole order"}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Status</p>
                             <div className="flex gap-2 mt-1">
                                 <Badge

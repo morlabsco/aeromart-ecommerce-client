@@ -232,7 +232,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                         </div>
                         <div className="my-1 h-px bg-border/60" />
-                        {(user.role === "admin"
+                        {(user.role === "admin" || user.role === "manager"
                           ? [
                               { label: "Dashboard", href: "/dashboard/admin" },
                               { label: "Orders", href: "/dashboard/admin/orders" },
@@ -366,7 +366,7 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
           {user ? (
             <>
               <Link
-                href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
+                href={user.role === "customer" ? "/dashboard/customer" : "/dashboard/admin"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
               >

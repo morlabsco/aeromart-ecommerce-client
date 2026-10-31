@@ -122,8 +122,9 @@ export function CartSidebar({
             </div>
           ) : (
             <>
-              {/* ── Item rows ── */}
-              <ScrollArea className="flex-1 px-5">
+              {/* ── Item rows ── (min-h-0 lets the flex child actually shrink so
+                  the footer + CHECKOUT stay pinned with many items) ── */}
+              <ScrollArea className="min-h-0 flex-1 px-5">
                 <div className="divide-y divide-border/60">
                   {items.map((item) => (
                     <div key={itemKey(item)} className="flex gap-4 py-4">

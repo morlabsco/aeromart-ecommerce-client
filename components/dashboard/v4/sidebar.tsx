@@ -75,6 +75,17 @@ const ADMIN_NAV: NavGroup[] = [
     },
 ];
 
+// Manager = staff WITHOUT user management, store settings or the newsletter
+// list (server enforces the same split — this only keeps the nav honest).
+const MANAGER_HIDDEN_LABELS = new Set(["Newsletter", "Users", "Settings"]);
+
+const MANAGER_NAV: NavGroup[] = ADMIN_NAV.map((group) => ({
+    ...group,
+    items: group.items.filter(
+        (item) => !MANAGER_HIDDEN_LABELS.has(item.label),
+    ),
+})).filter((group) => group.items.length > 0);
+
 const CUSTOMER_NAV: NavGroup[] = [
     {
         title: "Main menu",
@@ -124,7 +135,12 @@ export function DashboardSidebar({
         }
     }, [collapsed, focusSearchOnExpand]);
 
-    const groups = user?.role === "customer" ? CUSTOMER_NAV : ADMIN_NAV;
+    const groups =
+        user?.role === "customer"
+            ? CUSTOMER_NAV
+            : user?.role === "manager"
+              ? MANAGER_NAV
+              : ADMIN_NAV;
 
     // The search box filters the menu itself — instant, offline and honest
     // (a global dashboard search can come later as a real feature).

@@ -26,7 +26,11 @@ export type OrderStatus =
 
 export type PaymentStatus = "Pending" | "Paid" | "Failed";
 
-export type PaymentMethod = "COD" | "Online";
+export type PaymentMethod =
+  | "COD"
+  | "Online"
+  | "bkash-manual"
+  | "bank-manual";
 
 export type PaymentProvider = "stripe" | "sslcommerz" | "bkash" | null;
 

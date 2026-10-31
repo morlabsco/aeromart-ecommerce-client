@@ -1,6 +1,10 @@
 // Shared server layout for the route-based Settings pages.
 import { SettingsNav } from "@/components/dashboard/settings/settings-nav";
-import { PresetButton } from "@/components/dashboard/settings/preset-button";
+// TEMPORARILY DISABLED (user decision, 31/10/2026): the niche preset
+// apply/reset feature is parked — applying a preset can clobber the
+// hand-tuned Nittonova theme. The owner manages the theme manually per
+// section. Re-enable by rendering <PresetButton /> again.
+// import { PresetButton } from "@/components/dashboard/settings/preset-button";
 import type { Settings } from "@/lib/types/backend";
 
 interface SettingsPageShellProps {
@@ -25,7 +29,7 @@ export function SettingsPageShell({
                         Manage brand identity, theme and all website sections
                     </p>
                 </div>
-                <PresetButton />
+                {/* PresetButton parked — see the note at the top of this file. */}
             </div>
 
             <SettingsNav />

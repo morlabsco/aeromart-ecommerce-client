@@ -21,13 +21,15 @@ import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { ExternalLink, FileText, Loader2, RotateCcw, Save } from "lucide-react";
 import type { Settings } from "@/lib/types/backend";
+import { buildDefaultReturnRefundHtml } from "@/lib/policy-default-content";
 
 /* ---------------------------------------------------------------------------
  * Settings → Return & Refund — the rich-text editor for the storefront
  * policy page. Storage model: settings.policy.returnRefund holds ONE HTML
- * string (TipTap output). An EMPTY value renders the built-in default page
- * (the typed builder in the app — never deleted); saved HTML overrides only
- * the body, keeping the page shell (hero banner + contact panel) intact.
+ * string (TipTap output). An EMPTY value renders the DEFAULT content (the
+ * same full 8-section HTML "Load default policy" fills the editor with, see
+ * lib/policy-default-content.ts); saved HTML overrides only the body, keeping
+ * the page shell (hero banner + contact panel) intact.
  * ------------------------------------------------------------------------- */
 
 export function PolicySettingsContent({ settings }: { settings: Settings }) {
@@ -116,6 +118,18 @@ export function PolicySettingsContent({ settings }: { settings: Settings }) {
                         : "Everything saved. The page updates the moment you save."}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setHtml(buildDefaultReturnRefundHtml(settings.brand?.name || "AeroMart"));
+                            toast.info(
+                                "Default policy loaded into the editor — edit what you need, then Save & Publish.",
+                            );
+                        }}
+                        disabled={saving || isPending}
+                    >
+                        <FileText className="h-4 w-4" /> Load Default Policy
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={() => setConfirmReset(true)}

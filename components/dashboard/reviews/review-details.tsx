@@ -21,17 +21,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Trash2, Flag, FlagOff } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ReviewPhotos } from "@/components/shared/review-photos";
 import { StarRating } from "@/components/shared/star-rating";
 import { deleteReview, toggleReviewFlag } from "@/lib/services/review";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Review } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 
 export function ReviewDetails({ review }: { review: Review }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [flagReason, setFlagReason] = useState(review.flaggedReason ?? "");
     const [confirmDelete, setConfirmDelete] = useState(false);
+    // Deletes are admin-only — managers may flag/unflag but not delete.
+    const canDelete = useCanDelete();
 
     const handleFlag = () => {
         if (!review.isFlagged && !flagReason.trim()) {
@@ -100,6 +104,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                         )}
                         {review.isFlagged ? "Unflag" : "Flag Review"}
                     </Button>
+                    {canDelete && (
                     <Button
                         variant="destructive"
                         onClick={() => setConfirmDelete(true)}
@@ -108,6 +113,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                     </Button>
+                    )}
                 </div>
             </div>
 
@@ -141,6 +147,8 @@ export function ReviewDetails({ review }: { review: Review }) {
                     <p className="text-sm leading-relaxed text-muted-foreground">
                         &ldquo;{review.description}&rdquo;
                     </p>
+
+                    <ReviewPhotos photoUrls={review.photoUrls} size="md" />
 
                     <div className="grid sm:grid-cols-2 gap-4">
                         <div className="rounded-lg border p-4">

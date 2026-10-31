@@ -33,14 +33,47 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
     .slice(0, 5)
     .map((c) => ({ name: c.name, slug: c.slug }));
 
-  // Public nav: core routes, the top 3 categories, and the return & refund
-  // policy. Signed-in user links live in the header account menu instead.
-  const links: NavbarLink[] = [
+  // Public nav, in a fixed standard the admin cannot accidentally break:
+  //
+  //   Home · Products · Special Offers · { top categories, capped } ·
+  //   [custom links from Settings , Navbar] · Track Order · Return & Refund Policy
+  //
+  // The head, tail and category block are ALWAYS present (user decision);
+  // the settings navbar section can only ADD custom links between the
+  // categories and the tail — never remove the core set. The category cap
+  // keeps the charcoal bar from overflowing on narrower desktop widths.
+  const MAX_NAV_CATEGORIES = 3;
+
+  const coreLinks: NavbarLink[] = [
     link("Home", "/"),
     link("Products", "/products"),
-    ...categories.slice(0, 3).map((c) => link(c.name, `/products?category=${c.slug}`)),
+    link("Special Offers", "/products?offer=true"),
+    ...categories
+      .slice(0, MAX_NAV_CATEGORIES)
+      .map((c) => link(c.name, `/products?category=${c.slug}`)),
     link("Track Order", "/track-order"),
     link("Return & Refund Policy", "/return-refund-policy"),
+  ];
+
+  const coreUrls = new Set(coreLinks.map((l) => l.url));
+  const seenUrls = new Set<string>();
+  const customLinks = [...(settings?.navbar?.links ?? [])]
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .filter(
+      (l) =>
+        l?.label &&
+        l?.url &&
+        !coreUrls.has(l.url) && // can't duplicate the core set
+        !seenUrls.has(l.url) && // or itself
+        seenUrls.add(l.url),    // track what's been kept
+    )
+    .map((l) => link(l.label, l.url));
+
+  const tailCount = 2; // Track Order + Return & Refund Policy
+  const links: NavbarLink[] = [
+    ...coreLinks.slice(0, coreLinks.length - tailCount),
+    ...customLinks,
+    ...coreLinks.slice(coreLinks.length - tailCount),
   ].filter((l) => l?.label && l?.url);
 
   const brand = settings?.brand ?? null;

@@ -142,6 +142,46 @@ export const updateOrder = async (
   }
 };
 
+/** Staff edit of an order: payment method/status (+ reference notes) the
+ *  admin/manager controls from the dashboard. */
+export const updateOrderPayment = async (
+  orderId: string,
+  payload: {
+    paymentMethod?: string;
+    paymentStatus?: string;
+    notes?: string;
+  }
+): Promise<ServiceResult<Order>> => {
+  try {
+    const result = await apiRequest<Order>(`/order/${orderId}`, {
+      method: "PATCH",
+      body: payload,
+    });
+    revalidateTag("ORDER", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
+/** Admin-only hard delete (stock is restored server-side). */
+export const deleteOrder = async (
+  orderId: string
+): Promise<ServiceResult<{ deleted: boolean; orderId: string }>> => {
+  try {
+    const result = await apiRequest<{
+      deleted: boolean;
+      orderId: string;
+    }>(`/order/${orderId}`, {
+      method: "DELETE",
+    });
+    revalidateTag("ORDER", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 export const updateOrderStatus = async (
   orderId: string,
   status: OrderStatus

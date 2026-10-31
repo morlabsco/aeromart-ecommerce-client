@@ -18,10 +18,21 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateBrandSettings } from "@/lib/services/settings";
+import { restampProductCurrency } from "@/lib/services/product";
 import { NICHE_LABELS, NICHE_OPTIONS } from "@/lib/settings-niches";
 import { isErrorResult } from "@/lib/utils/result";
 import type { SettingsBrand, SettingsDeliveryOption } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /** Currency codes the storefront can display (see lib/utils/currency.ts). */
 const CURRENCY_OPTIONS = [
@@ -76,6 +87,14 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
     const [deliveryOptions, setDeliveryOptions] = useState<
         SettingsDeliveryOption[]
     >(brand.deliveryOptions ?? []);
+
+    // Currency force-change flow — only meaningful while the select points
+    // at a DIFFERENT currency than the saved one.
+    const savedCurrency = brand.currency || "usd";
+    const currencyChanged = currency.trim().toLowerCase() !== savedCurrency.toLowerCase();
+    const [forceCurrency, setForceCurrency] = useState(false);
+    const [currencyConfirmOpen, setCurrencyConfirmOpen] = useState(false);
+    const [currencyConfirmText, setCurrencyConfirmText] = useState("");
 
     const [logoPreview, setLogoPreview] = useState<FilePreview | null>(null);
     const [faviconPreview, setFaviconPreview] = useState<FilePreview | null>(null);
@@ -137,6 +156,14 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
                 country: d.country?.trim() || "",
                 isActive: d.isActive,
             }));
+        // Changing the store currency with the force toggle ON is a
+        // catalog-wide action — make the admin prove intent first.
+        if (currencyChanged && forceCurrency) {
+            setCurrencyConfirmText("");
+            setCurrencyConfirmOpen(true);
+            return;
+        }
+
         setSaving(true);
         startTransition(async () => {
             const result = await updateBrandSettings(
@@ -166,6 +193,70 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
             router.refresh();
         });
     };
+
+    /** Save the brand, then (if forced) restamp every product's currency. */
+    const runCurrencyChange = () => {
+        setCurrencyConfirmOpen(false);
+        setSaving(true);
+        startTransition(async () => {
+            const result = await updateBrandSettings(
+                {
+                    name: name.trim(),
+                    tagline,
+                    description,
+                    niche,
+                    nicheLabel,
+                    logoOnly,
+                    currency: currency.trim(),
+                    deliveryOptions: cleanDeliverySnapshot,
+                },
+                {
+                    logo: logoPreview?.file ?? null,
+                    favicon: faviconPreview?.file ?? null,
+                }
+            );
+            if (isErrorResult(result)) {
+                setSaving(false);
+                toast.error(serverErrorMessage(result));
+                return;
+            }
+            setLogoPreview(null);
+            setFaviconPreview(null);
+
+            // Brand saved — now restamp the catalog.
+            const restamp = await restampProductCurrency(currency.trim());
+            setSaving(false);
+            if (isErrorResult(restamp)) {
+                toast.error(
+                    `${serverErrorMessage(restamp)} , brand currency saved, but products still carry the old stamp. Re-save with the toggle on to retry.`
+                );
+                router.refresh();
+                return;
+            }
+            toast.success(
+                `Currency updated , ${restamp.data?.modified ?? 0} product(s) now use ${currency.trim().toUpperCase()}`
+            );
+            setForceCurrency(false);
+            router.refresh();
+        });
+    };
+
+    /** Snapshot of the delivery rows for both save paths. */
+    function cleanDeliverySnapshotRows() {
+        return deliveryOptions
+            .filter((d) => d.name.trim())
+            .map((d) => ({
+                name: d.name.trim(),
+                charge: Number(d.charge) || 0,
+                country: d.country?.trim() || "",
+                isActive: d.isActive,
+            }));
+    }
+    const cleanDeliverySnapshot = cleanDeliverySnapshotRows();
+
+    const newCode = currency.trim().toUpperCase();
+    const confirmMatches =
+        currencyConfirmText.trim().toUpperCase() === newCode;
 
     return (
         <Card>
@@ -264,6 +355,30 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
                     <p className="text-[11px] text-muted-foreground">
                         Single code used across the storefront for pricing and formatting.
                     </p>
+
+                    {currencyChanged && (
+                        <div className="mt-3 rounded-lg border border-warning/50 bg-warning/10 p-4">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <Label className="text-xs font-semibold text-foreground">
+                                        Force all products to {newCode}
+                                    </Label>
+                                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                                        You switched the store currency from{" "}
+                                        <span className="font-semibold">{savedCurrency.toUpperCase()}</span> to{" "}
+                                        <span className="font-semibold">{newCode}</span>. Turn this ON to restamp
+                                        EVERY product&apos;s currency to {newCode} when you save — price numbers stay
+                                        exactly as they are. Leave it OFF and only future edits pick up the new code.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={forceCurrency}
+                                    onCheckedChange={setForceCurrency}
+                                    aria-label={`Force all products to ${newCode}`}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Delivery options */}
@@ -543,6 +658,66 @@ export function BrandSettingsContent({ brand }: BrandSettingsContentProps) {
                         </>
                     )}
                 </Button>
+
+                {/* Hard confirm for the catalog-wide currency restamp — typing
+                    the code proves the admin read the consequences. */}
+                <AlertDialog
+                    open={currencyConfirmOpen}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setCurrencyConfirmOpen(false);
+                            setCurrencyConfirmText("");
+                        }
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                Change every product&apos;s currency to {newCode}?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <span className="block space-y-2 text-left">
+                                    <span className="block">
+                                        This saves the store currency as{" "}
+                                        <span className="font-semibold text-foreground">{newCode}</span> and restamps{" "}
+                                        <span className="font-semibold text-foreground">every product</span> in the
+                                        catalog. Price VALUES are not converted , a 2,000 stays 2,000, it just reads{" "}
+                        {newCode} now. Orders you already placed keep their recorded currency.
+                                    </span>
+                                    <span className="block rounded-md bg-muted px-3 py-2 font-mono text-xs text-foreground">
+                                        {savedCurrency.toUpperCase()} , {newCode}
+                                    </span>
+                                    <span className="block">
+                                        Type <span className="font-bold text-foreground">{newCode}</span> to enable
+                                        the button.
+                                    </span>
+                                </span>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <Input
+                            value={currencyConfirmText}
+                            onChange={(e) => setCurrencyConfirmText(e.target.value)}
+                            placeholder={newCode}
+                            aria-label="Type the new currency code to confirm"
+                            autoComplete="off"
+                        />
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    if (confirmMatches) runCurrencyChange();
+                                }}
+                                disabled={!confirmMatches || saving}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                                {saving
+                                    ? "Updating..."
+                                    : `Yes, restamp all products to ${newCode}`}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </CardContent>
         </Card>
     );

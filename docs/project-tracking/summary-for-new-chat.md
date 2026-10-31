@@ -1,6 +1,6 @@
 # Summary for New Chat — AeroMart Storefront (Nittonova design)
 
-Read this fully before doing anything. Last updated: 30/10/2026 (task batch 9 — items 1–14).
+Read this fully before doing anything. Last updated: 31/10/2026 (task batch 10 — 21 tasks).
 
 ## Context
 
@@ -118,6 +118,31 @@ Categories hover/contain fixes; footer socials → shared brand icons + right-co
 
 **Session leftovers**: temp QA admin `qa-admin@aeromartbd.com` / `QaAdmin#2026` in the dev DB (DELETE when the session's validation is done); QA order AMWEVTAUU5 kept as a correct-math specimen (buggy AMQP4NBRPS deleted + stock restored); `test-aero@example.com` subscribed to the newsletter during API testing.
 
+## Task batch 10 (31/10/2026 — 21 tasks, code-complete + live-verified)
+
+1. **Manager role**: staff = admin+manager (reads + create/update on orders/products/categories/brands/coupons/reviews-flag; order status; meta/activities). ALL deletes + users + settings + newsletter = admin-only. `POST /user` (admin) mints managers (Users → Create User has a role picker). **Public registration is customer-locked** (was self-escalatable to manager!). Client: proxy staff-routing + manager-locked sections (/settings /users /newsletter), MANAGER_NAV sidebar, `DashboardUserProvider` + `useCanDelete()` gating every delete button.
+2. **Review photos**: `photoUrls` (≤3) on reviews; multipart POST /review (`photos` files); validated picker on the product page; shared `ReviewPhotos` (thumbs + lightbox) on product details/admin/customer views; delete destroys photos.
+3. **Table links**: shared `TableLink` — first column of every dashboard table links to its detail page; newsletter has a quick-view Dialog instead.
+4. **PageProgress**: hand-rolled top progress line (primary color, retention trickle easing, anchor-click + pathname hooks, reduced-motion safe) in the root layout.
+5. **Track-order rail**: pulse ring bounded (custom `rail-pulse` 1.4× + rail padding, geometry offset 22→34px) — no x-scroll flicker, no clipping.
+6. **Cart drawer**: `min-h-0` on the items ScrollArea — CHECKOUT stays pinned with many items.
+7. **Currency force-change**: brand settings toggle + hard typed-code confirm modal → `PATCH /product/currency` bulk restamp (stamps only, NO value conversion). Verified 35/35.
+8. **Theme presets PARKED** (`<PresetButton />` commented in settings-page-shell.tsx — dated note; server endpoints remain admin-only).
+9. **Key features**: ALL shown in the buy box (cream panel, 2-col); removed from the description card.
+10. **Orders**: admin DELETE /order + stock restore (cancel also restores once — `stockRestored` marker); gateway initiate PARKED (note in order-payment-actions.tsx) replaced by the staff "Payment & Status" card (method switch + validated manual refs prefilled from notes + payment/order status); **manual bKash/Bank = Paid at creation, COD = Pending**; payment fields are staff-only.
+11. **Upazila**: `lib/data/bd-upazilas.ts` (602 upazilas, verified 64/64 name parity) + `UpazilaCombobox`; checkout + create-order order = District → Upazila → Address (required, resets on district change, appended to the address).
+12. **Coupon scoping**: `applicableProducts` — scoped coupons price from the matching LINES only (min-amount + discount + fixed cap); rejected when none are in the cart. `CouponProductPicker` on both forms; checkout math mirrors the server.
+13. Quick Add Offer modal enlarged (2xl, 420px list).
+14. **NotificationsPopover** on the topbar bell (last 6 activities, badges, timeAgo, View-all link).
+15. **overview-charts.tsx**: status donut + sales-trend bars (7/30d × revenue/orders switches) + payment-method share — pure CSS/SVG.
+16. **Legacy image fix**: update accepts `publicId: ""` + url (zod + URL backfill + client sends url) — the Dental Water Flosser updates cleanly now.
+17. **performedBy everywhere**: authUser threaded through ALL module writes (coupon/category/brand/product/review/settings/newsletter/user) — the audit log names the real actor. Auth middleware accepts `Bearer `-prefixed headers too.
+18. **Navbar standard**: Home · Products · Special Offers · top-3 categories · [settings custom links] · Track Order · Return & Refund — core set non-removable, categories capped.
+19/20. **`lib/utils/product-variants.ts`**: robust axis derivation (in-stock fallback, synthesized axes, attribute-less default SKU) + first-in-stock PRESELECTION + add-to-cart fallback + labeled pill when a color has no hex + honest "currently unavailable" toast. Fixes both the invisible color pickers and "Only undefined available".
+21. **Policy page**: full 8-section HTML in `lib/policy-default-content.ts` (page default + editor "Load Default Policy" button — one source of truth; typed card builder deleted).
+
+**New leftover**: `manager-test@aeromartbd.com` / `Manager#2026` (no user-delete endpoint — deactivate via Users or delete by hand).
+
 ## Next (user's stated plan)
 
 1. **Dashboard v4 — per-page polish pass** — all features already work inside the v4 shell; each feature page needs its internal design lifted to v4 (bare colored icons, v4 stat cards, drop duplicated in-content titles where the quick-view bar already titles the page, form/table/button styling per the v4 system). One by one, wherever the user directs.
@@ -125,6 +150,6 @@ Categories hover/contain fixes; footer socials → shared brand icons + right-co
 2. **Return & Refund Policy (29/10, batch 4)**: rebuilt in full from `docs/data/return-&-refund-policy.md` (Bangla+English, 8 sections + contact panel, brand-dynamic name/tagline/phone/email from settings). The content lives in a typed `buildSections(brand)` data model inside the page — the planned dashboard rich-text editor should store the HTML/sections in the settings singleton and use this builder as the static fallback; the layout (intro card → numbered cards → contact panel) can stay untouched.
 3. **Checkout terms gate (29/10, batch 4)**: the Details step gates PLACE ORDER behind an "I agree to the Terms, Privacy & Refund Policy" checkbox (`errors.terms` in the shared validation; brand link opens `/return-refund-policy` in a new tab).
 4. Owner TODOs: fill `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` in `.env` (contact form falls back to mailto until then); test order `DE4KCY5JEA` sits in the dev DB (cancel/ignore).
-5. Parked: dynamic theme full alignment; admin review module; SSLCommerz v3→v4; delete `settings-manager.tsx` (awaiting verification); SSLCommerz/bKash gateway re-enable (commented block in checkout); validation toasts for the remaining dashboard forms (part of v4).
+5. Parked: dynamic theme full alignment; admin review module; SSLCommerz v3→v4; delete `settings-manager.tsx` (awaiting verification); SSLCommerz/bKash gateway re-enable (commented block in checkout + parked card in order-payment-actions.tsx); validation toasts for the remaining dashboard forms (part of v4); theme preset UI re-enable (commented in settings-page-shell.tsx); delete test manager `manager-test@aeromartbd.com`.
 
 When done with any work: update `works.md` (✅ + short dated description, keep the ✅/🚫 convention), flip the reference row in `public/images/references/readme.md` when a reference-based section is finished, and keep this file current.

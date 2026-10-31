@@ -15,6 +15,8 @@ import { InstantStatusSelect } from "@/components/dashboard/shared/instant-statu
 import { formatCurrency } from "@/lib/utils/currency";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { TableLink } from "@/components/dashboard/shared/table-link";
+import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +39,8 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    // Deletes are admin-only — managers create/update but never delete.
+    const canDelete = useCanDelete();
 
     const currency = brandCurrency;
 
@@ -101,9 +105,11 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                                 row.original.name.charAt(0)
                             )}
                         </div>
-                        <div>
-                            <p className="font-medium text-sm">{row.original.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                            <TableLink href={`/dashboard/admin/products/${row.original._id}`} className="text-sm">
+                                {row.original.name}
+                            </TableLink>
+                            <p className="truncate text-xs text-muted-foreground">
                                 {row.original.slug}
                                 {row.original.sku ? ` · ${row.original.sku}` : ""}
                             </p>
@@ -200,7 +206,8 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`/dashboard/admin/products/update-product/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
+                        {canDelete && (
+<Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
@@ -209,11 +216,12 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
+                        )}
                     </div>
                 ),
             },
         ],
-        []
+        [canDelete]
     );
 
     const confirmDelete = () => {

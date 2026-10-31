@@ -111,7 +111,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 | Manager | `manager` |
 | Customer | `customer` |
 
-Role restrictions per endpoint are listed in each module below. `manager` is defined in the system but **not** currently used by any route guard; the active guards are `admin` and `customer`.
+Role restrictions per endpoint are listed in each module below. **Manager role (31/10/2026)**: managers are STAFF — they share the admin dashboard and can READ lists/details and CREATE/UPDATE orders, products (incl. offers), categories, brands, coupons and reviews (flag state), but every DELETE route, user management, settings and the newsletter list stay admin-only. `POST /user` (admin) is the only way to mint a manager. Public registration is hard-locked to `customer` (validation + service both reject anything else).
 
 ### Refresh token cookie details
 
@@ -372,6 +372,18 @@ Public. Uses the `resetToken` from step 5.5.
 ## 6. User Module
 
 Parent route: `/api/v1/user`
+
+### 6.0 POST /api/v1/user, Create user (ADMIN ONLY)
+
+Creates a dashboard user with an explicit role — the ONLY path that can mint a `manager` (or another admin).
+
+```
+POST /api/v1/user
+Authorization: Bearer <adminAccessToken>
+{ "name": "...", "email": "...", "password": "...", "role": "manager", "phoneNo": "optional" }
+```
+
+`role` ∈ `customer | manager | admin` (defaults to customer). Public registration (`POST /user/register`) is hard-locked to `customer` — any other role in the payload is a validation error.
 
 ### 6.1 POST /api/v1/user/register, Register customer
 
@@ -751,6 +763,18 @@ Authorization: Bearer <adminAccessToken>
 
 ---
 
+### 7.6 PATCH /api/v1/product/currency, Restamp all product currencies (ADMIN ONLY)
+
+Bulk-sets `currency` on EVERY non-deleted product to the given code (`bdt|usd|eur|gbp|inr`). Price VALUES are never converted — only the stamp follows the store's brand currency. Used by the brand-settings "force change all products" flow (typed-code confirmation modal). Registered above `PATCH /:productId` so the literal path wins.
+
+```
+PATCH /api/v1/product/currency
+Authorization: Bearer <adminAccessToken>
+{ "currency": "bdt" }
+```
+
+**Response:** `{ "data": { "matched": 35, "modified": 35 } }`
+
 ## 8. Order Module
 
 Parent route: `/api/v1/order`
@@ -1052,7 +1076,7 @@ Same rules as create: variant products require `variant.sku`; old stock (variant
 
 ### 8.8 PATCH /api/v1/order/:orderId/status, Change order status
 
-Protected, `admin`.
+Protected, `admin` OR `manager` (staff).
 
 **Request:**
 ```
@@ -1077,6 +1101,21 @@ Content-Type: application/json
 ```
 
 **Errors:** 400 "Cannot change status of a completed/cancelled order!" (final states are locked)
+
+Cancelling an order now RETURNS the reserved stock to the catalog exactly once (an internal `stockRestored` marker on the order prevents double-restoring; deletes check the same marker).
+
+### 8.9 DELETE /api/v1/order/:orderId, Delete order (ADMIN ONLY)
+
+Hard-deletes an order and returns its reserved stock (unless the order was already cancelled, which had restored it). Managers are refused by the route guard.
+
+```
+DELETE /api/v1/order/666a1a2b3c4d5e6f7a8b9c0d
+Authorization: Bearer <adminAccessToken>
+```
+
+**Response (200):** `{ "success": true, "data": { "deleted": true, "orderId": "AM..." } }`
+
+**Payment rules (31/10/2026)** — `paymentMethod` now has four values: `COD`, `Online` (gateway), `bkash-manual`, `bank-manual`. At creation the payment status is set automatically: **COD → Pending**, **manual bKash/Bank → Paid** (the customer attached a transaction reference; staff verify afterwards), gateway → Pending until the provider confirms. Staff (admin/manager) may set `paymentMethod` and `paymentStatus` through `PATCH /order/:orderId` — customers editing their own order cannot touch either field (403-free: the fields are simply ignored for non-staff).
 
 ---
 
@@ -1423,7 +1462,9 @@ Coupon model fields: `code` (uppercase, unique), `discountType` (`percentage` | 
 
 ### 12.1 POST /api/v1/coupon, Create coupon
 
-Protected, `admin`.
+Protected, `admin` OR `manager`.
+
+Optional `applicableProducts: string[]` (product ObjectIds, max 100) scopes the coupon: EMPTY/omitted = the whole order; when set, only those products' cart subtotal counts toward `minOrderAmount` and receives the discount (a cart with none of them is rejected at order time with "This coupon only applies to specific products"). Updates accept the same field.
 
 **Request:**
 ```
@@ -1811,6 +1852,7 @@ Authorization: Bearer <customerAccessToken>
 ```
 
 ### 14.4 POST /api/v1/review, Create review
+Multipart now — optional photos ride along as `photos` files (max 3, Cloudinary URLs land on `review.photoUrls: string[]`). JSON bodies still work (no photos). Deleting a review destroys its uploaded photos.
 
 Protected, `customer` only (admin/manager tokens get `401 You are not authorized!`). Validations:
 1. **Product exists + is active**, 404 "Product not found!" / 400 "Product is not available!".
@@ -1854,9 +1896,9 @@ Content-Type: application/json
 
 **Errors:** 404 "Product not found!" / 400 "Product is not available!" / 409 "You have already reviewed this product!"
 
-### 14.5 PATCH /api/v1/review/:reviewId/status, Toggle review flag (admin)
+### 14.5 PATCH /api/v1/review/:reviewId/status, Toggle review flag
 
-Protected, `admin`. Toggles `isFlagged`; flagged reviews are hidden from public reads and excluded from the product's rating calculation.
+Protected, `admin` OR `manager` (staff may flag/unflag; the DELETE route stays admin-only). Toggles `isFlagged`; flagged reviews are hidden from public reads and excluded from the product's rating calculation.
 
 **Request:**
 ```

@@ -103,6 +103,28 @@ export const toggleProductStatus = async (
   }
 };
 
+/**
+ * PATCH /product/currency , admin-only bulk restamp: every product's
+ * `currency` follows the store's new brand currency (values unchanged).
+ */
+export const restampProductCurrency = async (
+  currency: string
+): Promise<ServiceResult<{ matched: number; modified: number }>> => {
+  try {
+    const result = await apiRequest<{ matched: number; modified: number }>(
+      "/product/currency",
+      {
+        method: "PATCH",
+        body: { currency },
+      }
+    );
+    revalidateTag("PRODUCT", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 export const deleteProduct = async (
   productId: string
 ): Promise<ServiceResult<Product>> => {

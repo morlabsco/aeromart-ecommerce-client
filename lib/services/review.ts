@@ -86,6 +86,30 @@ export const createReview = async (
   }
 };
 
+/** POST /review with optional photos — multipart so the backend can push the
+ *  images through Cloudinary (photos key, max 3 files, validated client-side). */
+export const createReviewWithPhotos = async (
+  payload: { rating: number; description: string; product: string },
+  photos: File[]
+): Promise<ServiceResult<Review>> => {
+  try {
+    const formData = new FormData();
+    formData.append("rating", String(payload.rating));
+    formData.append("description", payload.description);
+    formData.append("product", payload.product);
+    photos.slice(0, 3).forEach((photo) => {
+      formData.append("photos", photo, photo.name);
+    });
+    const result = await apiRequest<Review>("/review", {
+      method: "POST",
+      formData,
+    });
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 /** PATCH /review/:reviewId/status , toggle a review's flagged state (admin).
  *  `flaggedReason` is included when flagging so the backend can store it. */
 export const toggleReviewFlag = async (

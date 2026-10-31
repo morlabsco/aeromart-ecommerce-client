@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/utils/currency";
 import { paymentMethodLabel } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 import type { MetaData, Order } from "@/lib/types/backend";
+import { DashboardOverviewCharts } from "./overview-charts";
 
 /* ---------------------------------------------------------------------------
  * Dashboard v4 overview — Nittonova dashboard reference: four stat cards with
@@ -328,6 +329,10 @@ export function DashboardOverviewV4({
                     </ul>
                 </section>
             </div>
+
+            {/* ── Extra business charts (status donut · sales trend · payment
+                methods) with range/metric switches ── */}
+            <DashboardOverviewCharts orders={orders} brandCurrency={brandCurrency} />
         </div>
     );
 }

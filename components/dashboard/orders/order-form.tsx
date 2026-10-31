@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { createOrder } from "@/lib/services/order";
 import { DistrictCombobox } from "@/components/public/checkout/district-combobox";
+import { UpazilaCombobox } from "@/components/public/checkout/upazila-combobox";
 import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
 import { cn } from "@/lib/utils";
 import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone";
@@ -80,6 +81,7 @@ export function CreateOrderForm({
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
     const [layout, setLayout] = useState<FormLayout>("two");
     const [district, setDistrict] = useState("");
+    const [upazila, setUpazila] = useState("");
     const [pickerQuery, setPickerQuery] = useState("");
     const isCustomer = pathname.startsWith("/dashboard/customer");
 
@@ -302,9 +304,13 @@ export function CreateOrderForm({
                 recipientName: values.recipientName,
                 phoneNo: values.phoneNo,
                 notes: values.notes || undefined,
-                shippingAddress: district
-                    ? `${values.shippingAddress}, ${district}`
-                    : values.shippingAddress,
+                shippingAddress: [
+                    values.shippingAddress,
+                    upazila || null,
+                    district || null,
+                ]
+                    .filter(Boolean)
+                    .join(", "),
                 paymentMethod,
             });
 
@@ -859,6 +865,25 @@ export function CreateOrderForm({
                             </div>
 
                             <div className="space-y-2">
+                                <Label>District</Label>
+                                <DistrictCombobox
+                                    value={district}
+                                    onChange={(next) => {
+                                        // A new district invalidates the upazila.
+                                        setDistrict(next);
+                                        setUpazila("");
+                                    }}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Upazila</Label>
+                                <UpazilaCombobox
+                                    district={district}
+                                    value={upazila}
+                                    onChange={setUpazila}
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="shippingAddress">
                                     Address (road / house / area)
                                 </Label>
@@ -873,16 +898,8 @@ export function CreateOrderForm({
                                         {errors.shippingAddress.message}
                                     </p>
                                 )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>District</Label>
-                                <DistrictCombobox
-                                    value={district}
-                                    onChange={setDistrict}
-                                />
                                 <p className="text-[11px] text-muted-foreground">
-                                    Appended to the address so it reads
-                                    “Road…, District”.
+                                    Saved as “Road…, Upazila, District”.
                                 </p>
                             </div>
 

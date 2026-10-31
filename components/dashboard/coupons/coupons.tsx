@@ -14,6 +14,8 @@ import { deleteCoupon, updateCoupon } from "@/lib/services/coupon";
 import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { TableLink } from "@/components/dashboard/shared/table-link";
+import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,6 +36,8 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
+    // Deletes are admin-only — managers create/update but never delete.
+    const canDelete = useCanDelete();
 
     const activeCoupons = coupons.filter((c) => c.isActive).length;
     const percentageCoupons = coupons.filter((c) => c.discountType === "percentage").length;
@@ -69,9 +73,9 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                 header: "Code",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span className="font-mono text-sm font-medium">
+                    <TableLink href={`/dashboard/admin/coupons/${row.original._id}`} mono>
                         {row.original.code}
-                    </span>
+                    </TableLink>
                 ),
             },
             {
@@ -166,7 +170,8 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.code}`} render={<a href={`/dashboard/admin/coupons/update-coupon/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
+                        {canDelete && (
+<Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
@@ -175,11 +180,12 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
+                        )}
                     </div>
                 ),
             },
         ],
-        []
+        [canDelete]
     );
 
     const confirmDelete = () => {

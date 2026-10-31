@@ -26,6 +26,7 @@ import { createCoupon } from "@/lib/services/coupon";
 import { parseLocalDate, toLocalDateString } from "@/lib/utils/date";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { CouponProductPicker } from "@/components/dashboard/coupons/coupon-product-picker";
 
 const couponSchema = z
     .object({
@@ -51,6 +52,8 @@ type CouponFormValues = z.output<typeof couponSchema>;
 export function CreateCouponForm() {
     const router = useRouter();
     const [submitting, setSubmitting] = useState(false);
+    // Product scope — empty = whole order.
+    const [applicableProducts, setApplicableProducts] = useState<string[]>([]);
 
     const {
         register,
@@ -88,6 +91,7 @@ export function CreateCouponForm() {
                 discountValue: values.discountValue,
                 minOrderAmount: values.minOrderAmount || 0,
                 maxDiscountAmount: values.maxDiscountAmount || 0,
+                applicableProducts,
                 startDate: values.startDate,
                 endDate: values.endDate,
                 isActive: values.isActive,
@@ -283,6 +287,11 @@ export function CreateCouponForm() {
                                 )}
                             </div>
                         </div>
+
+                        <CouponProductPicker
+                            selected={applicableProducts}
+                            onChange={setApplicableProducts}
+                        />
 
                         <div className="flex items-center justify-between py-1.5">
                             <div>
