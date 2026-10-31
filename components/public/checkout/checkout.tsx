@@ -16,7 +16,7 @@ import {
   Lock,
   Copy,
 } from "lucide-react"
-import { useCartStore } from "@/lib/store/app-store"
+import { useCartStore, cartSubtotal, cartItemCount } from "@/lib/store/app-store"
 import { ThemedImage } from "../../../components/shared/themed-image"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -299,9 +299,7 @@ interface CheckoutProfile {
 
 export default function Checkout({ profile = null }: { profile?: CheckoutProfile | null }) {
   const items = useCartStore((s) => s.items)
-  const subtotal = useCartStore((s) => s.subtotal)
   const clearCart = useCartStore((s) => s.clearCart)
-  const itemCount = useCartStore((s) => s.itemCount)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const updateItemQuantity = useCartStore((s) => s.updateItemQuantity)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -403,11 +401,14 @@ export default function Checkout({ profile = null }: { profile?: CheckoutProfile
   // "Pickup"-style options have a zero charge → no delivery address needed.
   const isPickup = deliveryCharge === 0
 
-  // Discounted total after applying the coupon, plus delivery charge.
-  const discount = useCouponDiscount(appliedCoupon, items, subtotal())
+  // Discounted total after applying the coupon, plus delivery charge. Totals
+  // derive from the SUBSCRIBED items (pure helpers) — store getters read
+  // during render are non-reactive and memoize stale under React Compiler.
+  const cartTotal = cartSubtotal(items)
+  const discount = useCouponDiscount(appliedCoupon, items, cartTotal)
   // Savings from active product offers already reflected in the subtotal.
   const offerDiscount = offerDiscountFor(items)
-  const finalTotal = Math.max(0, subtotal() - discount + deliveryCharge)
+  const finalTotal = Math.max(0, cartTotal - discount + deliveryCharge)
 
   const changeQty = (item: (typeof items)[number], delta: number) => {
     const next = item.quantity + delta
@@ -453,7 +454,7 @@ export default function Checkout({ profile = null }: { profile?: CheckoutProfile
         return
       }
       const coupon = result.data
-      const base = couponBaseAmount(coupon, items, subtotal())
+      const base = couponBaseAmount(coupon, items, cartSubtotal(items))
       const scoped = coupon.applicableProducts ?? []
       if (scoped.length > 0 && base <= 0) {
         toast.error("This coupon only applies to specific products , none of them are in your cart")
@@ -770,11 +771,13 @@ export default function Checkout({ profile = null }: { profile?: CheckoutProfile
       </div>
       <div className="space-y-2 border-t border-border pt-4 text-sm">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal ({itemCount()} items)</span>
+          <span className="text-muted-foreground">
+            Subtotal ({cartItemCount(items)} items)
+          </span>
           {/* Base prices (before offers) — the offer line below is the actual
-              deduction; subtotal() alone is already offer-adjusted. */}
+              deduction; cartSubtotal alone is already offer-adjusted. */}
           <span className="tabular-nums">
-            {formatCurrency(subtotal() + offerDiscount, currency)}
+            {formatCurrency(cartSubtotal(items) + offerDiscount, currency)}
           </span>
         </div>
         {offerDiscount > 0 && (
@@ -909,7 +912,7 @@ export default function Checkout({ profile = null }: { profile?: CheckoutProfile
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
             Checkout{" "}
-            <span className="font-bold text-muted-foreground">({itemCount()})</span>
+            <span className="font-bold text-muted-foreground">({cartItemCount(items)})</span>
           </h1>
         </div>
 

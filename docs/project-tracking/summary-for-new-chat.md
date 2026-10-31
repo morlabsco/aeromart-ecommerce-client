@@ -1,6 +1,6 @@
 # Summary for New Chat — AeroMart Storefront (Nittonova design)
 
-Read this fully before doing anything. Last updated: 31/10/2026 (task batches 11 + 12).
+Read this fully before doing anything. Last updated: 01/11/2026 (task batches 14 + 15 — v5 complete, prod-ready).
 
 ## Context
 
@@ -164,6 +164,26 @@ Categories hover/contain fixes; footer socials → shared brand icons + right-co
 **Batch 12 also**: Stripe radio parked on checkout; product links on all receipt surfaces; customer dashboard payment card (method switch + validated refs) + overview links; admin own-profile fix (`GET /user/:id` includes self — the LIST endpoint excludes the requester); district/upazila clear buttons (checkout + update-order form, which now edits recipient/phone/address/district/upazila too).
 
 **Leftovers for the owner**: `manager-test@aeromartbd.com` / `Manager#2026` (kept ACTIVE for verification — deactivate when done); `review-e2e@` + `review-shape-test@` deactivated (no user-delete endpoint exists); the user's own completed test order was flipped to Paid during the T23 verification; old `DE…`/test orders from earlier sessions still in the dev DB.
+
+## Task batch 13 (01/11/2026 — 6 tasks, verified)
+
+**Architecture changes that matter going forward:**
+- **`<head>` may only hold metadata/style elements** — PageProgress (a `<div>`) lives at the top of `<body>` now (fixed-position, draws at the viewport top from anywhere). Never put a div-rendering component in `<head>` (hydration error).
+- **`components/dashboard/shared/order-items-card.tsx`** is THE order items card (admin + customer order details): image tile (first `imageUrls` entry with a URL, PackageSearch fallback), linked name, variant + qty×struck→charged, line total. `OrderProductItem.product` is now `… | null` (deleted products render "Deleted product" instead of crashing) and declares `imageUrls`.
+- **`proxy.ts` redirects legacy flat dashboard URLs** (308): `/dashboard/{admin|manager}/{all,create,update}-order|-products|-users|-categories|-brands|-coupons[/…]` → the canonical `/dashboard/{role}/{module}/{leaf}/…`, path tail + query preserved, before auth. The update-order 404 was a stale flat bookmark, never a real route (verified through all git history).
+- **PhoneInput is one row at every width**: wrapper never wraps; the country trigger is content-sized, code-only ("+880") below `xl` (full "Name (+code)" from xl, `title` tooltip always, label truncated, popup fixed `w-64`).
+- my-orders `orderId` + Offered Products `name` columns are `TableLink`s now (the batch-10 sweep had missed them).
+
+## Task batch 14 (01/11/2026 — final v5 works; all CDP-verified)
+
+**Architecture changes that matter going forward:**
+- **`components/shared/rich-description.tsx`** (`looksLikeHtml` + `RichDescription`) is THE description renderer — editor HTML → `.rich-description`, plain text → paragraphs. Used by the public product page AND the dashboard product details (whose Overview card renders it in a `max-h-[26rem]` scrollable box with a "No description written yet." dashed placeholder). Never render `product.description` into a raw `<p>` again.
+- **PhoneInput trigger is `flex` now** — that was the whole two-row-chevron bug (no display:flex → label + chevron were wrappable inline content; the chevron overflowed the button onto the input and clicks on it "glitched" the popup open). The label switches on the FIELD's width via a container query: wrapper `@container`, label `@min-[17rem]` (compact "+880" in cramped columns, full "Name (+code)" in wide fields). Any new combobox-style trigger MUST have `flex … items-center` + `whitespace-nowrap`/`truncate` (see district-combobox for the pattern).
+- **`ReviewPhotos` lightbox**: white card + header counter + explicit close button + prev/next buttons + bottom thumbnail rail + arrow keys; single photo hides nav/rail; the `useEffect` runs BEFORE the empty-photos early return (hooks order).
+
+## Task batch 15 (01/11/2026 — cart reactivity, root-caused)
+
+- **NEVER read zustand state via store getters during render** (`useCartStore((s) => s.subtotal)` + `subtotal()` in a render body). The getter subscription returns a STABLE function reference (never re-renders) and the call reads live state outside React's data flow — with `reactCompiler: true` the compiler memoizes the result pure, so the value sits ONE MUTATION STALE until a reload. This was the "header cart total doesn't update without reload" bug. The store now exports pure **`cartSubtotal(items)` / `cartItemCount(items)`** helpers; the header, cart sidebar and checkout derive every money/count value from the SUBSCRIBED `items` (`useCartStore((s) => s.items)`). Store `subtotal()`/`itemCount()` methods remain for event-handler/imperative reads only.
 
 ## Next (user's stated plan)
 

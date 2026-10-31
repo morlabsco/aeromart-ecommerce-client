@@ -1,12 +1,19 @@
 // Order module types, docs/v7-backend-usage-guide.md §8.
 
 export interface OrderProductItem {
+  /**
+   * Populated product snapshot. `null` when the product has been deleted
+   * since the order was placed (Mongoose populate returns null) — the
+   * order's own price/quantity snapshot still renders.
+   */
   product: {
     _id: string;
     name: string;
     slug?: string;
     price: number;
-  };
+    /** Gallery (populated) — first entry with a URL is the thumbnail. */
+    imageUrls?: { publicId?: string; url: string; order?: number }[];
+  } | null;
   quantity: number;
   unitPrice: number;
   /** Pre-offer unit price snapshot; legacy orders may lack it (→ unitPrice). */

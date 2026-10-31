@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { ChevronDown, LayoutDashboard, LogOut, Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
-import { useCartStore, useUIStore } from "@/lib/store/app-store"
+import { useCartStore, useUIStore, cartSubtotal, cartItemCount } from "@/lib/store/app-store"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
 import { formatCurrency } from "../../lib/utils/currency"
 import { cn } from "../../lib/utils"
@@ -46,14 +46,20 @@ const stackedValue = "text-sm font-bold leading-tight text-foreground"
 export function Header({ brand, navLinks, user }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const items = useCartStore((state) => state.items)
-  const subtotal = useCartStore((s) => s.subtotal)
   const setCartOpen = useUIStore((s) => s.setCartOpen)
   const isMobileMenuOpen = useUIStore((s) => s.isMobileMenuOpen)
   const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen)
 
-  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
+  // Derive BOTH the count and the total from the subscribed items — reading
+  // the store's subtotal() getter during render is a non-reactive read that
+  // React Compiler memoized one mutation stale (the total lagged every
+  // add-to-cart until a reload).
+  const cartCount = cartItemCount(items)
   // Prefer the live brand currency from settings over the product snapshot.
-  const cartTotal = formatCurrency(subtotal(), brand?.currency ?? items[0]?.product.currency)
+  const cartTotal = formatCurrency(
+    cartSubtotal(items),
+    brand?.currency ?? items[0]?.product.currency
+  )
 
   // Fall back to the static theme config when settings aren't available.
   const theme = themes[DEFAULT_NICHE]

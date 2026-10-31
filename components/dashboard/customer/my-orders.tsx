@@ -12,6 +12,7 @@ import type { ApiMeta, Order } from "@/lib/types/backend";
 import { formatCurrency } from "@/lib/utils/currency";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { OrderStatusBadge } from "@/components/shared/order-status-badge";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 
 interface MyOrdersTableProps {
     orders: Order[];
@@ -60,9 +61,13 @@ export function MyOrdersTable({ orders, meta, brandCurrency = "usd" }: MyOrdersT
                 header: "Order ID",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <span className="font-mono text-sm font-medium">
-                        {row.original.orderId || `#${row.original._id.slice(-8)}`}
-                    </span>
+                    <TableLink
+                        href={`/dashboard/customer/orders/${row.original._id}`}
+                        mono
+                    >
+                        {row.original.orderId ||
+                            `#${row.original._id.slice(-8)}`}
+                    </TableLink>
                 ),
             },
             {
@@ -144,7 +149,7 @@ export function MyOrdersTable({ orders, meta, brandCurrency = "usd" }: MyOrdersT
                 ),
             },
         ],
-        []
+        [currency]
     );
 
     return (

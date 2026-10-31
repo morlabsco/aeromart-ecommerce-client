@@ -50,10 +50,13 @@ export default function RootLayout({
             className={cn("h-full", "antialiased", "font-sans", jost.variable, hindSiliguri.variable)}
         >
             <head>
-                <PageProgress />
                 <ThemeProvider />
             </head>
             <body className="min-h-full flex flex-col">
+                {/* PageProgress renders a <div> — it must live in <body>, not
+                    <head> (invalid HTML → hydration error). It's fixed-position
+                    so it draws at the viewport top from anywhere. */}
+                <PageProgress />
                 <main className="flex-1">{children}</main>
                 <Toaster position="top-right" />
             </body>

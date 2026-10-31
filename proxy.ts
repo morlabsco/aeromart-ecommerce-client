@@ -15,6 +15,44 @@ const ADMIN_PREFIX = "/dashboard/admin";
 const MANAGER_PREFIX = "/dashboard/manager";
 const CUSTOMER_PREFIX = "/dashboard/customer";
 
+// Sub-route leaves that live under a module folder (e.g. /dashboard/admin/
+// orders/update-order/[id]). Old bookmarks or hand-typed URLs sometimes drop
+// the module segment (/dashboard/admin/update-order/…) — map those to the
+// canonical route instead of letting them 404.
+const MODULE_LEAVES: Record<string, string> = {
+    "all-orders": "orders",
+    "create-order": "orders",
+    "update-order": "orders",
+    "all-products": "products",
+    "create-product": "products",
+    "update-product": "products",
+    "offered-products": "products",
+    "all-users": "users",
+    "create-user": "users",
+    "update-user": "users",
+    "all-categories": "categories",
+    "create-category": "categories",
+    "update-category": "categories",
+    "all-brands": "brands",
+    "create-brand": "brands",
+    "update-brand": "brands",
+    "all-coupons": "coupons",
+    "create-coupon": "coupons",
+    "update-coupon": "coupons",
+};
+
+/** Canonical path for a legacy flat dashboard URL, or null when it's not one. */
+function legacyDashboardRedirect(pathname: string): string | null {
+    const match = pathname.match(
+        /^\/dashboard\/(admin|manager)\/([^/]+)(\/.*)?$/
+    );
+    if (!match) return null;
+    const [, role, leaf, rest = ""] = match;
+    const module = MODULE_LEAVES[leaf];
+    if (!module) return null;
+    return `/dashboard/${role}/${module}/${leaf}${rest}`;
+}
+
 // Admin-ONLY dashboard sections (defense in depth — the proxy already keeps
 // managers on /dashboard/manager entirely; these guard the admin prefix).
 const ADMIN_ONLY_SECTIONS = [
@@ -71,6 +109,17 @@ function roleHome(role: string | undefined): string {
 
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    // Legacy flat dashboard URLs → canonical module route (permanent, so
+    // browsers rewrite stale bookmarks/history). Runs before auth so the
+    // login callbackUrl also lands on the canonical path.
+    const legacy = legacyDashboardRedirect(pathname);
+    if (legacy) {
+        const canonical = new URL(legacy, request.url);
+        canonical.search = request.nextUrl.search;
+        return NextResponse.redirect(canonical, 308);
+    }
+
     const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
     const hasToken = !!token;
     const payload = token ? decodeToken(token) : null;

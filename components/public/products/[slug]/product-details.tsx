@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ProductCard } from "@/components/shared/product-card"
+import { RichDescription } from "@/components/shared/rich-description"
 import { StarRating } from "@/components/shared/star-rating"
 import { ReviewPhotos } from "@/components/shared/review-photos"
 import {
@@ -101,32 +102,9 @@ const AVATAR_TINTS = [
 
 /* ── Product description rendering ──
  * The admin writes descriptions in a rich-text editor, so the field can be
- * HTML (headings, lists, tables) OR plain text. HTML is rendered into a
- * token-styled `.rich-description` container (admin-authored content, same
- * trust level as any CMS); plain text renders as paragraphs. Both use the
- * Bangla "Li Ador Noirrit" face first with the Jost/Hind stack behind it. */
-const looksLikeHtml = (text: string) => /<\/?[a-z][^>]*>/i.test(text)
-
-function renderDescription(text: string) {
-  if (!looksLikeHtml(text)) {
-    return (
-      <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-        {text
-          .split(/\n+/)
-          .filter(Boolean)
-          .map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-      </div>
-    )
-  }
-  return (
-    <div
-      className="rich-description text-sm leading-relaxed text-muted-foreground"
-      dangerouslySetInnerHTML={{ __html: text }}
-    />
-  )
-}
+ * HTML (headings, lists, tables) OR plain text — the shared
+ * `RichDescription` component renders both (token-styled `.rich-description`
+ * for HTML, relaxed paragraphs for plain text). */
 
 /* ── Main component ── */
 interface ProductDetailsProps {
@@ -812,11 +790,13 @@ export default function ProductDetails({
             </button>
             {descriptionOpen && (
               <div className="mt-6 space-y-6">
-                {product.description &&
-                  renderDescription(product.description)}
+                {product.description && (
+                  <RichDescription text={product.description} />
+                )}
                 {product.fullDescription &&
-                  product.fullDescription !== product.description &&
-                  renderDescription(product.fullDescription)}
+                  product.fullDescription !== product.description && (
+                    <RichDescription text={product.fullDescription} />
+                  )}
                 {/* Key features live in the buy box above — not repeated here. */}
               </div>
             )}

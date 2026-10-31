@@ -28,6 +28,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { OfferPriceEditor } from "@/components/dashboard/shared/product-pricing-editors";
+import { TableLink } from "@/components/dashboard/shared/table-link";
 import {
     BadgePercent,
     CalendarClock,
@@ -221,9 +222,12 @@ export function OfferedProductsTable({
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-medium">
+                                <TableLink
+                                    href={`${base}/products/${row.original._id}`}
+                                    className="block"
+                                >
                                     {row.original.name}
-                                </p>
+                                </TableLink>
                                 <p className="truncate text-xs text-muted-foreground">
                                     {formatCurrency(
                                         row.original.price,
@@ -332,7 +336,7 @@ export function OfferedProductsTable({
                 ),
             },
         ],
-        [currency],
+        [currency, base],
     );
 
     const statCards = [

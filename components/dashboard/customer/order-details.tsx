@@ -17,12 +17,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Ban, CreditCard, Loader2 } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft, Ban, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { formatCurrency } from "@/lib/utils/currency";
+import { OrderItemsCard } from "@/components/dashboard/shared/order-items-card";
 import { updateOrder, updateOrderPayment } from "@/lib/services/order";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { OrderStatusBadge } from "@/components/shared/order-status-badge";
@@ -361,69 +360,7 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="text-base">Items</CardTitle>
-                        <CardDescription>Products in this order</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {order.products.map((item, i) => (
-                            <div key={i} className="flex items-center justify-between rounded-lg border p-4">
-                                <div>
-                                    {item.product.slug ? (
-                                        <Link
-                                            href={`/products/${item.product.slug}`}
-                                            className="text-sm font-medium underline-offset-4 transition-colors hover:text-brand hover:underline"
-                                        >
-                                            {item.product.name}
-                                        </Link>
-                                    ) : (
-                                        <p className="text-sm font-medium">{item.product.name}</p>
-                                    )}
-                                    {item.variant && (
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                            {Object.entries(
-                                                item.variant.attributes ?? {}
-                                            )
-                                                .map(
-                                                    ([key, value]) =>
-                                                        `${key}: ${value}`
-                                                )
-                                                .join(" · ")}
-                                            {item.variant.sku && (
-                                                <span className="font-mono">
-                                                    {" "}
-                                                    · {item.variant.sku}
-                                                </span>
-                                            )}
-                                        </p>
-                                    )}
-                                    <p className="mt-0.5 flex flex-wrap items-baseline gap-1.5 text-xs text-muted-foreground">
-                                        <span>
-                                            {item.quantity} ×{" "}
-                                            {(item.baseUnitPrice ?? item.unitPrice) >
-                                            item.unitPrice ? (
-                                                <>
-                                                    <span className="mr-1 line-through decoration-muted-foreground/60">
-                                                        {formatCurrency(item.baseUnitPrice ?? item.unitPrice, currency)}
-                                                    </span>
-                                                    <span className="font-semibold text-foreground">
-                                                        {formatCurrency(item.unitPrice, currency)}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                formatCurrency(item.unitPrice, currency)
-                                            )}
-                                        </span>
-                                    </p>
-                                </div>
-                                <p className="text-sm font-medium tabular-nums">
-                                    {formatCurrency(item.quantity * item.unitPrice, currency)}
-                                </p>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
+                <OrderItemsCard products={order.products} currency={currency} />
 
                 <Card>
                     <CardHeader>

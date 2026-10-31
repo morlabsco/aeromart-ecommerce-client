@@ -1,7 +1,7 @@
 "use client"
 
 import { X, ShoppingCart, Trash2, Plus, Minus, ArrowRight } from "lucide-react"
-import { useCartStore, useUIStore } from "@/lib/store/app-store"
+import { useCartStore, useUIStore, cartSubtotal } from "@/lib/store/app-store"
 import { ScrollArea } from "../ui/scroll-area"
 import { buttonVariants } from "../ui/button"
 import { cn } from "@/lib/utils"
@@ -38,7 +38,6 @@ export function CartSidebar({
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const updateItemQuantity = useCartStore((s) => s.updateItemQuantity)
   const clearCart = useCartStore((s) => s.clearCart)
-  const subtotal = useCartStore((s) => s.subtotal)
   const isCartOpen = useUIStore((s) => s.isCartOpen)
   const setCartOpen = useUIStore((s) => s.setCartOpen)
 
@@ -211,7 +210,7 @@ export function CartSidebar({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-lg font-extrabold text-brand tabular-nums">
-                    {formatCurrency(subtotal(), currency ?? items[0]?.product.currency)}
+                    {formatCurrency(cartSubtotal(items), currency ?? items[0]?.product.currency)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">

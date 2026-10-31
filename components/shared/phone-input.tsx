@@ -118,7 +118,13 @@ export function PhoneInput({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-stretch gap-2 sm:flex-nowrap",
+        // One row, ALWAYS — the code select is content-sized (never w-full,
+        // which made it claim the whole first row and wrap the number input
+        // onto a second one) and the input takes whatever is left. The
+        // wrapper is a container so the trigger's label can switch on the
+        // FIELD's own width, not the viewport (the same component lives in
+        // full-width sections and cramped two-column grids).
+        "flex @container items-stretch gap-2",
         className,
       )}
     >
@@ -138,23 +144,44 @@ export function PhoneInput({
         disabled={lockCountry}
       >
         <ComboboxTrigger
-          aria-label="Country code"
+          aria-label={`Country code (${selectedLabel})`}
+          title={selectedLabel}
           className={cn(
-            "h-11 w-full max-w-[13rem] shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-sm font-semibold shadow-xs transition-[color,box-shadow,border-color] outline-none sm:w-[12.5rem]",
+            // flex is what keeps the chevron on ONE row — without it the
+            // label + chevron are wrappable inline content and the chevron
+            // drops below the label (overflowing the button onto the input,
+            // which made clicks near the border "glitch" the popup open).
+            "flex h-11 w-auto max-w-[13rem] shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-sm font-semibold shadow-xs transition-[color,box-shadow,border-color] outline-none",
             "focus-visible:border-brand/50 focus-visible:ring-2 focus-visible:ring-ring/25",
             "data-popup-open:border-brand/50 data-popup-open:ring-2 data-popup-open:ring-ring/25",
-            "[&>svg]:transition-transform data-popup-open:[&>svg]:rotate-180",
+            "[&>svg]:shrink-0 [&>svg]:transition-transform data-popup-open:[&>svg]:rotate-180",
             "dark:bg-input/30 dark:hover:bg-input/50",
           )}
         >
-          <ComboboxValue placeholder="Code" />
+          {/* Compact when the field is narrow (tight form columns can't
+              afford the full country name beside the number) — the full
+              "Name (code)" label only where the field itself is ≥17rem wide.
+              The dropdown always lists every name (searchable) and the
+              trigger carries a title tooltip. */}
+          <ComboboxValue placeholder="Code">
+            {() => (
+              <span className="min-w-0 truncate">
+                <span className="@min-[17rem]:hidden">{dial.code}</span>
+                <span className="hidden @min-[17rem]:inline">
+                  {selectedLabel}
+                </span>
+              </span>
+            )}
+          </ComboboxValue>
         </ComboboxTrigger>
         <ComboboxContent
           side="bottom"
           sideOffset={8}
           align="start"
           collisionAvoidance={{ side: "shift", fallbackAxisSide: "none" }}
-          className="min-w-0"
+          // The trigger is compact, so the anchor-width popup would be too
+          // narrow to search in — give the dropdown a comfortable fixed width.
+          className="min-w-0 w-64"
         >
           <ComboboxInput
             showTrigger={false}

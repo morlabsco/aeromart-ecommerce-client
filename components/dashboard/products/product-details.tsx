@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, Maximize2, Pencil, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/currency";
+import { RichDescription } from "@/components/shared/rich-description";
 import type { Product } from "@/lib/types/backend";
 import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
@@ -171,7 +172,25 @@ export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetail
                         <CardDescription>Product information</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">{product.description}</p>
+                        {/* Description — admin rich text (same renderer as the
+                            storefront); long content scrolls inside the box
+                            instead of stretching the page. */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Description
+                            </p>
+                            {product.description?.trim() ? (
+                                <div className="max-h-[26rem] overscroll-contain overflow-y-auto rounded-lg border bg-muted/30 p-4">
+                                    <RichDescription
+                                        text={product.description}
+                                    />
+                                </div>
+                            ) : (
+                                <p className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                                    No description written yet.
+                                </p>
+                            )}
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="rounded-lg border p-4">

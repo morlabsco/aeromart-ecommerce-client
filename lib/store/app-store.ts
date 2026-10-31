@@ -76,6 +76,20 @@ export interface CartMutationResult {
   available?: number
 }
 
+/** Pure cart math over an items array. In React renders ALWAYS derive from
+ *  the subscribed items (useCartStore((s) => s.items) + these helpers) —
+ *  calling the store's subtotal()/itemCount() getters during render is a
+ *  NON-REACTIVE read that React Compiler memoizes one mutation stale (the
+ *  header total lagged every add until reload). The store getters remain
+ *  for imperative/event-handler reads of live state. */
+export function cartSubtotal(items: CartItem[]): number {
+  return items.reduce((sum, i) => sum + lineUnitPrice(i) * i.quantity, 0)
+}
+
+export function cartItemCount(items: CartItem[]): number {
+  return items.reduce((sum, i) => sum + i.quantity, 0)
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -167,8 +181,8 @@ export const useCartStore = create<CartState>()(
         return { ok: true, capped: clamped !== quantity, available: maxStock }
       },
       clearCart: () => set({ items: [] }),
-      itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
-      subtotal: () => get().items.reduce((sum, i) => sum + lineUnitPrice(i) * i.quantity, 0),
+      itemCount: () => cartItemCount(get().items),
+      subtotal: () => cartSubtotal(get().items),
     }),
     {
       name: "demo-ecomm-cart",
