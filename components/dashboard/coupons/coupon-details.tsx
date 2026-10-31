@@ -7,26 +7,45 @@ import type { Coupon } from "@/lib/types/backend";
 
 interface CouponDetailsProps {
     coupon: Coupon;
+    /** Dashboard URL base (/dashboard/admin or /dashboard/manager) — the
+     *  page derives it from the session role; relative "../" hrefs resolve
+     *  against the URL directory and land on the role overview instead of
+     *  the coupons list. */
+    base?: string;
 }
 
-export function CouponDetails({ coupon }: CouponDetailsProps) {
+export function CouponDetails({
+    coupon,
+    base = "/dashboard/admin",
+}: CouponDetailsProps) {
     const expired = new Date(coupon.endDate) < new Date();
 
     return (
         <div className="space-y-6">
-            <div className="flex items-start justify-between">
-                <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                     <h2 className="text-2xl font-bold tracking-tight">{coupon.code}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                         Coupon details
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" render={<Link href="../" />} className="flex items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    <Button
+                        variant="outline"
+                        render={<Link href={`${base}/coupons/all-coupons`} />}
+                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
-                    <Button render={<Link href={`../update-coupon/${coupon._id}`} />} className="flex items-center gap-2">
+                    <Button
+                        render={
+                            <Link
+                                href={`${base}/coupons/update-coupon/${coupon._id}`}
+                            />
+                        }
+                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    >
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>

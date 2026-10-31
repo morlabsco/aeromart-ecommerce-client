@@ -33,7 +33,7 @@ export function UserDetails({ user, isSelf = false, selfRole = "admin" }: UserDe
                                 href={
                                     selfRole === "manager"
                                         ? "/dashboard/manager"
-                                        : "/dashboard/admin/users"
+                                        : "/dashboard/admin/users/all-users"
                                 }
                             />
                         }

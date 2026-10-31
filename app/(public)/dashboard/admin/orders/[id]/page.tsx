@@ -10,6 +10,8 @@ import { OrderDetails } from "@/components/dashboard/orders/order-details";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
 import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
+import { getSession } from "@/lib/get-session";
+import { dashboardBaseFor } from "@/lib/utils/dashboard-base";
 
 export const dynamic = "force-dynamic";
 
@@ -18,16 +20,31 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function OrderDetailsContent({ orderId }: { orderId: string }) {
-    const [result, settingsResult] = await Promise.all([
+    const [result, settingsResult, session] = await Promise.all([
         getOrderById(orderId),
         getSettings(),
+        getSession(),
     ]);
+    // The page is shared with /dashboard/manager — the session role tells us
+    // which base the Back/Update links must use.
+    const base = dashboardBaseFor(session.user?.role);
     if (isErrorResult(result) || !result.data) {
         const message = isErrorResult(result) ? result.message : "Order not found!";
-        return <DetailError message={message} backHref="/dashboard/admin/orders" />;
+        return (
+            <DetailError
+                message={message}
+                backHref={`${base}/orders/all-orders`}
+            />
+        );
     }
     const brandCurrency = unwrapData(settingsResult)?.brand?.currency ?? "usd";
-    return <OrderDetails order={result.data} brandCurrency={brandCurrency} />;
+    return (
+        <OrderDetails
+            order={result.data}
+            brandCurrency={brandCurrency}
+            base={base}
+        />
+    );
 }
 
 export default async function OrderDetailsPage({

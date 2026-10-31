@@ -22,7 +22,6 @@ import {
     Ticket,
     Users,
 } from "lucide-react";
-import { logoutAction } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -289,9 +288,21 @@ export function DashboardSidebar({
                                                 type="button"
                                                 disabled={loggingOut}
                                                 title={collapsed ? item.label : undefined}
-                                                onClick={async () => {
+                                                onClick={() => {
                                                     setLoggingOut(true);
-                                                    await logoutAction();
+                                                    // Full-page navigation to
+                                                    // the /logout flow — it
+                                                    // clears the session cookie
+                                                    // AND redirects home.
+                                                    // Calling logoutAction()
+                                                    // alone left the visitor
+                                                    // on /dashboard with a
+                                                    // dead session (the page
+                                                    // then errored on every
+                                                    // authenticated fetch).
+                                                    window.location.assign(
+                                                        "/logout"
+                                                    );
                                                 }}
                                                 className={cn(
                                                     "flex w-full cursor-pointer items-center overflow-hidden rounded-lg text-sm transition-colors hover:bg-white/5 hover:text-header-nav-foreground disabled:opacity-50",

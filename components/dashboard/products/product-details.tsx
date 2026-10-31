@@ -81,7 +81,7 @@ export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetail
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" render={<Link href={`${base}/products`} />} className="flex items-center gap-2">
+                    <Button variant="outline" render={<Link href={`${base}/products/all-products`} />} className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>

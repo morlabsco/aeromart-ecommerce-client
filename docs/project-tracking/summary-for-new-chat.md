@@ -1,6 +1,6 @@
 # Summary for New Chat — AeroMart Storefront (Nittonova design)
 
-Read this fully before doing anything. Last updated: 01/11/2026 (task batches 14 + 15 — v5 complete, prod-ready).
+Read this fully before doing anything. Last updated: 01/11/2026 (task batches 14–17 — v5 complete, prod-ready).
 
 ## Context
 
@@ -184,6 +184,18 @@ Categories hover/contain fixes; footer socials → shared brand icons + right-co
 ## Task batch 15 (01/11/2026 — cart reactivity, root-caused)
 
 - **NEVER read zustand state via store getters during render** (`useCartStore((s) => s.subtotal)` + `subtotal()` in a render body). The getter subscription returns a STABLE function reference (never re-renders) and the call reads live state outside React's data flow — with `reactCompiler: true` the compiler memoizes the result pure, so the value sits ONE MUTATION STALE until a reload. This was the "header cart total doesn't update without reload" bug. The store now exports pure **`cartSubtotal(items)` / `cartItemCount(items)`** helpers; the header, cart sidebar and checkout derive every money/count value from the SUBSCRIBED `items` (`useCartStore((s) => s.items)`). Store `subtotal()`/`itemCount()` methods remain for event-handler/imperative reads only.
+
+## Task batch 17 (01/11/2026 — description whitespace)
+
+- **`RichDescription` preserves editor whitespace now** (both pages, one component): the HTML branch runs `preserveEditorWhitespace()` — blank/space-only/nbsp-only `<p>` → `<p><br></p>` (visible empty line; browsers give empty paragraphs NO line box) and 2+ space runs in text nodes → `&nbsp;` (single spaces render fine); text segments containing newlines are skipped (pretty-printed legacy HTML must not gain stray lines — all stored descriptions are compact TipTap output). The PLAIN-TEXT branch renders `whitespace-pre-wrap` (never split into paragraphs — `split(/\n+/)` collapsed deliberate blank lines). The transform is render-only: stored data and the TipTap edit round-trip are untouched. TipTap's editing surface is pre-wrap, which is why the edit page always showed what the details pages dropped.
+
+## Task batch 16 (01/11/2026 — logout, back buttons, receipt overflow)
+
+**Architecture changes that matter going forward:**
+- **NEVER use relative `../` hrefs from dynamic-segment pages** — URL `..` resolution strips the dynamic segment AND its parent directory (`/dashboard/admin/orders/<id>` + `../update-order/x` → the FLAT `/dashboard/admin/update-order/x`; `../` alone → the role overview). Use **`lib/utils/dashboard-base.ts`** (`dashboardBaseFor(role)` — server-safe; `dashboard-user.tsx` re-exports it for client code) or `useDashboardBase()` in client components. The shared detail pages (orders/coupons/brands/categories [id]) take a `base` prop derived from the SESSION ROLE (the alias manager pages re-export the admin page, so the role is the only prefix signal). Back buttons go to the module LIST pages (all-orders/all-products/…), matching the sidebar nav.
+- **Sidebar/desktop logout = full-page `/logout` navigation** (the server action `logoutAction()` only clears the cookie — staying on the page leaves a dead session).
+- **`truncate` on an anchor needs `block`** — `truncate` (overflow+nowrap) on an INLINE `<a>` doesn't constrain the line box and long text blows out the page (this broke /order/success, /payment/* and /track-order with long product names). Always `block truncate` (or `line-clamp`, which sets its own display) inside `min-w-0 flex-1` rows.
+- Detail page headers (admin + customer order details) stack their action buttons full-width on phones (`flex w-full flex-col gap-2 sm:w-auto sm:flex-row`).
 
 ## Next (user's stated plan)
 

@@ -176,7 +176,11 @@ export function OrderSummaryCard({
               {item.slug ? (
                 <Link
                   href={`/products/${item.slug}`}
-                  className="truncate text-[15px] font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                  // block is REQUIRED — truncate (overflow+nowrap) on an
+                  // inline anchor doesn't constrain the line box, so long
+                  // product names painted past the card and blew out the
+                  // page on phones.
+                  className="block truncate text-[15px] font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
                 >
                   {item.name}
                 </Link>
@@ -210,7 +214,7 @@ export function OrderSummaryCard({
                 </span>
               </p>
             </div>
-            <span className="text-[15px] font-bold tabular-nums text-foreground">
+            <span className="shrink-0 text-[15px] font-bold tabular-nums text-foreground">
               {formatCurrency(item.total, money)}
             </span>
           </li>

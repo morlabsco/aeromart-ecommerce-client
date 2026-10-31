@@ -12,6 +12,8 @@ import { BrandDetails } from "@/components/dashboard/brands/brand-details";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
 import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
+import { getSession } from "@/lib/get-session";
+import { dashboardBaseFor } from "@/lib/utils/dashboard-base";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +22,24 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function BrandDetailsContent({ brandId }: { brandId: string }) {
-    const result = await getAllBrands({ limit: 100 });
+    const [result, session] = await Promise.all([
+        getAllBrands({ limit: 100 }),
+        getSession(),
+    ]);
+    // Shared with /dashboard/manager — the session role picks the base.
+    const base = dashboardBaseFor(session.user?.role);
     if (isErrorResult(result)) {
-        return <DetailError message={result.message} backHref="/dashboard/admin/brands" />;
+        return (
+            <DetailError
+                message={result.message}
+                backHref={`${base}/brands/all-brands`}
+            />
+        );
     }
     const brand = unwrapData(result)?.find((b) => b._id === brandId);
     if (!brand) notFound();
 
-    return <BrandDetails brand={brand} />;
+    return <BrandDetails brand={brand} base={base} />;
 }
 
 export default async function BrandDetailsPage({

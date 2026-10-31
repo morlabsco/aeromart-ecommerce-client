@@ -17,14 +17,23 @@ interface OrderDetailsProps {
      * stale) stamp is only a fallback. */
     brandCurrency?: string;
     order: Order;
+    /** Dashboard URL base (/dashboard/admin or /dashboard/manager) — the
+     * page derives it from the session role. Links are built explicitly on
+     * it; relative "../" hrefs resolve against the URL directory and land on
+     * the role overview instead of the orders list. */
+    base?: string;
 }
 
-export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps) {
+export function OrderDetails({
+    order,
+    brandCurrency = "usd",
+    base = "/dashboard/admin",
+}: OrderDetailsProps) {
     const currency = brandCurrency ?? order.currency;
     return (
         <div className="space-y-6">
-            <div className="flex items-start justify-between">
-                <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                     <h2 className="text-2xl font-bold tracking-tight">
                         Order {order.orderId || order._id.slice(-8)}
                     </h2>
@@ -32,8 +41,14 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                         Order details
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" render={<Link href="../" />} className="flex items-center gap-2">
+                {/* Stacked full-width on phones, inline on sm+ — the three
+                    buttons used to squeeze onto one tight row. */}
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    <Button
+                        variant="outline"
+                        render={<Link href={`${base}/orders/all-orders`} />}
+                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
@@ -41,9 +56,17 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                         <DownloadInvoiceButton
                             orderId={order._id}
                             label="Invoice"
+                            className="w-full justify-center sm:w-auto"
                         />
                     )}
-                    <Button render={<Link href={`../update-order/${order._id}`} />} className="flex items-center gap-2">
+                    <Button
+                        render={
+                            <Link
+                                href={`${base}/orders/update-order/${order._id}`}
+                            />
+                        }
+                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    >
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>

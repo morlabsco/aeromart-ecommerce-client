@@ -12,6 +12,8 @@ import { CategoryDetails } from "@/components/dashboard/categories/category-deta
 import { DetailError } from "@/components/dashboard/shared/detail-error";
 import { dashboardMetadata } from "@/lib/metadata";
 import { PageSkeleton } from "@/components/dashboard/v4/page-skeleton";
+import { getSession } from "@/lib/get-session";
+import { dashboardBaseFor } from "@/lib/utils/dashboard-base";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +22,24 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function CategoryDetailsContent({ categoryId }: { categoryId: string }) {
-    const result = await getAllCategories({ limit: 100 });
+    const [result, session] = await Promise.all([
+        getAllCategories({ limit: 100 }),
+        getSession(),
+    ]);
+    // Shared with /dashboard/manager — the session role picks the base.
+    const base = dashboardBaseFor(session.user?.role);
     if (isErrorResult(result)) {
-        return <DetailError message={result.message} backHref="/dashboard/admin/categories" />;
+        return (
+            <DetailError
+                message={result.message}
+                backHref={`${base}/categories/all-categories`}
+            />
+        );
     }
     const category = unwrapData(result)?.find((c) => c._id === categoryId);
     if (!category) notFound();
 
-    return <CategoryDetails category={category} />;
+    return <CategoryDetails category={category} base={base} />;
 }
 
 export default async function CategoryDetailsPage({

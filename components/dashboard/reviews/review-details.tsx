@@ -27,10 +27,16 @@ import { deleteReview, toggleReviewFlag } from "@/lib/services/review";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Review } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
-import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
+import {
+    useCanDelete,
+    useDashboardBase,
+} from "@/components/dashboard/v4/dashboard-user";
 
 export function ReviewDetails({ review }: { review: Review }) {
     const router = useRouter();
+    // Reviews are shared between /dashboard/admin and /dashboard/manager —
+    // links follow the visitor's own prefix.
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
     const [flagReason, setFlagReason] = useState(review.flaggedReason ?? "");
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -67,7 +73,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                 return;
             }
             toast.success(result.message ?? "Review deleted");
-            router.push("/dashboard/admin/reviews");
+            router.push(`${base}/reviews`);
             router.refresh();
         });
     };
@@ -80,7 +86,7 @@ export function ReviewDetails({ review }: { review: Review }) {
                         variant="ghost"
                         size="sm"
                         className="mb-2 -ml-2 text-muted-foreground"
-                        render={<Link href="/dashboard/admin/reviews" />}
+                        render={<Link href={`${base}/reviews`} />}
                     >
                         <ArrowLeft className="h-4 w-4 mr-1" />
                         Back to Reviews

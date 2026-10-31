@@ -188,8 +188,14 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
                         Order details
                     </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" render={<Link href="/dashboard/customer/orders/my-orders" />} className="flex items-center gap-2">
+                {/* Stacked full-width on phones, inline on sm+ — the buttons
+                    used to squeeze onto one tight row. */}
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    <Button
+                        variant="outline"
+                        render={<Link href="/dashboard/customer/orders/my-orders" />}
+                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    >
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
@@ -197,11 +203,16 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
                         <DownloadInvoiceButton
                             orderId={order._id}
                             label="Invoice"
+                            className="w-full justify-center sm:w-auto"
                         />
                     )}
                     {canCancel && (
-                        <Button variant="destructive" onClick={() => setConfirmCancel(true)}>
-                            <Ban className="mr-2 h-4 w-4" />
+                        <Button
+                            variant="destructive"
+                            onClick={() => setConfirmCancel(true)}
+                            className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                        >
+                            <Ban className="h-4 w-4" />
                             Cancel Order
                         </Button>
                     )}

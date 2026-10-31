@@ -500,7 +500,10 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                           {product.slug ? (
                             <Link
                               href={`/products/${product.slug}`}
-                              className="truncate text-sm font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                              // block is REQUIRED — truncate on an inline
+                              // anchor doesn't constrain the line box and
+                              // long names blew out the page on phones.
+                              className="block truncate text-sm font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
                             >
                               {product.name}
                             </Link>
@@ -530,7 +533,7 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                             </span>
                           </p>
                         </div>
-                        <p className="text-sm font-semibold tabular-nums text-foreground">
+                        <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
                           {formatCurrency(product.total, money)}
                         </p>
                       </li>

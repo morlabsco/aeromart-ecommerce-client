@@ -2,12 +2,18 @@
 
 import { createContext, useContext } from "react";
 import { usePathname } from "next/navigation";
+import {
+    MANAGER_BASE,
+    ADMIN_BASE,
+    dashboardBaseFor,
+} from "@/lib/utils/dashboard-base";
 
 /** The manager dashboard lives at /dashboard/manager (admins keep
  *  /dashboard/admin). Every internal dashboard link must be built on this
- *  base so the URL never leaks across roles. */
-export const MANAGER_BASE = "/dashboard/manager";
-export const ADMIN_BASE = "/dashboard/admin";
+ *  base so the URL never leaks across roles. The constants + role helper
+ *  live in the server-safe lib; re-exported here for existing client
+ *  imports. */
+export { MANAGER_BASE, ADMIN_BASE, dashboardBaseFor };
 
 /* ---------------------------------------------------------------------------
  * Dashboard user context — the v4 shell already resolves the signed-in user
@@ -64,7 +70,5 @@ export function useDashboardBase(): string {
     return pathname.startsWith(MANAGER_BASE) ? MANAGER_BASE : ADMIN_BASE;
 }
 
-/** Plain helper for places that already know the role (server pages). */
-export function dashboardBaseFor(role?: string | null): string {
-    return role === "manager" ? MANAGER_BASE : ADMIN_BASE;
-}
+/** Plain helper for places that already know the role (server pages) —
+ *  re-exported from the server-safe lib above. */
