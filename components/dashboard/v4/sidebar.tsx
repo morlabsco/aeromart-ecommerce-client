@@ -75,15 +75,28 @@ const ADMIN_NAV: NavGroup[] = [
     },
 ];
 
-// Manager = staff WITHOUT user management, store settings or the newsletter
-// list (server enforces the same split — this only keeps the nav honest).
-const MANAGER_HIDDEN_LABELS = new Set(["Newsletter", "Users", "Settings"]);
+// Manager = staff WITHOUT user management, store settings, the newsletter
+// list or the activities audit log (admin-only — it monitors everyone's
+// work, managers included). Server enforces the same split. Manager hrefs
+// point at the manager's own /dashboard/manager surface.
+const MANAGER_HIDDEN_LABELS = new Set([
+    "Newsletter",
+    "Users",
+    "Settings",
+    "Activities",
+]);
 
 const MANAGER_NAV: NavGroup[] = ADMIN_NAV.map((group) => ({
     ...group,
-    items: group.items.filter(
-        (item) => !MANAGER_HIDDEN_LABELS.has(item.label),
-    ),
+    items: group.items
+        .filter((item) => !MANAGER_HIDDEN_LABELS.has(item.label))
+        .map((item) => ({
+            ...item,
+            href: item.href.replace(
+                "/dashboard/admin",
+                "/dashboard/manager",
+            ),
+        })),
 })).filter((group) => group.items.length > 0);
 
 const CUSTOMER_NAV: NavGroup[] = [

@@ -25,6 +25,7 @@ import { getOfferStatus, offerSaleInfo } from "@/lib/utils/offer";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import type { Product, ProductOfferPrice } from "@/lib/types/backend";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 /* ---------------------------------------------------------------------------
  * Add Offer page — the full-screen sibling of the manager's Quick Add modal.
@@ -42,6 +43,8 @@ const SEARCH_FIELDS =
 
 export function AddOffer({ brandCurrency = "usd" }: AddOfferProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
 
     /* ── Step 1: search ── */
@@ -127,7 +130,7 @@ export function AddOffer({ brandCurrency = "usd" }: AddOfferProps) {
                 return;
             }
             toast.success(`Offer saved for "${picked.name}"`);
-            router.push("/dashboard/admin/products/offered-products");
+            router.push(`${base}/products/offered-products`);
             router.refresh();
         });
     };
@@ -146,7 +149,7 @@ export function AddOffer({ brandCurrency = "usd" }: AddOfferProps) {
                 <Button
                     variant="outline"
                     render={
-                        <Link href="/dashboard/admin/products/offered-products" />
+                        <Link href={`${base}/products/offered-products`} />
                     }
                 >
                     <ArrowLeft className="h-4 w-4" /> Back to Offered Products

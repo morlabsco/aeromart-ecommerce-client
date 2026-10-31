@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { getMeta } from "@/lib/services/meta";
 import { getAllOrders } from "@/lib/services/order";
 import { getSettings } from "@/lib/services/settings";
+import { getSession } from "@/lib/get-session";
 import { unwrapData, unwrapList } from "@/lib/services/api-client";
 import { dashboardMetadata } from "@/lib/metadata";
 import { DashboardOverviewV4 } from "@/components/dashboard/v4/overview";
@@ -19,11 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function OverviewContent() {
-    const [metaResult, ordersResult, settingsResult] = await Promise.all([
-        getMeta(),
-        getAllOrders({ limit: 100, sort: "-createdAt" }),
-        getSettings(),
-    ]);
+    const [metaResult, ordersResult, settingsResult, session] =
+        await Promise.all([
+            getMeta(),
+            getAllOrders({ limit: 100, sort: "-createdAt" }),
+            getSettings(),
+            getSession(),
+        ]);
 
     const meta = unwrapData(metaResult);
     const orders = unwrapList(ordersResult);
@@ -35,6 +38,7 @@ async function OverviewContent() {
             meta={meta}
             orders={orders}
             brandCurrency={brandCurrency}
+            role={session.user?.role ?? "admin"}
         />
     );
 }

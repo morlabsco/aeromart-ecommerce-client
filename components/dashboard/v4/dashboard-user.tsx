@@ -1,6 +1,13 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import { usePathname } from "next/navigation";
+
+/** The manager dashboard lives at /dashboard/manager (admins keep
+ *  /dashboard/admin). Every internal dashboard link must be built on this
+ *  base so the URL never leaks across roles. */
+export const MANAGER_BASE = "/dashboard/manager";
+export const ADMIN_BASE = "/dashboard/admin";
 
 /* ---------------------------------------------------------------------------
  * Dashboard user context — the v4 shell already resolves the signed-in user
@@ -41,8 +48,23 @@ export function useCanDelete(): boolean {
     return useDashboardUser()?.role === "admin";
 }
 
-/** True for admin OR manager (staff share the admin dashboard). */
+/** True for admin OR manager (staff share the dashboard surface). */
 export function useIsStaff(): boolean {
     const role = useDashboardUser()?.role;
     return role === "admin" || role === "manager";
+}
+
+/**
+ * Role-correct base for internal dashboard links, derived from the current
+ * PATHNAME (the URL is the truth — not the session — so shared components
+ * link correctly under both /dashboard/admin and /dashboard/manager).
+ */
+export function useDashboardBase(): string {
+    const pathname = usePathname();
+    return pathname.startsWith(MANAGER_BASE) ? MANAGER_BASE : ADMIN_BASE;
+}
+
+/** Plain helper for places that already know the role (server pages). */
+export function dashboardBaseFor(role?: string | null): string {
+    return role === "manager" ? MANAGER_BASE : ADMIN_BASE;
 }

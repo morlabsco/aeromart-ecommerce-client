@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { ChevronDown, LayoutDashboard, LogOut, Menu, Phone, Search, ShoppingBag, User, X } from "lucide-react"
-import { useCartStore, useUIStore } from "../../lib/store/app-store"
+import { useCartStore, useUIStore } from "@/lib/store/app-store"
 import { themes, DEFAULT_NICHE } from "../../lib/theme.config"
 import { formatCurrency } from "../../lib/utils/currency"
 import { cn } from "../../lib/utils"
@@ -234,9 +234,9 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
                         <div className="my-1 h-px bg-border/60" />
                         {(user.role === "admin" || user.role === "manager"
                           ? [
-                              { label: "Dashboard", href: "/dashboard/admin" },
-                              { label: "Orders", href: "/dashboard/admin/orders" },
-                              { label: "Products", href: "/dashboard/admin/products" },
+                              { label: "Dashboard", href: user.role === "manager" ? "/dashboard/manager" : "/dashboard/admin" },
+                              { label: "Orders", href: user.role === "manager" ? "/dashboard/manager/orders/all-orders" : "/dashboard/admin/orders/all-orders" },
+                              { label: "Products", href: user.role === "manager" ? "/dashboard/manager/products/all-products" : "/dashboard/admin/products/all-products" },
                             ]
                           : [
                               { label: "Dashboard", href: "/dashboard/customer" },
@@ -366,7 +366,13 @@ export function Header({ brand, navLinks, user }: HeaderProps) {
           {user ? (
             <>
               <Link
-                href={user.role === "customer" ? "/dashboard/customer" : "/dashboard/admin"}
+                href={
+                  user.role === "customer"
+                    ? "/dashboard/customer"
+                    : user.role === "manager"
+                      ? "/dashboard/manager"
+                      : "/dashboard/admin"
+                }
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-bold uppercase tracking-widest text-foreground transition-colors hover:text-brand"
               >

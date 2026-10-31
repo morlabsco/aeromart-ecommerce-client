@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react"
 import { Search, ChevronDown, ChevronUp, Mail, Phone } from "lucide-react"
-import { useCustomerStore, useOrderStore } from "../../../lib/store/app-store"
+import { useCustomerStore, useOrderStore } from "@/lib/store/app-store"
 import { useQueryParams } from "../../../lib/hooks/use-query-params"
 import { Input } from "../../ui/input"
 import { Pagination } from "../../ui/pagination"

@@ -15,7 +15,10 @@ import { serverErrorMessage } from "@/lib/utils/form-feedback";
 interface InstantStatusSelectProps<T extends string> {
     value: T;
     options: { value: T; label: string }[];
-    onUpdate: (value: T) => Promise<{ message?: string } | Error>;
+    /** Return the RAW ServiceResult (or a thrown-caught Error) — the
+     *  component classifies via isErrorResult. Never pre-reduce it to
+     *  { message } (a bare message object reads as an error envelope). */
+    onUpdate: (value: T) => Promise<unknown>;
     /** Called after a successful update so the page can refresh its data. */
     onSuccess?: () => void;
     /** Class for the select trigger, e.g. sizing/width. */
@@ -44,13 +47,16 @@ export function InstantStatusSelect<T extends string>({
 
     const handleChange = (next: T) => {
         startTransition(async () => {
-            const result = await onUpdate(next);
+            const result: unknown = await onUpdate(next);
             if (isErrorResult(result)) {
                 toast.error(serverErrorMessage(result));
                 return;
             }
             setCurrent(next);
-            toast.success(result.message ?? "Updated successfully");
+            toast.success(
+                (result as { message?: string }).message ??
+                    "Updated successfully",
+            );
             onSuccess?.();
         });
     };
@@ -62,7 +68,16 @@ export function InstantStatusSelect<T extends string>({
             disabled={isPending}
         >
             <SelectTrigger className={className ?? "h-7 w-32"}>
-                <SelectValue />
+                <SelectValue>
+                                    {(value) =>
+                                        options.find(
+                                            (option) =>
+                                                option.value ===
+                                                String(value ?? ""),
+                                        )?.label ??
+                                        String(value ?? "")
+                                    }
+                                </SelectValue>
             </SelectTrigger>
             <SelectContent>
                 {options.map((option) => (

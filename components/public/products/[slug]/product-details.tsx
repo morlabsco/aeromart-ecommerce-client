@@ -38,7 +38,7 @@ import {
 } from "@/lib/utils/product-variants"
 import { WhatsAppIcon } from "@/components/shared/brand-icons"
 import { toast } from "sonner"
-import { createReview, createReviewWithPhotos } from "@/lib/services/review"
+import { createReviewWithPhotos } from "@/lib/services/review"
 import { formatCurrency, getOfferPrice } from "@/lib/utils/currency"
 import type { Product } from "@/lib/types"
 import type { Review } from "@/lib/types/backend"
@@ -191,21 +191,16 @@ export default function ProductDetails({
     setReviewError(null)
     setSubmittingReview(true)
     try {
-      const result =
-        reviewPhotos.length > 0
-          ? await createReviewWithPhotos(
-              {
-                rating: reviewRating,
-                description: reviewText.trim(),
-                product: productId,
-              },
-              reviewPhotos,
-            )
-          : await createReview({
-              rating: reviewRating,
-              description: reviewText.trim(),
-              product: productId,
-            })
+      // ONE submit path: the multipart service with the `data` envelope works
+      // with and without photos (plain-JSON bodies would trip parseBody).
+      const result = await createReviewWithPhotos(
+        {
+          rating: reviewRating,
+          description: reviewText.trim(),
+          product: productId,
+        },
+        reviewPhotos,
+      )
       if (isErrorResult(result)) {
         setReviewError(result.message)
         toast.error(result.message)
@@ -309,16 +304,15 @@ export default function ProductDetails({
       ? [product.image]
       : []
 
-  // Price shown reflects the chosen variant while an offer is active: the
-  // offer is applied on top of the variant's price (backend: variant.price ??
-  // product.price). Without an offer the product price stands regardless of
-  // the selected variant.
+  // Price shown ALWAYS follows the chosen variant (backend prices each line
+  // as variant.price ?? product.price): pick the variant's price when a SKU
+  // is resolved, apply the offer on top when one is active, and fall back to
+  // the product price only while nothing is selected / the SKU carries no
+  // own price. Updates instantly because it derives from selection state.
   const skuBasePrice = selectedSku?.price ?? product.price
-  const skuSalePrice = hasOffer
+  const displayPrice = hasOffer
     ? getOfferPrice(skuBasePrice, product.offerPrice) ?? skuBasePrice
-    : undefined
-  const displayPrice =
-    skuSalePrice ?? (hasOffer && salePrice !== null ? salePrice : product.price)
+    : skuBasePrice
 
   // Strikethrough shows the pre-offer price so the savings are visible.
   const referencePrice = hasOffer
@@ -954,7 +948,7 @@ export default function ProductDetails({
                         <img
                           src={url}
                           alt={`Selected photo ${i + 1}`}
-                          className="size-16 object-cover"
+                          className="size-24 object-cover sm:size-28"
                         />
                         <button
                           type="button"
@@ -981,10 +975,13 @@ export default function ProductDetails({
                         />
                         <Label
                           htmlFor="review-photos"
-                          className="flex size-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+                          className="flex h-24 w-full max-w-[10rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand sm:w-40"
                         >
-                          <ImagePlus className="size-5" />
-                          <span className="text-[10px] font-semibold">Add</span>
+                          <ImagePlus className="size-6" />
+                          <span className="text-xs font-semibold">Add photos</span>
+                          <span className="text-[10px]">
+                            {3 - reviewPhotos.length} of 3 left
+                          </span>
                         </Label>
                       </>
                     )}

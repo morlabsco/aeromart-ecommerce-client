@@ -20,11 +20,11 @@ export function CategoryDetails({ category }: CategoryDetailsProps) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" render={<Link href="/dashboard/admin/categories" />} className="flex items-center gap-2">
+                    <Button variant="outline" render={<Link href="../" />} className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
-                    <Button render={<Link href={`/dashboard/admin/categories/update-category/${category._id}`} />} className="flex items-center gap-2">
+                    <Button render={<Link href={`../update-category/${category._id}`} />} className="flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>

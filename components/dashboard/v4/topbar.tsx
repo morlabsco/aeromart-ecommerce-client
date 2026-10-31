@@ -27,7 +27,9 @@ export function DashboardTopbar({
     const profileHref =
         user?.role === "customer"
             ? "/dashboard/customer/profile"
-            : "/dashboard/admin/profile";
+            : user?.role === "manager"
+              ? "/dashboard/manager/profile"
+              : "/dashboard/admin/profile";
 
     const initials = (user?.name || "U")
         .split(" ")
@@ -56,9 +58,10 @@ export function DashboardTopbar({
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {/* Notifications quick view — recent activity in a popover
-                    (customers skip it — no activities module on their side). */}
-                {user?.role !== "customer" && <NotificationsPopover />}
+                {/* Notifications quick view — recent activity in a popover.
+                    Admin only: the audit log tracks everyone's work
+                    (managers included), so managers don't see it. */}
+                {user?.role === "admin" && <NotificationsPopover />}
                 <Link
                     href={profileHref}
                     aria-label="Your profile"

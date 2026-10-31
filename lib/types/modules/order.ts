@@ -4,6 +4,7 @@ export interface OrderProductItem {
   product: {
     _id: string;
     name: string;
+    slug?: string;
     price: number;
   };
   quantity: number;
@@ -85,6 +86,8 @@ export interface CreateOrderPayload {
 
 export interface OrderTrackingProduct {
   productId: string;
+  /** Storefront slug — links the item name to /products/[slug]. */
+  slug?: string;
   name: string;
   image: string;
   quantity: number;
@@ -165,6 +168,8 @@ export interface OrderInvoicePayment {
 
 export interface OrderInvoiceItem {
   productId: string;
+  /** Storefront slug — links the item to /products/[slug]. */
+  slug?: string;
   name: string;
   image: string;
   quantity: number;

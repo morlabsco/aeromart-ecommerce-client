@@ -385,6 +385,9 @@ Authorization: Bearer <adminAccessToken>
 
 `role` ∈ `customer | manager | admin` (defaults to customer). Public registration (`POST /user/register`) is hard-locked to `customer` — any other role in the payload is a validation error.
 
+**`GET /user/:id`** (admin) — single user, INCLUDES the requesting admin (the list endpoint excludes yourself, so own-profile views must use this).
+**`PATCH /user/:id/role`** (admin) — `{ role }` switches customer ↔ manager ONLY: admin targets, self-changes and no-ops are rejected (granting admin stays a direct database edit).
+
 ### 6.1 POST /api/v1/user/register, Register customer
 
 Public. Auto-logs-in: returns an access token and sets the `refreshToken` cookie. Only `customer` role is allowed (`admin` registration is rejected).
@@ -1073,6 +1076,8 @@ Same rules as create: variant products require `variant.sku`; old stock (variant
 ```
 
 **Errors:** 401 (not owner/admin), 400 "Cannot modify a completed/cancelled order!"
+
+**State rules (31/10/2026)**: Completed orders accept payment method/status and notes (items/coupon/delivery stay frozen); Cancelled orders accept NOTHING; the ORDER OWNER may switch their own `paymentMethod` between `COD`/`bkash-manual`/`bank-manual` (never `paymentStatus`, never once completed). Staff (admin/manager) control both fields. Phone numbers on orders are unified `+880…` values (shared PhoneInput).
 
 ### 8.8 PATCH /api/v1/order/:orderId/status, Change order status
 
@@ -1852,7 +1857,7 @@ Authorization: Bearer <customerAccessToken>
 ```
 
 ### 14.4 POST /api/v1/review, Create review
-Multipart now — optional photos ride along as `photos` files (max 3, Cloudinary URLs land on `review.photoUrls: string[]`). JSON bodies still work (no photos). Deleting a review destroys its uploaded photos.
+Multipart — optional photos ride along as `photos` files (max 3, Cloudinary URLs land on `review.photoUrls: string[]`); the JSON payload sits in the `data` envelope field (the shared multipart convention). Plain-JSON bodies also pass (parseBody skips non-multipart). Deleting a review destroys its uploaded photos.
 
 Protected, `customer` only (admin/manager tokens get `401 You are not authorized!`). Validations:
 1. **Product exists + is active**, 404 "Product not found!" / 400 "Product is not available!".

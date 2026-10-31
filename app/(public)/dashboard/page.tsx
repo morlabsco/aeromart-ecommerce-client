@@ -20,6 +20,9 @@ export default async function DashboardIndex() {
     if (session.user?.role === "customer") {
         redirect("/dashboard/customer");
     }
-    
+    if (session.user?.role === "manager") {
+        redirect("/dashboard/manager");
+    }
+
     redirect("/dashboard/admin");
 }

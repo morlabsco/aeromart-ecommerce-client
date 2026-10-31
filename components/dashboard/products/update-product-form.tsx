@@ -38,6 +38,7 @@ import { KeyValueListEditor } from "@/components/dashboard/shared/key-value-list
 import { ProductImageUploader } from "@/components/dashboard/shared/product-image-uploader";
 import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AttributesEditor,
     ColorOptionsEditor,
@@ -84,6 +85,8 @@ interface UpdateProductFormProps {
 
 export function UpdateProductForm({ product, brands, categories, brandCurrency = "usd" }: UpdateProductFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     const [layout, setLayout] = useState<FormLayout>("two");
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -287,7 +290,7 @@ export function UpdateProductForm({ product, brands, categories, brandCurrency =
             }
 
             toast.success(result.message ?? "Product updated successfully");
-            router.push(`/dashboard/admin/products/${product._id}`);
+            router.push(`${base}/products/${product._id}`);
             router.refresh();
         } finally {
             setSubmitting(false);

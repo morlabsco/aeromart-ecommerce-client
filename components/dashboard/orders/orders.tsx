@@ -25,7 +25,6 @@ import {
 import { deleteOrder } from "@/lib/services/order";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
-import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ApiMeta, Order } from "@/lib/types/backend";
 import { updateOrderStatus } from "@/lib/services/order";
@@ -33,6 +32,7 @@ import { InstantStatusSelect } from "@/components/dashboard/shared/instant-statu
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { formatCurrency } from "@/lib/utils/currency";
 import { paymentMethodLabel } from "@/lib/utils/format";
+import { useCanDelete, useDashboardBase, useDashboardUser } from "@/components/dashboard/v4/dashboard-user";
 
 interface OrdersTableProps {
     orders: Order[];
@@ -45,6 +45,8 @@ interface OrdersTableProps {
 /** Customer cell — signed-in orders show the account (popover quick detail),
  * guest orders show the delivery recipient. */
 function CustomerCell({ order }: { order: Order }) {
+    // The user profile lives in the admin-only Users panel.
+    const isAdmin = useDashboardUser()?.role === "admin";
     const user = order.user;
     const name = user?.name || order.recipientName || "Guest";
     const sub = user?.email || order.phoneNo || "";
@@ -127,7 +129,7 @@ function CustomerCell({ order }: { order: Order }) {
                         </dd>
                     </div>
                 </dl>
-                {user && (
+                {user && isAdmin && (
                     <div className="border-t border-border/60 p-3.5">
                         <Button
                             variant="brandOutline"
@@ -146,6 +148,8 @@ function CustomerCell({ order }: { order: Order }) {
 
 export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     // Deletes are admin-only — managers never delete orders.
     const canDelete = useCanDelete();
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
@@ -211,7 +215,7 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                 header: "Order ID",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <TableLink href={`/dashboard/admin/orders/${row.original._id}`} mono>
+                    <TableLink href={`${base}/orders/${row.original._id}`} mono>
                         {row.original.orderId || row.original._id.slice(-8)}
                     </TableLink>
                 ),
@@ -303,10 +307,10 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             />
                         )}
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View order ${row.original._id}`} render={<a href={`/dashboard/admin/orders/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View order ${row.original._id}`} render={<a href={`${base}/orders/${row.original._id}`} />}>
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update order ${row.original._id}`} render={<a href={`/dashboard/admin/orders/update-order/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update order ${row.original._id}`} render={<a href={`${base}/orders/update-order/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -336,7 +340,7 @@ export function OrdersTable({ orders, meta, brandCurrency = "usd" }: OrdersTable
                         Manage and track customer orders
                     </p>
                 </div>
-                <Button render={<a href="/dashboard/admin/orders/create-order" />}>
+                <Button render={<a href={`${base}/orders/create-order`} />}>
                     Create Order
                 </Button>
             </div>

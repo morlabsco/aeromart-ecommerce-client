@@ -1,4 +1,5 @@
-import { Clock, PackageCheck, ShoppingBag, XCircle } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Clock, PackageCheck, ShoppingBag, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { paymentMethodLabel } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
@@ -115,6 +116,12 @@ export function CustomerOverviewV4({
                     <h3 className="text-base font-bold text-foreground">
                         Recent Orders
                     </h3>
+                    <Link
+                        href="/dashboard/customer/orders/my-orders"
+                        className="text-xs font-bold text-brand transition-colors hover:text-brand/80"
+                    >
+                        View all
+                    </Link>
                 </div>
                 {recent.length === 0 ? (
                     <p className="px-5 py-10 text-center text-sm text-muted-foreground">
@@ -128,9 +135,13 @@ export function CustomerOverviewV4({
                                 className="flex flex-wrap items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/40"
                             >
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-bold text-foreground">
+                                    <Link
+                                        href={`/dashboard/customer/orders/${order._id}`}
+                                        className="inline-flex items-center gap-1 truncate text-sm font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                                    >
                                         {order.orderId}
-                                    </p>
+                                        <ArrowRight className="size-3.5 shrink-0 text-brand" />
+                                    </Link>
                                     <p className="mt-0.5 text-xs text-muted-foreground">
                                         {new Date(order.createdAt).toLocaleDateString("en-GB", {
                                             day: "numeric",

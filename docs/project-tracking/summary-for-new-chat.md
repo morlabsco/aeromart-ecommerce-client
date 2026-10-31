@@ -1,6 +1,6 @@
 # Summary for New Chat — AeroMart Storefront (Nittonova design)
 
-Read this fully before doing anything. Last updated: 31/10/2026 (task batch 10 — 21 tasks).
+Read this fully before doing anything. Last updated: 31/10/2026 (task batches 11 + 12).
 
 ## Context
 
@@ -142,6 +142,28 @@ Categories hover/contain fixes; footer socials → shared brand icons + right-co
 21. **Policy page**: full 8-section HTML in `lib/policy-default-content.ts` (page default + editor "Load Default Policy" button — one source of truth; typed card builder deleted).
 
 **New leftover**: `manager-test@aeromartbd.com` / `Manager#2026` (no user-delete endpoint — deactivate via Users or delete by hand).
+
+## Task batches 11 & 12 (31/10/2026 — final sessions of this chat)
+
+**Architecture changes that matter going forward:**
+- **Manager surface = `/dashboard/manager`** (admins keep `/dashboard/admin`): 31 alias pages re-export the shared admin pages; proxy locks each prefix to its role (cross-hits + locked sections redirect). EVERY shared dashboard link must use `useDashboardBase()` (client, pathname-derived) or `dashboardBaseFor(role)` (server) — never hardcode `/dashboard/admin` in shared components. Activities/users/settings/newsletter are admin-only (no manager alias routes).
+- **Phone numbers are unified** `+8801712345678` via the shared `PhoneInput` (country combobox, BD default, trunk-0 stripping, `isValidFullPhone`). Applied on checkout, bKash sender fields, create-order and the staff/customer payment cards.
+- **Order update rules (server, verified)**: Completed orders accept payment method/status + notes (core frozen); Cancelled accept nothing; the ORDER OWNER may switch their own method between COD/bkash-manual/bank-manual (never the status, never once completed). The staff Payment & Status card pre-checks conflicts (warning modal) + has a "What can I change?" guide dialog.
+- **Policy page = structured sections**: `settings.policy.sections` (`PolicySectionData[]` — title/intro/paragraphs/items/checklist/callout/note; the old `returnRefund` rich-HTML field is legacy, no longer written). Public page renders saved sections or the 8-section defaults (lib/policy-sections.ts) in the numbered-card design; the dashboard edits the section LIST (add/remove/reorder, Load Default Sections, Reset). Type: `SettingsPolicy.sections`.
+- **Store imports MUST use the `@/lib/store/app-store` alias** — three relative imports once created a SECOND zustand instance (header total never updated, checkout edits no-op'd).
+- **parseBody**: the `data` JSON envelope is MULTIPART-only now; plain-JSON bodies pass through. Multipart clients (review photos, products) still pack payloads in `data`.
+- **Order product populates include `slug`** (details, tracking and invoice payloads) — receipt surfaces link items to `/products/[slug]`.
+- `InstantStatusSelect.onUpdate` returns the RAW ServiceResult (pre-reducing to `{message}` breaks isErrorResult); its trigger renders proper-case labels.
+- Sales overview chart is a client component with Daily/Weekly/Monthly; the admin overview page passes `role` for base-aware links.
+- Review agents live in `docs/agents/` (backend-api-reviewer, storefront-reviewer + README) — read-only briefs with the project rules and verification commands.
+- Chat widget fades out while the cart drawer is open.
+- **Build note**: `npm run build` needs `NODE_OPTIONS="--max-old-space-size=3072"` on this machine (plain builds get OOM-killed, exit 137).
+
+**Batch 11 also**: PageProgress rewritten (transform painted ONLY via ref — an inline JSX transform reset it every re-render, that was the "not working" bug); users role select (customer↔manager, admin DB-only); user photos render; review multipart fix; activities admin-only + reference links + metadata card; checkout color dots; live variant pricing; variant error HOW-TO-FIX messages; bigger password dots; checkout quick-fill toggle.
+
+**Batch 12 also**: Stripe radio parked on checkout; product links on all receipt surfaces; customer dashboard payment card (method switch + validated refs) + overview links; admin own-profile fix (`GET /user/:id` includes self — the LIST endpoint excludes the requester); district/upazila clear buttons (checkout + update-order form, which now edits recipient/phone/address/district/upazila too).
+
+**Leftovers for the owner**: `manager-test@aeromartbd.com` / `Manager#2026` (kept ACTIVE for verification — deactivate when done); `review-e2e@` + `review-shape-test@` deactivated (no user-delete endpoint exists); the user's own completed test order was flipped to Paid during the T23 verification; old `DE…`/test orders from earlier sessions still in the dev DB.
 
 ## Next (user's stated plan)
 

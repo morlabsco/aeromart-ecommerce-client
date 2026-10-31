@@ -142,6 +142,31 @@ export const updateOrder = async (
   }
 };
 
+/** Staff edit of an order's non-core fields (payment state, recipient,
+ *  phone, address) — the update page's combined patch. */
+export const updateOrderDetails = async (
+  orderId: string,
+  payload: {
+    paymentMethod?: string;
+    paymentStatus?: string;
+    notes?: string;
+    recipientName?: string;
+    phoneNo?: string;
+    shippingAddress?: string;
+  }
+): Promise<ServiceResult<Order>> => {
+  try {
+    const result = await apiRequest<Order>(`/order/${orderId}`, {
+      method: "PATCH",
+      body: payload,
+    });
+    revalidateTag("ORDER", "max");
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 /** Staff edit of an order: payment method/status (+ reference notes) the
  *  admin/manager controls from the dashboard. */
 export const updateOrderPayment = async (

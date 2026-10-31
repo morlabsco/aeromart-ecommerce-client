@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Trash2, History } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, History, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { clearSingleActivity } from "@/lib/services/activity";
@@ -24,6 +24,11 @@ import { isErrorResult } from "@/lib/utils/result";
 import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 import type { Activity, ActivityModule, ActivityType } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import {
+    activityEntityHref,
+    activityMetaLabel,
+    activityMetaValue,
+} from "@/lib/utils/activity-refs";
 
 interface ActivityDetailsProps {
     activity: Activity;
@@ -49,6 +54,10 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
     };
 
     const metadata = activity.metadata ?? {};
+    const entityHref = activityEntityHref(
+        activity.module,
+        activity.referenceId,
+    );
 
     return (
         <div className="space-y-6">
@@ -101,6 +110,30 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
                                 {activity.referenceId || "—"}
                             </p>
                         </div>
+                        {entityHref && (
+                            <div className="rounded-lg border border-brand/40 bg-brand/5 p-4 sm:col-span-2 lg:col-span-3">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                            Linked record
+                                        </p>
+                                        <p className="mt-1 text-sm text-foreground">
+                                            Open the {activity.module.toLowerCase()} this
+                                            entry was recorded about.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="brandOutline"
+                                        size="sm"
+                                        render={<a href={entityHref} />}
+                                        className="gap-1.5"
+                                    >
+                                        <ExternalLink className="size-3.5" />
+                                        View {activity.module}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                         <div className="rounded-lg border p-4">
                             <p className="text-xs text-muted-foreground">Recorded At</p>
                             <p className="text-sm font-medium mt-1">
@@ -112,6 +145,31 @@ export function ActivityDetails({ activity }: ActivityDetailsProps) {
             </Card>
 
             {/* ── Who did it — populated performer details ── */}
+            {Object.keys(metadata).length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Details captured</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {Object.entries(metadata).map(([key, value]) => (
+                                <div
+                                    key={key}
+                                    className="rounded-lg border border-border/60 bg-muted/30 p-3"
+                                >
+                                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        {activityMetaLabel(key)}
+                                    </dt>
+                                    <dd className="mt-1 break-words text-sm font-medium text-foreground">
+                                        {activityMetaValue(value)}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </CardContent>
+                </Card>
+            )}
+
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Performed By</CardTitle>

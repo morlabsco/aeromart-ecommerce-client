@@ -15,7 +15,7 @@ import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { TableLink } from "@/components/dashboard/shared/table-link";
-import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
+import { useCanDelete, useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,6 +34,8 @@ interface BrandsTableProps {
 
 export function BrandsTable({ brands, meta }: BrandsTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
     const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
     // Deletes are admin-only — managers create/update but never delete.
@@ -105,7 +107,7 @@ export function BrandsTable({ brands, meta }: BrandsTableProps) {
                             )}
                         </div>
                         <div className="min-w-0">
-                            <TableLink href={`/dashboard/admin/brands/${row.original._id}`} className="text-sm">
+                            <TableLink href={`${base}/brands/${row.original._id}`} className="text-sm">
                                 {row.original.name}
                             </TableLink>
                             <p className="truncate text-xs text-muted-foreground">{row.original._id}</p>
@@ -149,10 +151,10 @@ export function BrandsTable({ brands, meta }: BrandsTableProps) {
                 header: "",
                 cell: ({ row }) => (
                     <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`/dashboard/admin/brands/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`${base}/brands/${row.original._id}`} />}>
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`/dashboard/admin/brands/update-brand/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`${base}/brands/update-brand/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -182,7 +184,7 @@ export function BrandsTable({ brands, meta }: BrandsTableProps) {
                         Manage your product brands
                     </p>
                 </div>
-                <Button render={<a href="/dashboard/admin/brands/create-brand" />}>
+                <Button render={<a href={`${base}/brands/create-brand`} />}>
                     Create Brand
                 </Button>
             </div>

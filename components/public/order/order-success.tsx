@@ -173,9 +173,18 @@ export function OrderSummaryCard({
               )}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold text-foreground">
-                {item.name}
-              </p>
+              {item.slug ? (
+                <Link
+                  href={`/products/${item.slug}`}
+                  className="truncate text-[15px] font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <p className="truncate text-[15px] font-bold text-foreground">
+                  {item.name}
+                </p>
+              )}
               {item.variant?.attributes && (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {Object.entries(item.variant.attributes)

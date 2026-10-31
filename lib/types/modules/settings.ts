@@ -1,5 +1,7 @@
 // Settings module types, docs/v7-backend-usage-guide.md §15 (singleton document).
 
+import type { PolicySectionData } from "@/lib/policy-sections";
+
 export interface SettingsDeliveryOption {
   name: string;
   charge: number;
@@ -182,12 +184,15 @@ export interface SettingsSeo {
 }
 
 /**
- * Editable policy pages (dashboard → Settings → Return & Refund). An empty
- * `returnRefund` string renders the built-in default page — the dashboard
- * editor's HTML only OVERRIDES it while present.
+ * Editable policy pages (dashboard → Settings → Return & Refund). The
+ * dashboard manages a LIST of structured sections (mirrors
+ * lib/policy-sections.ts) that render in the storefront's numbered-card
+ * design; an EMPTY list renders the shipped default sections. `returnRefund`
+ * is the legacy single rich-HTML override (readable, no longer written).
  */
 export interface SettingsPolicy {
-  returnRefund: string;
+  returnRefund?: string;
+  sections?: PolicySectionData[];
 }
 
 export interface Settings {

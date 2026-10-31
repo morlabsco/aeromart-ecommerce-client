@@ -16,6 +16,7 @@ import { InstantStatusSelect } from "@/components/dashboard/shared/instant-statu
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { TableLink } from "@/components/dashboard/shared/table-link";
 import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,6 +35,8 @@ interface CouponsTableProps {
 
 export function CouponsTable({ coupons, meta }: CouponsTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
     const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
     // Deletes are admin-only — managers create/update but never delete.
@@ -73,7 +76,7 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                 header: "Code",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <TableLink href={`/dashboard/admin/coupons/${row.original._id}`} mono>
+                    <TableLink href={`${base}/coupons/${row.original._id}`} mono>
                         {row.original.code}
                     </TableLink>
                 ),
@@ -164,10 +167,10 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                 header: "",
                 cell: ({ row }) => (
                     <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.code}`} render={<a href={`/dashboard/admin/coupons/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.code}`} render={<a href={`${base}/coupons/${row.original._id}`} />}>
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.code}`} render={<a href={`/dashboard/admin/coupons/update-coupon/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.code}`} render={<a href={`${base}/coupons/update-coupon/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -212,7 +215,7 @@ export function CouponsTable({ coupons, meta }: CouponsTableProps) {
                         Manage discount coupons
                     </p>
                 </div>
-                <Button render={<a href="/dashboard/admin/coupons/create-coupon" />}>
+                <Button render={<a href={`${base}/coupons/create-coupon`} />}>
                     Create Coupon
                 </Button>
             </div>

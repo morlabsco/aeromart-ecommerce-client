@@ -24,6 +24,7 @@ import { updateCategory } from "@/lib/services/category";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Category } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 const categorySchema = z.object({
     name: z.string().min(1, { message: "Category name is required." }),
@@ -40,6 +41,8 @@ interface UpdateCategoryFormProps {
 
 export function UpdateCategoryForm({ category, categories }: UpdateCategoryFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [parentId, setParentId] = useState<string>(category.parent?._id ?? "none");
@@ -87,7 +90,7 @@ export function UpdateCategoryForm({ category, categories }: UpdateCategoryFormP
             }
 
             toast.success(result.message ?? "Category updated successfully");
-            router.push(`/dashboard/admin/categories/${category._id}`);
+            router.push(`${base}/categories/${category._id}`);
             router.refresh();
         } finally {
             setSubmitting(false);

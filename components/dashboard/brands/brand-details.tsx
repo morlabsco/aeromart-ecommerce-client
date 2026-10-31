@@ -20,11 +20,11 @@ export function BrandDetails({ brand }: BrandDetailsProps) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" render={<Link href="/dashboard/admin/brands" />} className="flex items-center gap-2">
+                    <Button variant="outline" render={<Link href="../" />} className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
-                    <Button render={<Link href={`/dashboard/admin/brands/update-brand/${brand._id}`} />} className="flex items-center gap-2">
+                    <Button render={<Link href={`../update-brand/${brand._id}`} />} className="flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>

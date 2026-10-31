@@ -16,6 +16,7 @@ import { InstantStatusSelect } from "@/components/dashboard/shared/instant-statu
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { TableLink } from "@/components/dashboard/shared/table-link";
 import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,6 +35,8 @@ interface CategoriesTableProps {
 
 export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
     // Deletes are admin-only — managers create/update but never delete.
@@ -87,7 +90,7 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                             )}
                         </div>
                         <div className="min-w-0">
-                            <TableLink href={`/dashboard/admin/categories/${row.original._id}`} className="text-sm">
+                            <TableLink href={`${base}/categories/${row.original._id}`} className="text-sm">
                                 {row.original.name}
                             </TableLink>
                             <p className="truncate text-xs text-muted-foreground">{row.original.slug}</p>
@@ -144,10 +147,10 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                 header: "",
                 cell: ({ row }) => (
                     <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`/dashboard/admin/categories/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`${base}/categories/${row.original._id}`} />}>
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`/dashboard/admin/categories/update-category/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`${base}/categories/update-category/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -192,7 +195,7 @@ export function CategoriesTable({ categories, meta }: CategoriesTableProps) {
                         Organize your product catalog
                     </p>
                 </div>
-                <Button render={<a href="/dashboard/admin/categories/create-category" />}>
+                <Button render={<a href={`${base}/categories/create-category`} />}>
                     Create Category
                 </Button>
             </div>

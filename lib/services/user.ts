@@ -43,6 +43,20 @@ export const createUserByAdmin = async (
   }
 };
 
+/** GET /user/:id , admin-only — includes the requesting admin (own profile). */
+export const getUserById = async (
+  id: string
+): Promise<ServiceResult<User>> => {
+  try {
+    const result = await apiRequest<User>(`/user/${id}`, {
+      tags: ["USER"],
+    });
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
 export const getAllUsers = async (
   query: ListQuery = {}
 ): Promise<ServiceResult<User[]>> => {
@@ -82,6 +96,23 @@ export const updateUserProfile = async (
       method: "PATCH",
       formData: userData,
     });
+    return result;
+  } catch (error: any) {
+    return toServiceResult(error);
+  }
+};
+
+/** PATCH /user/:id/role , admin-only: switch customer <-> manager. */
+export const updateUserRole = async (
+  id: string,
+  role: "customer" | "manager"
+): Promise<ServiceResult<User>> => {
+  try {
+    const result = await apiRequest<User>(`/user/${id}/role`, {
+      method: "PATCH",
+      body: { role },
+    });
+    revalidateTag("USER", "max");
     return result;
   } catch (error: any) {
     return toServiceResult(error);

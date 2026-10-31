@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,17 @@ import {
 } from "@/components/ui/select";
 import { createOrder } from "@/lib/services/order";
 import { DistrictCombobox } from "@/components/public/checkout/district-combobox";
+import {
+    PhoneInput,
+    isValidFullPhone,
+} from "@/components/shared/phone-input";
 import { UpazilaCombobox } from "@/components/public/checkout/upazila-combobox";
 import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
 import { cn } from "@/lib/utils";
-import { PHONE_ERROR_MESSAGE, PHONE_REGEX } from "@/lib/utils/phone";
 import { formatCurrency, getOfferPrice } from "@/lib/utils/currency";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import type {
     Coupon,
     PaymentMethod,
@@ -37,9 +41,10 @@ import type {
 
 const orderSchema = z.object({
     recipientName: z.string().min(2, { message: "Recipient name is required." }),
-    phoneNo: z
-        .string()
-        .regex(PHONE_REGEX, { message: PHONE_ERROR_MESSAGE }),
+    phoneNo: z.string().refine(isValidFullPhone, {
+        message:
+            "Enter a valid number — pick the country code and type the local number (BD: 01XXXXXXXXX).",
+    }),
     shippingAddress: z.string().min(5, { message: "Shipping address is required." }),
     notes: z.string().optional(),
     deliveryOptionName: z
@@ -73,6 +78,8 @@ export function CreateOrderForm({
     deliveryOptions = [],
 }: CreateOrderFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const pathname = usePathname();
     const [submitting, setSubmitting] = useState(false);
     const [lines, setLines] = useState<OrderLine[]>([]);
@@ -87,6 +94,7 @@ export function CreateOrderForm({
 
     const {
         register,
+        control,
         handleSubmit,
         reset,
         watch,
@@ -330,7 +338,7 @@ export function CreateOrderForm({
             router.push(
                 isCustomer
                     ? "/dashboard/customer/orders/my-orders"
-                    : "/dashboard/admin/orders/all-orders"
+                    : `${base}/orders/all-orders`
             );
             router.refresh();
         } finally {
@@ -849,12 +857,18 @@ export function CreateOrderForm({
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phoneNo">Phone Number</Label>
-                                    <Input
-                                        id="phoneNo"
-                                        placeholder="+8801712345678"
-                                        {...register("phoneNo")}
-                                        aria-invalid={!!errors.phoneNo}
+                                    <Label>Phone Number</Label>
+                                    <Controller
+                                        name="phoneNo"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <PhoneInput
+                                                value={field.value ?? ""}
+                                                onChange={field.onChange}
+                                                invalid={!!errors.phoneNo}
+                                                aria-label="Customer phone number"
+                                            />
+                                        )}
                                     />
                                     {errors.phoneNo && (
                                         <p className="text-[11px] font-medium text-destructive">

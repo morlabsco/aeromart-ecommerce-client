@@ -27,6 +27,7 @@ import { parseLocalDate, toLocalDateString } from "@/lib/utils/date";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { CouponProductPicker } from "@/components/dashboard/coupons/coupon-product-picker";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 const couponSchema = z
     .object({
@@ -51,6 +52,8 @@ type CouponFormValues = z.output<typeof couponSchema>;
 
 export function CreateCouponForm() {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     // Product scope — empty = whole order.
     const [applicableProducts, setApplicableProducts] = useState<string[]>([]);
@@ -105,7 +108,7 @@ export function CreateCouponForm() {
             toast.success(result.message ?? "Coupon created successfully");
             // Reset so the form is ready for another entry.
             reset();
-            router.push("/dashboard/admin/coupons/all-coupons");
+            router.push(`${base}/coupons/all-coupons`);
             router.refresh();
         } finally {
             setSubmitting(false);

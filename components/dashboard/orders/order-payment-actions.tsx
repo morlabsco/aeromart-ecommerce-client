@@ -6,6 +6,16 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Card,
     CardContent,
     CardDescription,
@@ -22,9 +32,20 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { updateOrderPayment, updateOrderStatus } from "@/lib/services/order";
+import {
+    PhoneInput,
+    isValidFullPhone,
+} from "@/components/shared/phone-input";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage, notifyInvalidFields } from "@/lib/utils/form-feedback";
-import { Loader2, Save } from "lucide-react";
+import { CircleHelp, Loader2, Save } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import type { Order } from "@/lib/types/backend";
 
 /* ---------------------------------------------------------------------------
@@ -83,6 +104,8 @@ export function OrderPaymentActions({
     );
     const [status, setStatus] = useState<string>(order.status ?? "Pending");
     const [bkashSender, setBkashSender] = useState("");
+    const [conflicts, setConflicts] = useState<string[] | null>(null);
+    const [guideOpen, setGuideOpen] = useState(false);
     const [bkashTrxId, setBkashTrxId] = useState("");
     const [bankRef, setBankRef] = useState("");
 
@@ -124,6 +147,39 @@ export function OrderPaymentActions({
         return parts;
     }, [order.notes]);
 
+    /** Business-rule conflicts checked BEFORE anything is sent — the admin
+     *  sees exactly what the combination implies and confirms consciously. */
+    const findConflicts = (): string[] => {
+        const warnings: string[] = [];
+        const paymentChanged = paymentStatus !== order.paymentStatus;
+        const statusChanged = !statusLocked && status !== order.status;
+
+        if (statusChanged && status === "Completed" && paymentStatus === "Pending") {
+            warnings.push(
+                "Completing the order while payment is still PENDING — the customer has not paid yet. This is allowed, but confirm you will collect/verify the payment later (payment status stays editable on completed orders).",
+            );
+        }
+        if (statusChanged && status === "Cancelled" && paymentStatus === "Paid") {
+            warnings.push(
+                "Cancelling an order marked PAID — a refund may be owed. Cancelled orders lock completely afterwards, so double-check before saving.",
+            );
+        }
+        if (statusChanged && status === "Cancelled" && paymentChanged && paymentStatus === "Paid") {
+            warnings.push(
+                "You are marking the order PAID and CANCELLED at the same time , usually one or the other is intended.",
+            );
+        }
+        if (
+            order.status === "Cancelled" &&
+            (paymentChanged || method !== order.paymentMethod)
+        ) {
+            warnings.push(
+                "This order is already CANCELLED , the server refuses payment changes on cancelled orders.",
+            );
+        }
+        return warnings;
+    };
+
     const save = () => {
         // Manual methods need their verification reference — validate first.
         const invalid: string[] = [];
@@ -133,7 +189,8 @@ export function OrderPaymentActions({
             bankRef: "Bank Reference",
         };
         if (method === "bkash-manual") {
-            if (!bkashSender.trim()) invalid.push("bkashSender");
+            if (!bkashSender.trim() || !isValidFullPhone(bkashSender))
+                invalid.push("bkashSender");
             if (!bkashTrxId.trim()) invalid.push("bkashTrxId");
         }
         if (method === "bank-manual" && !bankRef.trim()) {
@@ -144,22 +201,23 @@ export function OrderPaymentActions({
             return;
         }
 
-        // Rebuild the notes: customer's own note first, then the reference.
-        const parts = [...baseNotes];
-        if (method === "bkash-manual") {
-            parts.push(
-                `bKash (manual) — Sender: ${bkashSender.trim()}, TrxID: ${bkashTrxId.trim()}`,
-            );
+        const warnings = findConflicts();
+        if (warnings.length > 0) {
+            setConflicts(warnings);
+            return;
         }
-        if (method === "bank-manual") {
-            parts.push(`Bank (manual) — NPSB Ref: ${bankRef.trim()}`);
-        }
+        executeSave();
+    };
 
+    const executeSave = () => {
+        setConflicts(null);
         startTransition(async () => {
+            // Payment/method first (works on completed orders too), then the
+            // status change through its own validating endpoint.
             const result = await updateOrderPayment(order._id, {
                 paymentMethod: method,
                 paymentStatus,
-                notes: parts.join(" | "),
+                notes: buildNotes(),
             });
             if (isErrorResult(result)) {
                 toast.error(serverErrorMessage(result));
@@ -167,8 +225,6 @@ export function OrderPaymentActions({
             }
             toast.success("Payment details updated");
 
-            // Status change runs through its own endpoint (also validates the
-            // frozen-state rules server-side).
             if (!statusLocked && status !== order.status) {
                 const statusResult = await updateOrderStatus(order._id, status as never);
                 if (isErrorResult(statusResult)) {
@@ -182,15 +238,43 @@ export function OrderPaymentActions({
         });
     };
 
+    /** Customer notes with any previous manual-reference lines stripped, so
+     *  re-saving never duplicates the reference block. */
+    const buildNotes = () => {
+        const parts = (order.notes ?? "")
+            .split(" | ")
+            .filter(
+                (part) =>
+                    part.trim() && !REF_PREFIXES.some((p) => part.startsWith(p)),
+            );
+        if (method === "bkash-manual") {
+            parts.push(
+                `bKash (manual) — Sender: ${bkashSender.trim()}, TrxID: ${bkashTrxId.trim()}`,
+            );
+        }
+        if (method === "bank-manual") {
+            parts.push(`Bank (manual) — NPSB Ref: ${bankRef.trim()}`);
+        }
+        return parts.join(" | ");
+    };
+
     return (
         <Card>
             <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
                     <CardTitle className="text-base">Payment &amp; Status</CardTitle>
+                    {/* Labeled so payment state and order state never read as
+                     * the same thing. */}
                     <Badge variant="outline" className="text-xs">
+                        <span className="mr-1 font-semibold text-muted-foreground">
+                            Payment:
+                        </span>{" "}
                         {order.paymentStatus}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
+                        <span className="mr-1 font-semibold text-muted-foreground">
+                            Order:
+                        </span>{" "}
                         {order.status}
                     </Badge>
                 </div>
@@ -209,7 +293,13 @@ export function OrderPaymentActions({
                             onValueChange={(v) => setMethod(String(v ?? "COD"))}
                         >
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Method" />
+                                <SelectValue placeholder="Method">
+                                    {(value) =>
+                                        PAYMENT_METHODS.find(
+                                            (option) => option.value === String(value ?? ""),
+                                        )?.label ?? String(value ?? "Method")
+                                    }
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {PAYMENT_METHODS.map((option) => (
@@ -233,7 +323,9 @@ export function OrderPaymentActions({
                             }
                         >
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Status" />
+                                <SelectValue placeholder="Payment status">
+                                    {(value) => String(value ?? "Pending")}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {PAYMENT_STATUSES.map((option) => (
@@ -253,7 +345,9 @@ export function OrderPaymentActions({
                             disabled={statusLocked}
                         >
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Order status" />
+                                <SelectValue placeholder="Order status">
+                                    {(value) => String(value ?? "Pending")}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {ORDER_STATUSES.map((option) => (
@@ -277,12 +371,11 @@ export function OrderPaymentActions({
                     <div className="grid grid-cols-1 gap-4 rounded-lg border border-border/60 bg-muted/30 p-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label className="text-xs">bKash Sender Number</Label>
-                            <Input
+                            <PhoneInput
                                 value={bkashSender}
-                                onChange={(e) => setBkashSender(e.target.value)}
-                                placeholder="01XXXXXXXXX"
-                                inputMode="tel"
-                                aria-invalid={!bkashSender.trim()}
+                                onChange={setBkashSender}
+                                invalid={!bkashSender.trim()}
+                                aria-label="bKash sender number"
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -319,7 +412,17 @@ export function OrderPaymentActions({
                     </div>
                 )}
 
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGuideOpen(true)}
+                        className="gap-1.5 text-muted-foreground hover:text-foreground"
+                    >
+                        <CircleHelp className="size-4" />
+                        What can I change?
+                    </Button>
                     <Button
                         type="button"
                         onClick={save}
@@ -339,6 +442,103 @@ export function OrderPaymentActions({
                     </Button>
                 </div>
             </CardContent>
+
+            {/* ── Conflict confirmation — shown before a risky combination is
+                 saved so the admin consciously proceeds ── */}
+            <AlertDialog
+                open={conflicts !== null}
+                onOpenChange={(open) => !open && setConflicts(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Check before saving
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <span className="block space-y-2 text-left">
+                                {(conflicts ?? []).map((warning, i) => (
+                                    <span
+                                        key={i}
+                                        className="block rounded-md bg-warning/10 px-3 py-2 text-[13px] leading-relaxed text-warning-foreground"
+                                    >
+                                        {warning}
+                                    </span>
+                                ))}
+                            </span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isPending}>
+                            Let me review
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                executeSave();
+                            }}
+                            disabled={isPending}
+                        >
+                            {isPending ? "Saving..." : "Yes, save anyway"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* ── Status & payment guide ── */}
+            <Dialog open={guideOpen} onOpenChange={setGuideOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>What can be changed, and when</DialogTitle>
+                        <DialogDescription>
+                            The rules that guard order updates , so nothing is
+                            saved by accident.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 text-sm">
+                        <div className="rounded-lg border border-border/60 p-3">
+                            <p className="font-semibold text-foreground">
+                                Pending / Processing / Shipped
+                            </p>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">
+                                Everything is editable: items, coupon,
+                                delivery, payment method + status and the order
+                                status. Cancelling returns the reserved stock.
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 p-3">
+                            <p className="font-semibold text-foreground">
+                                Completed
+                            </p>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">
+                                Items, coupon and delivery are frozen. Payment
+                                status, payment method and notes stay editable ,
+                                late bKash/bank verifications are recorded
+                                here. Order status can no longer change.
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 p-3">
+                            <p className="font-semibold text-foreground">
+                                Cancelled
+                            </p>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">
+                                Fully locked , nothing can be changed. Stock was
+                                already returned when the order was cancelled.
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-brand/40 bg-brand/5 p-3">
+                            <p className="font-semibold text-foreground">
+                                Payment statuses
+                            </p>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">
+                                Pending , awaiting payment/verification. Paid ,
+                                money confirmed (manual bKash/bank orders start
+                                Paid , the reference is verified by staff).
+                                Failed , a gateway payment did not go through.
+                            </p>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

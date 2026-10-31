@@ -37,6 +37,7 @@ import { KeyValueListEditor } from "@/components/dashboard/shared/key-value-list
 import { ProductImageUploader } from "@/components/dashboard/shared/product-image-uploader";
 import { FormLayoutToggle, type FormLayout } from "@/components/dashboard/shared/form-layout-toggle";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AttributesEditor,
     ColorOptionsEditor,
@@ -86,6 +87,8 @@ const MAX_IMAGES = 10;
 
 export function CreateProductForm({ brands, categories, brandCurrency = "usd" }: CreateProductFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [layout, setLayout] = useState<FormLayout>("two");
@@ -249,7 +252,7 @@ export function CreateProductForm({ brands, categories, brandCurrency = "usd" }:
             setOfferPrice(null);
             setHasVariants(false);
             setVariants([]);
-            router.push("/dashboard/admin/products/all-products");
+            router.push(`${base}/products/all-products`);
             router.refresh();
         } finally {
             setSubmitting(false);

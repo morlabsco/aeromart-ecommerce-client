@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Users, Eye, Pencil } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ApiMeta, User } from "@/lib/types/backend";
-import { toggleUserStatus } from "@/lib/services/user";
+import { toggleUserStatus, updateUserRole } from "@/lib/services/user";
 import { isErrorResult } from "@/lib/utils/result";
 import { InstantStatusSelect } from "@/components/dashboard/shared/instant-status-select";
 
@@ -64,6 +64,14 @@ export function UsersTable({ users, meta }: UsersTableProps) {
                 enableSorting: true,
                 cell: ({ row }) => (
                     <div className="flex items-center gap-3">
+                        {row.original.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={row.original.photoUrl}
+                                alt={row.original.name}
+                                className="h-8 w-8 shrink-0 rounded-full bg-muted object-cover"
+                            />
+                        ) : (
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {row.original.name
                                 .split(" ")
@@ -71,6 +79,7 @@ export function UsersTable({ users, meta }: UsersTableProps) {
                                 .join("")
                                 .slice(0, 2)}
                         </div>
+                        )}
                         <div className="min-w-0">
                             <TableLink href={`/dashboard/admin/users/${row.original._id}`} className="text-sm">
                                 {row.original.name}
@@ -84,14 +93,30 @@ export function UsersTable({ users, meta }: UsersTableProps) {
                 accessorKey: "role",
                 header: "Role",
                 enableSorting: true,
-                cell: ({ row }) => (
-                    <Badge
-                        variant={row.original.role === "admin" ? "secondary" : "outline"}
-                        className="text-xs capitalize"
-                    >
-                        {row.original.role}
-                    </Badge>
-                ),
+                cell: ({ row }) =>
+                    row.original.role === "admin" ? (
+                        // Admin is granted by direct database edit only —
+                        // shown as a locked badge, never switchable here.
+                        <Badge variant="secondary" className="text-xs capitalize">
+                            admin
+                        </Badge>
+                    ) : (
+                        <InstantStatusSelect
+                            value={row.original.role}
+                            options={[
+                                { value: "customer", label: "Customer" },
+                                { value: "manager", label: "Manager" },
+                            ]}
+                            onUpdate={async (next) => {
+                                const result = await updateUserRole(
+                                    row.original._id,
+                                    next as "customer" | "manager",
+                                );
+                                return result;
+                            }}
+                            className="w-[8.5rem]"
+                        />
+                    ),
             },
             {
                 accessorKey: "isActive",
@@ -106,9 +131,7 @@ export function UsersTable({ users, meta }: UsersTableProps) {
                         ]}
                         onUpdate={async () => {
                             const result = await toggleUserStatus(row.original._id);
-                            return isErrorResult(result)
-                                ? result
-                                : { message: result.message };
+                            return result;
                         }}
                         onSuccess={() => router.refresh()}
                     />

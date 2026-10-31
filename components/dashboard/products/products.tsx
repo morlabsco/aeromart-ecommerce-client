@@ -17,6 +17,7 @@ import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { TableLink } from "@/components/dashboard/shared/table-link";
 import { useCanDelete } from "@/components/dashboard/v4/dashboard-user";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +38,8 @@ interface ProductsTableProps {
 
 export function ProductsTable({ products, meta, brandCurrency = "usd" }: ProductsTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
     // Deletes are admin-only — managers create/update but never delete.
@@ -106,7 +109,7 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                             )}
                         </div>
                         <div className="min-w-0">
-                            <TableLink href={`/dashboard/admin/products/${row.original._id}`} className="text-sm">
+                            <TableLink href={`${base}/products/${row.original._id}`} className="text-sm">
                                 {row.original.name}
                             </TableLink>
                             <p className="truncate text-xs text-muted-foreground">
@@ -197,13 +200,13 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                 header: "",
                 cell: ({ row }) => (
                     <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`/dashboard/admin/products/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`View ${row.original.name}`} render={<a href={`${base}/products/${row.original._id}`} />}>
                             <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Open ${row.original.name} on storefront`} title="View on storefront" render={<a href={`/products/${row.original.slug}`} target="_blank" rel="noopener noreferrer" />}>
                             <ExternalLink className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`/dashboard/admin/products/update-product/${row.original._id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label={`Update ${row.original.name}`} render={<a href={`${base}/products/update-product/${row.original._id}`} />}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -248,7 +251,7 @@ export function ProductsTable({ products, meta, brandCurrency = "usd" }: Product
                         Manage your product catalog
                     </p>
                 </div>
-                <Button render={<a href="/dashboard/admin/products/create-product" />}>
+                <Button render={<a href={`${base}/products/create-product`} />}>
                     Create Product
                 </Button>
             </div>

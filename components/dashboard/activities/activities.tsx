@@ -40,6 +40,7 @@ import { isErrorResult } from "@/lib/utils/result";
 import { ActivityModuleBadge, ActivityTypeBadge } from "@/components/shared/activity-badges";
 import Link from "next/link";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { activityEntityHref } from "@/lib/utils/activity-refs";
 import { TableLink } from "@/components/dashboard/shared/table-link";
 
 /** Proper-cased role for chips ("admin" → "Admin"). */
@@ -253,11 +254,22 @@ export function ActivitiesTable({ activities, meta }: ActivitiesTableProps) {
                 accessorKey: "reference",
                 header: "Reference",
                 enableSorting: true,
-                cell: ({ row }) => (
-                    <span className="font-mono text-xs text-muted-foreground">
-                        {row.original.reference || "—"}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const href = activityEntityHref(
+                        row.original.module,
+                        row.original.referenceId,
+                    );
+                    const label = row.original.reference || "—";
+                    return href ? (
+                        <TableLink href={href} mono className="text-xs">
+                            {label}
+                        </TableLink>
+                    ) : (
+                        <span className="font-mono text-xs text-muted-foreground">
+                            {label}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: "createdAt",

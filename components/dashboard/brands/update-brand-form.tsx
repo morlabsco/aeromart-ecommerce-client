@@ -16,6 +16,7 @@ import { updateBrand } from "@/lib/services/brand";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Brand } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 const brandSchema = z.object({
     name: z.string().min(1, { message: "Brand name is required." }),
@@ -30,6 +31,8 @@ interface UpdateBrandFormProps {
 
 export function UpdateBrandForm({ brand }: UpdateBrandFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +67,7 @@ export function UpdateBrandForm({ brand }: UpdateBrandFormProps) {
             }
 
             toast.success(result.message ?? "Brand updated successfully");
-            router.push(`/dashboard/admin/brands/${brand._id}`);
+            router.push(`${base}/brands/${brand._id}`);
             router.refresh();
         } finally {
             setSubmitting(false);

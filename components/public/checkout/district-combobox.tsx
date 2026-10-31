@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, SearchX } from "lucide-react"
+import { MapPin, SearchX, X } from "lucide-react"
 import {
   Combobox,
   ComboboxContent,
@@ -23,6 +23,8 @@ interface DistrictComboboxProps {
   invalid?: boolean
   /** Accessible name for the trigger button. */
   "aria-label"?: string
+  /** Shows a clear (✕) button while a district is selected. */
+  clearable?: boolean
 }
 
 /**
@@ -36,9 +38,11 @@ export function DistrictCombobox({
   value,
   onChange,
   invalid,
+  clearable = false,
   "aria-label": ariaLabel = "District",
 }: DistrictComboboxProps) {
   return (
+    <div className="flex items-stretch gap-2">
     <Combobox
       items={BD_DISTRICTS}
       value={value || null}
@@ -48,7 +52,7 @@ export function DistrictCombobox({
       <ComboboxTrigger
         aria-label={ariaLabel}
         className={cn(
-          "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-4 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow,border-color] outline-none",
+          "flex h-11 w-full min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-4 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow,border-color] outline-none",
           "focus-visible:border-brand/50 focus-visible:ring-2 focus-visible:ring-ring/25",
           "data-popup-open:border-brand/50 data-popup-open:ring-2 data-popup-open:ring-ring/25",
           "[&>svg]:transition-transform data-popup-open:[&>svg]:rotate-180",
@@ -99,5 +103,16 @@ export function DistrictCombobox({
         </ComboboxEmpty>
       </ComboboxContent>
     </Combobox>
+    {clearable && value && (
+      <button
+        type="button"
+        onClick={() => onChange("")}
+        aria-label="Clear district"
+        className="flex w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-input text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+      >
+        <X className="size-4" />
+      </button>
+    )}
+    </div>
   )
 }

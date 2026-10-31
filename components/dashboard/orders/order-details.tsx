@@ -32,7 +32,7 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" render={<Link href="/dashboard/admin/orders" />} className="flex items-center gap-2">
+                    <Button variant="outline" render={<Link href="../" />} className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
@@ -42,7 +42,7 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                             label="Invoice"
                         />
                     )}
-                    <Button render={<Link href={`/dashboard/admin/orders/update-order/${order._id}`} />} className="flex items-center gap-2">
+                    <Button render={<Link href={`../update-order/${order._id}`} />} className="flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>
@@ -59,7 +59,16 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                         {order.products.map((item, i) => (
                             <div key={i} className="flex items-center justify-between rounded-lg border p-4">
                                 <div>
-                                    <p className="text-sm font-medium">{item.product.name}</p>
+                                    {item.product.slug ? (
+                                        <Link
+                                            href={`/products/${item.product.slug}`}
+                                            className="text-sm font-medium underline-offset-4 transition-colors hover:text-brand hover:underline"
+                                        >
+                                            {item.product.name}
+                                        </Link>
+                                    ) : (
+                                        <p className="text-sm font-medium">{item.product.name}</p>
+                                    )}
                                     {item.variant && (
                                         <p className="text-xs text-muted-foreground mt-0.5">
                                             {Object.entries(
@@ -178,11 +187,15 @@ export function OrderDetails({ order, brandCurrency = "usd" }: OrderDetailsProps
                             </p>
                         </div>
                         <div className="rounded-lg border p-4">
-                            <p className="text-xs text-muted-foreground">Status</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Order Status
+                            </p>
                             <OrderStatusBadge status={order.status} className="mt-1" />
                         </div>
                         <div className="rounded-lg border p-4">
-                            <p className="text-xs text-muted-foreground">Payment</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Payment Status
+                            </p>
                             <Badge
                                 variant={
                                     order.paymentStatus === "Paid"

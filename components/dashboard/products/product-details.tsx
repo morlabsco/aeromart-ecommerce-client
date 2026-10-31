@@ -9,6 +9,7 @@ import { ArrowLeft, ExternalLink, Maximize2, Pencil, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { Product } from "@/lib/types/backend";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 interface ProductDetailsProps {
     product: Product;
@@ -55,6 +56,8 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
 
 export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetailsProps) {
     const [selectedImage, setSelectedImage] = useState(0);
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const currency = brandCurrency ?? product.currency;
 
     const images = [...(product.imageUrls ?? [])]
@@ -77,7 +80,7 @@ export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetail
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" render={<Link href="/dashboard/admin/products" />} className="flex items-center gap-2">
+                    <Button variant="outline" render={<Link href={`${base}/products`} />} className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />
                         Back
                     </Button>
@@ -97,7 +100,7 @@ export function ProductDetails({ product, brandCurrency = "usd" }: ProductDetail
                             View on Storefront
                         </Button>
                     )}
-                    <Button render={<Link href={`/dashboard/admin/products/update-product/${product._id}`} />} className="flex items-center gap-2">
+                    <Button render={<Link href={`${base}/products/update-product/${product._id}`} />} className="flex items-center gap-2">
                         <Pencil className="h-4 w-4" />
                         Update
                     </Button>

@@ -5,8 +5,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getAllUsers } from "@/lib/services/user";
-import { unwrapData } from "@/lib/services/api-client";
+import { getUserById } from "@/lib/services/user";
+import { getSession } from "@/lib/get-session";
 import { isErrorResult } from "@/lib/utils/result";
 import { UserDetails } from "@/components/dashboard/users/user-details";
 import { DetailError } from "@/components/dashboard/shared/detail-error";
@@ -20,14 +20,23 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
 async function UserDetailsContent({ userId }: { userId: string }) {
-    const result = await getAllUsers({ limit: 100 });
+    const [result, session] = await Promise.all([
+        getUserById(userId),
+        getSession(),
+    ]);
     if (isErrorResult(result)) {
         return <DetailError message={result.message} backHref="/dashboard/admin/users" />;
     }
-    const user = unwrapData(result)?.find((u) => u._id === userId);
+    const user = result.data;
     if (!user) notFound();
 
-    return <UserDetails user={user} />;
+    return (
+        <UserDetails
+            user={user}
+            isSelf={session.user?.userId === userId}
+            selfRole={session.user?.role ?? "admin"}
+        />
+    );
 }
 
 export default async function UserDetailsPage({

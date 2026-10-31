@@ -11,14 +11,21 @@ import { usePathname } from "next/navigation";
  * The motion is a "retention" trickle, not a steady linear crawl: it jumps
  * early, then takes successively smaller steps on a slowing clock (like
  * YouTube/GitHub), holding just under done until the navigation lands — then
- * snaps to 100% and fades out. transform-only so it stays compositor-smooth;
- * suppressed entirely for prefers-reduced-motion.
+ * snaps to 100% and fades out.
+ *
+ * IMPLEMENTATION NOTE: the bar's transform is painted EXCLUSIVELY through
+ * the ref. React must never re-apply a transform on re-render (setVisible
+ * flips re-render the wrapper) — an inline `transform` in the JSX resets the
+ * painted value to scaleX(0) and the bar appears dead. transform-only so it
+ * stays compositor-smooth; suppressed entirely for prefers-reduced-motion.
  * ------------------------------------------------------------------------- */
 
 /** Percent jumps — each step is smaller than the last (the hook shape). */
 const TRICKLE_STEPS = [30, 18, 12, 8, 5, 3, 2, 1.5, 1];
 /** Delays between steps — growing, so progress feels fast then patient. */
 const TRICKLE_DELAYS_MS = [180, 240, 300, 360, 420, 480, 540, 600];
+/** How long the completed bar lingers before fading out. */
+const FINISH_LINGER_MS = 260;
 
 export function PageProgress() {
     const pathname = usePathname();
@@ -34,6 +41,7 @@ export function PageProgress() {
         timersRef.current = [];
     }, []);
 
+    /** The ONLY writer of the bar's transform. */
     const paint = useCallback((value: number) => {
         progressRef.current = value;
         if (barRef.current) {
@@ -49,9 +57,11 @@ export function PageProgress() {
         if (navigatingRef.current || reducedMotionRef.current) return;
         navigatingRef.current = true;
         setVisible(true);
-        paint(8);
 
         let value = 8;
+        // Paint AFTER the visible state has committed so nothing resets it;
+        // rAF lands after the commit without waiting a whole frame chain.
+        requestAnimationFrame(() => paint(value));
         TRICKLE_STEPS.forEach((step, i) => {
             const delay = TRICKLE_DELAYS_MS[i] ?? 650;
             const t = window.setTimeout(() => {
@@ -64,16 +74,19 @@ export function PageProgress() {
         });
     }, [paint]);
 
-    /** Snap to done and fade out. */
+    /** Snap to done, linger, fade out and reset (the reset happens while
+     *  invisible, so it never animates backwards). */
     const finish = useCallback(() => {
         if (!navigatingRef.current) return;
         clearTimers();
-        paint(100);
         navigatingRef.current = false;
+        paint(100);
         const t = window.setTimeout(() => {
             setVisible(false);
-            paint(0);
-        }, 220);
+            // Reset after the fade so the next run starts from zero cleanly.
+            const reset = window.setTimeout(() => paint(0), 240);
+            timersRef.current.push(reset);
+        }, FINISH_LINGER_MS);
         timersRef.current.push(t);
     }, [clearTimers, paint]);
 
@@ -88,7 +101,8 @@ export function PageProgress() {
         return () => mq.removeEventListener("change", update);
     }, []);
 
-    // Internal link clicks start the run (Next <Link>s render real anchors).
+    // Internal link clicks start the run (Next <Link>s render real anchors;
+    // the capture phase fires before React's own handlers can preventDefault).
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
             if (event.defaultPrevented || event.button !== 0) return;
@@ -102,7 +116,10 @@ export function PageProgress() {
             if (!href || href.startsWith("#")) return;
             // External / mail / tel / new-tab targets don't navigate the app.
             if (target.target && target.target !== "_self") return;
-            if (/^([a-z]+:)?\/\//i.test(href) && !href.startsWith(window.location.origin))
+            if (
+                /^([a-z]+:)?\/\//i.test(href) &&
+                !href.startsWith(window.location.origin)
+            )
                 return;
             if (/^(mailto:|tel:|javascript:)/i.test(href)) return;
             const url = new URL(target.href, window.location.href);
@@ -146,15 +163,11 @@ export function PageProgress() {
             className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]"
             style={{ opacity: visible ? 1 : 0, transition: "opacity 220ms ease" }}
         >
+            {/* The bar carries NO transform in the JSX on purpose — see the
+             * note at the top of this file. */}
             <div
                 ref={barRef}
-                className="h-full w-full origin-left bg-primary"
-                style={{
-                    transform: "scaleX(0)",
-                    transition: visible
-                        ? "transform 240ms cubic-bezier(0.22, 0.61, 0.36, 1)"
-                        : "none",
-                }}
+                className="h-full w-full origin-left bg-primary transition-transform duration-200 ease-out"
             />
         </div>
     );

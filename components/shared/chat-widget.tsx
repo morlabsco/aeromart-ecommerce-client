@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useUIStore } from "@/lib/store/app-store"
 import { MessageCircle, Phone, X } from "lucide-react"
 import type { SettingsContact } from "@/lib/types/backend"
 import { cn } from "@/lib/utils"
@@ -69,8 +70,23 @@ export function ChatWidget({ contact }: ChatWidgetProps) {
   // No contact channels configured at all — render nothing.
   if (actions.length === 0) return null
 
+  // The cart drawer slides over this corner — fade the widget out of the
+  // way while it is open (and close the channel list so nothing dangles).
+  const isCartOpen = useUIStore((s) => s.isCartOpen)
+  useEffect(() => {
+    if (isCartOpen) setOpen(false)
+  }, [isCartOpen])
+
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-center gap-3 sm:bottom-6 sm:right-6">
+    <div
+      className={cn(
+        "fixed bottom-5 right-5 z-50 flex flex-col items-center gap-3 transition-all duration-300 ease-out sm:bottom-6 sm:right-6",
+        isCartOpen
+          ? "pointer-events-none translate-x-6 translate-y-6 scale-90 opacity-0"
+          : "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100"
+      )}
+      aria-hidden={isCartOpen || undefined}
+    >
       {/* Channel buttons — spring open upward with a stagger */}
       <div className="flex flex-col items-center gap-3">
         {actions.map((action, i) => {

@@ -53,6 +53,7 @@ import { getOfferStatus, offerSaleInfo } from "@/lib/utils/offer";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Product, ProductOfferPrice } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 /** Offer lifecycle → Badge variant + label. */
 const STATUS_BADGE: Record<
@@ -100,6 +101,8 @@ export function OfferedProductsTable({
     brandCurrency = "usd",
 }: OfferedProductsTableProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [isPending, startTransition] = useTransition();
 
     /* ── Offer editor dialog (edit an existing offer) ── */
@@ -294,7 +297,7 @@ export function OfferedProductsTable({
                             aria-label={`View ${row.original.name}`}
                             render={
                                 <a
-                                    href={`/dashboard/admin/products/${row.original._id}`}
+                                    href={`${base}/products/${row.original._id}`}
                                 />
                             }
                         >
@@ -387,7 +390,7 @@ export function OfferedProductsTable({
                     <Button
                         variant="brand"
                         render={
-                            <Link href="/dashboard/admin/products/offered-products/add" />
+                            <Link href={`${base}/products/offered-products/add`} />
                         }
                     >
                         <Plus className="h-4 w-4" /> Add Offer

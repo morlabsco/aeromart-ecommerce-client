@@ -23,27 +23,38 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { formatCurrency } from "@/lib/utils/currency";
-import { updateOrder } from "@/lib/services/order";
-import { stripeInit, sslCommerzInit, bkashInit } from "@/lib/services/payment";
+import { updateOrder, updateOrderPayment } from "@/lib/services/order";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { OrderStatusBadge } from "@/components/shared/order-status-badge";
 import { isErrorResult } from "@/lib/utils/result";
 import type { Order } from "@/lib/types/backend";
 import { paymentMethodLabel } from "@/lib/utils/format";
-import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import {
+    serverErrorMessage,
+    notifyInvalidFields,
+} from "@/lib/utils/form-feedback";
+import {
+    PhoneInput,
+    isValidFullPhone,
+} from "@/components/shared/phone-input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-type PaymentProviderOption = "stripe" | "sslcommerz" | "bkash";
+/** Methods a customer may switch their own order between. */
+const CUSTOMER_METHODS = [
+    { value: "COD", label: "Cash on Delivery" },
+    { value: "bkash-manual", label: "bKash (Manual)" },
+    { value: "bank-manual", label: "Bank Transfer (Manual)" },
+] as const;
 
-const PAYMENT_PROVIDER_OPTIONS: {
-    value: PaymentProviderOption;
-    label: string;
-    description: string;
-    logo: string;
-}[] = [
-    { value: "stripe", label: "Stripe", description: "Pay securely with a card.", logo: "/images/stripe-pay-logo.png" },
-    { value: "sslcommerz", label: "SSLCommerz", description: "Bangladesh online payment gateway.", logo: "/images/sslcommerz-pay-logo.png" },
-    { value: "bkash", label: "bKash", description: "Bangladesh mobile wallet.", logo: "/images/bkash-pay-logo.png" },
-];
+/** Note markers the checkout writes for manual payment references. */
+const REF_PREFIXES = ["bKash (manual)", "Bank (manual)"];
 
 const CANCELLABLE: string[] = ["Pending", "Processing", "Shipped"];
 
@@ -63,12 +74,96 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [confirmCancel, setConfirmCancel] = useState(false);
-    const [paymentProvider, setPaymentProvider] =
-        useState<PaymentProviderOption>("stripe");
+
+    // Manual-payment reference form (owner can switch method / attach refs).
+    const [method, setMethod] = useState<string>(order.paymentMethod ?? "COD");
+    const [bkashSender, setBkashSender] = useState("");
+    const [bkashTrxId, setBkashTrxId] = useState("");
+    const [bankRef, setBankRef] = useState("");
     const [paying, setPaying] = useState(false);
 
     const canCancel = CANCELLABLE.includes(order.status);
-    const canPay = order.paymentStatus !== "Paid" && order.status !== "Cancelled";
+    // The owner may adjust payment while the order is open and unpaid.
+    const canEditPayment =
+        order.paymentStatus !== "Paid" &&
+        !["Completed", "Cancelled"].includes(order.status);
+
+    // Prefill any manual reference already attached to the order.
+    const existingRefs = (() => {
+        const notes = order.notes ?? "";
+        const bkash = notes.match(
+            /bKash \(manual\) — Sender: ([^,]+), TrxID: ([^\s|]+)/,
+        );
+        const bank = notes.match(/Bank \(manual\) — NPSB Ref: ([^\s|]+)/);
+        return {
+            bkashSender: bkash?.[1] ?? "",
+            bkashTrxId: bkash?.[2] ?? "",
+            bankRef: bank?.[1] ?? "",
+        };
+    })();
+    if (bkashSender === "" && existingRefs.bkashSender) {
+        setBkashSender(existingRefs.bkashSender);
+        setBkashTrxId(existingRefs.bkashTrxId);
+    }
+    if (bankRef === "" && existingRefs.bankRef) {
+        setBankRef(existingRefs.bankRef);
+    }
+
+    const savePayment = () => {
+        const invalid: string[] = [];
+        const labels: Record<string, string> = {
+            bkashSender: "bKash Sender Number",
+            bkashTrxId: "bKash Transaction ID",
+            bankRef: "Bank Reference",
+        };
+        if (method === "bkash-manual") {
+            if (!bkashSender.trim() || !isValidFullPhone(bkashSender))
+                invalid.push("bkashSender");
+            if (!bkashTrxId.trim()) invalid.push("bkashTrxId");
+        }
+        if (method === "bank-manual" && !bankRef.trim()) {
+            invalid.push("bankRef");
+        }
+        if (invalid.length) {
+            notifyInvalidFields(invalid, labels, "save the payment");
+            return;
+        }
+
+        // Customer's own note survives; the reference block is rebuilt.
+        const parts = (order.notes ?? "")
+            .split(" | ")
+            .filter(
+                (part) =>
+                    part.trim() && !REF_PREFIXES.some((p) => part.startsWith(p)),
+            );
+        if (method === "bkash-manual") {
+            parts.push(
+                `bKash (manual) — Sender: ${bkashSender.trim()}, TrxID: ${bkashTrxId.trim()}`,
+            );
+        }
+        if (method === "bank-manual") {
+            parts.push(`Bank (manual) — NPSB Ref: ${bankRef.trim()}`);
+        }
+
+        setPaying(true);
+        startTransition(async () => {
+            const result = await updateOrderPayment(order._id, {
+                paymentMethod: method,
+                notes: parts.join(" | "),
+            });
+            setPaying(false);
+            if (isErrorResult(result)) {
+                toast.error(serverErrorMessage(result));
+                return;
+            }
+            toast.success(
+                method === "COD"
+                    ? "Payment method set to Cash on Delivery , pay the rider on delivery."
+                    : "Reference submitted , our team will verify and confirm your payment.",
+            );
+            router.refresh();
+        });
+    };
 
     const handleCancel = () => {
         startTransition(async () => {
@@ -81,80 +176,6 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
             toast.success(result.message ?? "Order cancelled successfully");
             router.refresh();
         });
-    };
-
-    const handlePayNow = async () => {
-        if (paying) return;
-        setPaying(true);
-        try {
-            const recipientName = order.recipientName ?? order.user?.name ?? "";
-            const phoneNo = order.phoneNo ?? "";
-            const address = order.shippingAddress || "";
-            // Fallback segments for gateways that want separated address parts.
-            const [addr1 = address, city = "", state = "", postcode = "", country = "Bangladesh"] =
-                address.split(",").map((s) => s.trim());
-
-            const email = order.user?.email ?? "";
-            const amount = order.finalAmount;
-
-            let gatewayUrl: string | null = null;
-
-            if (paymentProvider === "stripe") {
-                const res = await stripeInit(order._id, {
-                    amount,
-                    currency: currency || "usd",
-                });
-                if (isErrorResult(res)) {
-                    toast.error(res.message);
-                    return;
-                }
-                gatewayUrl = res.data.gatewayUrl;
-            } else if (paymentProvider === "sslcommerz") {
-                const res = await sslCommerzInit(order._id, {
-                    total_amount: amount,
-                    product_name: "Order",
-                    product_category: "General",
-                    currency: (currency || "usd").toUpperCase(),
-                    cus_name: recipientName,
-                    cus_email: email,
-                    cus_phone: phoneNo,
-                    cus_add1: addr1,
-                    cus_city: city,
-                    cus_state: state,
-                    cus_postcode: postcode,
-                    cus_country: country,
-                    ship_name: recipientName,
-                    ship_add1: addr1,
-                    ship_city: city,
-                    ship_state: state,
-                    ship_postcode: postcode,
-                    ship_country: country,
-                });
-                if (isErrorResult(res)) {
-                    toast.error(res.message);
-                    return;
-                }
-                gatewayUrl = res.data.gatewayUrl;
-            } else {
-                const res = await bkashInit(order._id, {
-                    amount,
-                    customerNumber: phoneNo,
-                });
-                if (isErrorResult(res)) {
-                    toast.error(res.message);
-                    return;
-                }
-                gatewayUrl = res.data.gatewayUrl;
-            }
-
-            if (gatewayUrl) {
-                window.location.href = gatewayUrl;
-            }
-        } catch {
-            toast.error("Failed to start payment. Please try again.");
-        } finally {
-            setPaying(false);
-        }
     };
 
     return (
@@ -188,77 +209,155 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
                 </div>
             </div>
 
-            {canPay && (
+            {canEditPayment ? (
+                /* ── Payment method + manual reference (the gateways are
+                 *    parked — customers switch between COD and the manual
+                 *    methods and attach their transaction reference) ── */
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">
-                            Complete Payment
-                        </CardTitle>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <CardTitle className="text-base">Payment</CardTitle>
+                            <Badge variant="outline" className="text-xs">
+                                <span className="mr-1 font-semibold text-muted-foreground">
+                                    Payment:
+                                </span>{" "}
+                                {order.paymentStatus}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                                <span className="mr-1 font-semibold text-muted-foreground">
+                                    Order:
+                                </span>{" "}
+                                {order.status}
+                            </Badge>
+                        </div>
                         <CardDescription>
-                            This order hasn't been paid yet. Choose a payment
-                            method and continue to the gateway to pay{" "}
+                            Switch how you pay for{" "}
                             <span className="font-medium text-foreground">
                                 {formatCurrency(order.finalAmount, currency)}
-                            </span>
-                            .
+                            </span>{" "}
+                            , manual payments are verified by our team once you
+                            send the reference.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <RadioGroup
-                            value={paymentProvider}
-                            onValueChange={(value) =>
-                                setPaymentProvider(
-                                    value as PaymentProviderOption
-                                )
-                            }
-                            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                        >
-                            {PAYMENT_PROVIDER_OPTIONS.map((option) => (
-                                <Label
-                                    key={option.value}
-                                    className="flex cursor-pointer items-center gap-3 rounded-lg border p-4 has-data-[state=checked]:border-primary"
-                                >
-                                    <RadioGroupItem value={option.value} />
-                                    <Image
-                                        src={option.logo}
-                                        alt={option.label}
-                                        width={0}
-                                        height={0}
-                                        sizes="100vw"
-                                        className="h-6 w-auto object-contain"
-                                    />
-                                    <div>
-                                        <p className="text-sm font-medium">
+                        <div className="max-w-sm space-y-1.5">
+                            <Label className="text-xs">Payment Method</Label>
+                            <Select
+                                value={method}
+                                onValueChange={(v) => setMethod(String(v ?? "COD"))}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Method">
+                                        {(value) =>
+                                            CUSTOMER_METHODS.find(
+                                                (option) =>
+                                                    option.value ===
+                                                    String(value ?? ""),
+                                            )?.label ??
+                                            paymentMethodLabel(String(value ?? ""))
+                                        }
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {CUSTOMER_METHODS.map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
                                             {option.label}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {option.description}
-                                        </p>
-                                    </div>
-                                </Label>
-                            ))}
-                        </RadioGroup>
-                        <div className="flex items-center justify-end gap-2">
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {method === "bkash-manual" && (
+                            <div className="grid grid-cols-1 gap-4 rounded-lg border border-border/60 bg-muted/30 p-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">
+                                        Your bKash Number
+                                    </Label>
+                                    <PhoneInput
+                                        value={bkashSender}
+                                        onChange={setBkashSender}
+                                        invalid={!bkashSender.trim()}
+                                        aria-label="bKash sender number"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">
+                                        Transaction ID
+                                    </Label>
+                                    <Input
+                                        value={bkashTrxId}
+                                        onChange={(e) =>
+                                            setBkashTrxId(e.target.value)
+                                        }
+                                        placeholder="e.g. 9F7KD2LM1Q"
+                                        aria-invalid={!bkashTrxId.trim()}
+                                    />
+                                </div>
+                                <p className="text-[11px] text-muted-foreground sm:col-span-2">
+                                    Required , we verify this reference before
+                                    confirming your payment.
+                                </p>
+                            </div>
+                        )}
+
+                        {method === "bank-manual" && (
+                            <div className="grid grid-cols-1 gap-4 rounded-lg border border-border/60 bg-muted/30 p-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">
+                                        Bank / NPSB Reference
+                                    </Label>
+                                    <Input
+                                        value={bankRef}
+                                        onChange={(e) =>
+                                            setBankRef(e.target.value)
+                                        }
+                                        placeholder="NPSB reference number"
+                                        aria-invalid={!bankRef.trim()}
+                                    />
+                                </div>
+                                <p className="text-[11px] text-muted-foreground sm:col-span-2">
+                                    Required , we verify this reference before
+                                    confirming your payment.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-end">
                             <Button
                                 type="button"
-                                onClick={handlePayNow}
-                                disabled={paying}
+                                variant="brand"
+                                onClick={savePayment}
+                                disabled={paying || isPending}
                             >
-                                {paying ? (
+                                {paying || isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Redirecting to payment...
+                                        Saving...
                                     </>
                                 ) : (
-                                    <>
-                                        <CreditCard className="mr-2 h-4 w-4" />
-                                        Pay Now
-                                    </>
+                                    "Save Payment Details"
                                 )}
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
+            ) : (
+                order.paymentStatus !== "Paid" && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Payment</CardTitle>
+                            <CardDescription>
+                                This order is {order.status.toLowerCase()} and
+                                payment can no longer be changed here , contact
+                                support if something looks wrong.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                )
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -271,7 +370,16 @@ export function CustomerOrderDetails({ order, brandCurrency = "usd" }: CustomerO
                         {order.products.map((item, i) => (
                             <div key={i} className="flex items-center justify-between rounded-lg border p-4">
                                 <div>
-                                    <p className="text-sm font-medium">{item.product.name}</p>
+                                    {item.product.slug ? (
+                                        <Link
+                                            href={`/products/${item.product.slug}`}
+                                            className="text-sm font-medium underline-offset-4 transition-colors hover:text-brand hover:underline"
+                                        >
+                                            {item.product.name}
+                                        </Link>
+                                    ) : (
+                                        <p className="text-sm font-medium">{item.product.name}</p>
+                                    )}
                                     {item.variant && (
                                         <p className="text-xs text-muted-foreground mt-0.5">
                                             {Object.entries(

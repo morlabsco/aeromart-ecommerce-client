@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/shared/star-rating";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Review } from "@/lib/types/backend";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 interface ReviewsTableProps {
     reviews: Review[];
@@ -56,6 +57,8 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
         },
     ];
 
+    const base = useDashboardBase();
+
     const columns: ColumnDef<Review>[] = useMemo(
         () => [
             {
@@ -63,7 +66,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
                 header: "Product",
                 enableSorting: true,
                 cell: ({ row }) => (
-                    <TableLink href={`/dashboard/admin/reviews/${row.original._id}`} className="text-sm">
+                    <TableLink href={`${base}/reviews/${row.original._id}`} className="text-sm">
                         {row.original.product?.name ?? "—"}
                     </TableLink>
                 ),
@@ -140,7 +143,7 @@ export function ReviewsTable({ reviews }: ReviewsTableProps) {
                             aria-label="View review"
                             render={
                                 <a
-                                    href={`/dashboard/admin/reviews/${row.original._id}`}
+                                    href={`${base}/reviews/${row.original._id}`}
                                 />
                             }
                         >

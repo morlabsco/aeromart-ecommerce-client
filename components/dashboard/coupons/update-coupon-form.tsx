@@ -28,6 +28,7 @@ import { isErrorResult } from "@/lib/utils/result";
 import type { Coupon } from "@/lib/types/backend";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
 import { CouponProductPicker } from "@/components/dashboard/coupons/coupon-product-picker";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 const couponSchema = z
     .object({
@@ -59,6 +60,8 @@ interface UpdateCouponFormProps {
 
 export function UpdateCouponForm({ coupon }: UpdateCouponFormProps) {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     // Product scope — empty = whole order (starts from the saved scope).
     const [applicableProducts, setApplicableProducts] = useState<string[]>(
@@ -109,7 +112,7 @@ export function UpdateCouponForm({ coupon }: UpdateCouponFormProps) {
             }
 
             toast.success(result.message ?? "Coupon updated successfully");
-            router.push(`/dashboard/admin/coupons/${coupon._id}`);
+            router.push(`${base}/coupons/${coupon._id}`);
             router.refresh();
         } finally {
             setSubmitting(false);

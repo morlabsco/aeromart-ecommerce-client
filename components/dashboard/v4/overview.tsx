@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
     Activity as ActivityIcon,
     ArrowUpRight,
@@ -12,6 +13,7 @@ import { paymentMethodLabel } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 import type { MetaData, Order } from "@/lib/types/backend";
 import { DashboardOverviewCharts } from "./overview-charts";
+import { SalesOverviewChart } from "./sales-overview-chart";
 
 /* ---------------------------------------------------------------------------
  * Dashboard v4 overview — Nittonova dashboard reference: four stat cards with
@@ -116,11 +118,15 @@ export function DashboardOverviewV4({
     meta,
     orders,
     brandCurrency = "usd",
+    role = "admin",
 }: {
     meta: MetaData | null;
     orders: Order[];
     brandCurrency?: string;
+    /** Drives the dashboard base for links (admin vs manager surface). */
+    role?: string;
 }) {
+    const base = role === "manager" ? "/dashboard/manager" : "/dashboard/admin";
     const months = monthlyTotals(orders);
     const maxMonth = Math.max(...months, 1);
     // "Nice" y-axis max (round up to a clean multiple of 4 steps).
@@ -183,78 +189,8 @@ export function DashboardOverviewV4({
             </div>
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                {/* ── Sales overview chart ── */}
-                <section className="rounded-xl border border-border/60 bg-card p-5 shadow-sm sm:p-6 xl:col-span-2">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-bold text-foreground">
-                                Sales overview
-                            </h2>
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                                Order value per month · {new Date().getFullYear()}
-                            </p>
-                        </div>
-                        <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold text-brand">
-                            {formatCurrency(
-                                months.reduce((sum, v) => sum + v, 0),
-                                brandCurrency,
-                            )}{" "}
-                            this year
-                        </span>
-                    </div>
-
-                    <div className="mt-6 flex h-56 gap-3 sm:h-64">
-                        {/* y grid */}
-                        <div className="flex w-14 shrink-0 flex-col justify-between pb-6 text-right text-[10px] font-medium tabular-nums text-muted-foreground/70">
-                            {[4, 3, 2, 1, 0].map((n) => (
-                                <span key={n}>{compactCurrency(n * step, brandCurrency)}</span>
-                            ))}
-                        </div>
-                        <div className="relative flex-1">
-                            {[4, 3, 2, 1, 0].map((n) => (
-                                <span
-                                    key={n}
-                                    aria-hidden="true"
-                                    className="absolute inset-x-0 border-t border-dashed border-border/70"
-                                    style={{ top: `${(n / 4) * 100}%` }}
-                                />
-                            ))}
-                            <div className="absolute inset-0 flex items-end gap-1.5 pb-6 sm:gap-2">
-                                {months.map((value, i) => (
-                                    <div
-                                        key={i}
-                                        className="group relative flex h-full flex-1 items-end"
-                                        title={`${MONTHS[i]}: ${formatCurrency(value, brandCurrency)}`}
-                                    >
-                                        <span
-                                            className={cn(
-                                                "w-full rounded-t-md transition-colors",
-                                                value > 0
-                                                    ? "bg-brand group-hover:bg-brand/80"
-                                                    : "bg-muted",
-                                            )}
-                                            style={{
-                                                height: `${Math.min(100, (value / yMax) * 100)}%`,
-                                                minHeight: value > 0 ? 4 : 2,
-                                            }}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                            {/* x labels */}
-                            <div className="absolute inset-x-0 bottom-0 flex gap-1.5 sm:gap-2">
-                                {MONTHS.map((m) => (
-                                    <span
-                                        key={m}
-                                        className="flex-1 truncate text-center text-[10px] font-medium text-muted-foreground/70"
-                                    >
-                                        {m}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                {/* ── Sales overview chart (Daily / Weekly / Monthly) ── */}
+                <SalesOverviewChart orders={orders} brandCurrency={brandCurrency} />
 
                 {/* ── Recent activity ── */}
                 <section className="flex flex-col rounded-xl border border-border/60 bg-card p-5 shadow-sm sm:p-6">
@@ -263,7 +199,7 @@ export function DashboardOverviewV4({
                             Recent activity
                         </h2>
                         <Link
-                            href="/dashboard/admin/orders/all-orders"
+                            href={`${base}/orders/all-orders`}
                             className="text-xs font-bold text-brand transition-colors hover:text-brand/80"
                         >
                             See all
@@ -300,9 +236,13 @@ export function DashboardOverviewV4({
                                         {initials}
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-foreground">
+                                        <Link
+                                            href={`${base}/orders/${order._id}`}
+                                            className="flex items-center gap-1 truncate text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                                        >
                                             {order.recipientName || "Guest"}
-                                        </p>
+                                            <ArrowRight className="size-3.5 shrink-0 text-brand" />
+                                        </Link>
                                         <p className="truncate text-xs text-muted-foreground">
                                             Order {order.orderId} ·{" "}
                                             {new Date(order.createdAt).toLocaleDateString(

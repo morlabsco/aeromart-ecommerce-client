@@ -12,14 +12,20 @@ const AUTH_ROUTES = [
 
 const PROTECTED_DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/dashboard/admin";
+const MANAGER_PREFIX = "/dashboard/manager";
 const CUSTOMER_PREFIX = "/dashboard/customer";
 
-// Admin-ONLY dashboard sections — managers share the rest of /dashboard/admin
-// but never see user management, store settings or the newsletter list.
+// Admin-ONLY dashboard sections (defense in depth — the proxy already keeps
+// managers on /dashboard/manager entirely; these guard the admin prefix).
 const ADMIN_ONLY_SECTIONS = [
     "/dashboard/admin/settings",
     "/dashboard/admin/users",
     "/dashboard/admin/newsletter",
+    "/dashboard/admin/activities",
+    "/dashboard/manager/settings",
+    "/dashboard/manager/users",
+    "/dashboard/manager/newsletter",
+    "/dashboard/manager/activities",
 ];
 
 interface DecodedJwt {
@@ -57,12 +63,10 @@ function decodeToken(token: string): DecodedJwt | null {
 }
 
 function roleHome(role: string | undefined): string {
-    return role === "customer" ? "/dashboard/customer" : "/dashboard/admin";
-}
-
-/** Staff (admin + manager) share the admin dashboard. */
-function isStaff(role: string | undefined): boolean {
-    return role === "admin" || role === "manager";
+    if (role === "customer") return "/dashboard/customer";
+    // Managers have their OWN dashboard surface at /dashboard/manager.
+    if (role === "manager") return "/dashboard/manager";
+    return "/dashboard/admin";
 }
 
 export function proxy(request: NextRequest) {
@@ -84,24 +88,47 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // Role enforcement: admin routes for staff (admin + manager), customer
-    // routes for customers.
+    // Role enforcement: /dashboard/admin is ADMIN-only (managers live at
+    // /dashboard/manager, customers at /dashboard/customer).
     if (pathname === ADMIN_PREFIX || pathname.startsWith(`${ADMIN_PREFIX}/`)) {
-        if (!isStaff(role)) {
+        if (role !== "admin") {
             return NextResponse.redirect(
                 new URL(roleHome(role), request.url)
             );
         }
-        // Manager locks: the admin-only sections bounce managers home.
         if (
-            role !== "admin" &&
             ADMIN_ONLY_SECTIONS.some(
                 (section) =>
                     pathname === section || pathname.startsWith(`${section}/`)
             )
         ) {
+            // An admin is allowed everywhere on the admin prefix — the
+            // section list only ever bounces non-admins (kept for safety if
+            // a route is ever shared across prefixes).
+        }
+    }
+    if (
+        pathname === MANAGER_PREFIX ||
+        pathname.startsWith(`${MANAGER_PREFIX}/`)
+    ) {
+        if (role !== "manager") {
             return NextResponse.redirect(
-                new URL("/dashboard/admin", request.url)
+                new URL(roleHome(role), request.url)
+            );
+        }
+        // Manager-locked sections bounce home instead of 404ing (no alias
+        // routes exist for them by design).
+        const managerSection = (section: string) =>
+            section.replace("/dashboard/admin", "/dashboard/manager");
+        if (
+            ADMIN_ONLY_SECTIONS.some(
+                section =>
+                    pathname === managerSection(section) ||
+                    pathname.startsWith(`${managerSection(section)}/`),
+            )
+        ) {
+            return NextResponse.redirect(
+                new URL(MANAGER_PREFIX, request.url)
             );
         }
     }

@@ -87,16 +87,23 @@ export const createReview = async (
 };
 
 /** POST /review with optional photos — multipart so the backend can push the
- *  images through Cloudinary (photos key, max 3 files, validated client-side). */
+ *  images through Cloudinary. The JSON payload rides in the `data` field
+ *  (the shared parseBody convention every multipart route uses) with photo
+ *  files under `photos` (max 3, validated client-side). */
 export const createReviewWithPhotos = async (
   payload: { rating: number; description: string; product: string },
   photos: File[]
 ): Promise<ServiceResult<Review>> => {
   try {
     const formData = new FormData();
-    formData.append("rating", String(payload.rating));
-    formData.append("description", payload.description);
-    formData.append("product", payload.product);
+    formData.append(
+      "data",
+      JSON.stringify({
+        rating: payload.rating,
+        description: payload.description,
+        product: payload.product,
+      })
+    );
     photos.slice(0, 3).forEach((photo) => {
       formData.append("photos", photo, photo.name);
     });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link"
 import { Check, Copy, Loader2, MapPin, Package, Phone, Radar, Search, Truck, User, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -496,7 +497,16 @@ export function TrackOrderClient({ searchParams, currency }: TrackOrderClientPro
                           )}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-foreground">{product.name}</p>
+                          {product.slug ? (
+                            <Link
+                              href={`/products/${product.slug}`}
+                              className="truncate text-sm font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+                            >
+                              {product.name}
+                            </Link>
+                          ) : (
+                            <p className="truncate text-sm font-bold text-foreground">{product.name}</p>
+                          )}
                           {product.variant?.sku && (
                             <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
                               {product.variant.sku}

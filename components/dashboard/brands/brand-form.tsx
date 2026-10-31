@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { createBrand } from "@/lib/services/brand";
 import { isErrorResult } from "@/lib/utils/result";
 import { serverErrorMessage } from "@/lib/utils/form-feedback";
+import { useDashboardBase } from "@/components/dashboard/v4/dashboard-user";
 
 const brandSchema = z.object({
     name: z.string().min(1, { message: "Brand name is required." }),
@@ -25,6 +26,8 @@ type BrandFormValues = z.infer<typeof brandSchema>;
 
 export function CreateBrandForm() {
     const router = useRouter();
+    // Links follow the visitor's own dashboard prefix (admin/manager).
+    const base = useDashboardBase();
     const [submitting, setSubmitting] = useState(false);
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +68,7 @@ export function CreateBrandForm() {
             reset();
             setLogoFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
-            router.push("/dashboard/admin/brands/all-brands");
+            router.push(`${base}/brands/all-brands`);
             router.refresh();
         } finally {
             setSubmitting(false);

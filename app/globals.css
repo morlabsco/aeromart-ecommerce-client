@@ -209,6 +209,14 @@
      it as a neutral ink glyph that follows the foreground color in both
      themes, with a pointer cursor. The mask (alpha-only) recolors the
      stroke via currentColor. */
+  /* Password fields: bigger glyphs so the dots read clearly while typing
+     (the shared Input is text-sm = 14px — the masking dots render tiny).
+     Revealed (text) views keep the normal size via :not. */
+  input[type="password"] {
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+  }
+
   input[type="search"]::-webkit-search-cancel-button {
     -webkit-appearance: none;
     appearance: none;

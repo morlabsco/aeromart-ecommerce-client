@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -16,13 +16,19 @@ import {
   Lock,
   Copy,
 } from "lucide-react"
-import { useCartStore } from "../../../lib/store/app-store"
+import { useCartStore } from "@/lib/store/app-store"
 import { ThemedImage } from "../../../components/shared/themed-image"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import {
+  PhoneInput,
+  isValidFullPhone,
+  mergePhoneNumber,
+} from "@/components/shared/phone-input"
 import { DistrictCombobox } from "../../../components/public/checkout/district-combobox"
 import { UpazilaCombobox } from "../../../components/public/checkout/upazila-combobox"
 import { deriveVariantAxes, resolveVariantSku } from "@/lib/utils/product-variants"
@@ -232,6 +238,11 @@ function VariantSwitcher({
           <div className="flex flex-wrap gap-1.5">
             {axis.options.map((option) => {
               const active = selection[axis.name] === option
+              // Color axes get a swatch dot inside the pill (the hex comes
+              // from the product's colorOptions) so choices are visual.
+              const hex = item.product.colorOptions?.find(
+                (c) => c.name.toLowerCase() === option.toLowerCase()
+              )?.hex
               return (
                 <button
                   key={option}
@@ -239,13 +250,24 @@ function VariantSwitcher({
                   onClick={() =>
                     setSelection((prev) => ({ ...prev, [axis.name]: option }))
                   }
+                  title={hex ? `${option} — ${hex}` : option}
                   className={cn(
-                    "cursor-pointer rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors",
+                    "flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors",
                     active
                       ? "border-brand bg-brand/10 text-brand"
                       : "border-border text-muted-foreground hover:border-brand/50 hover:text-foreground"
                   )}
                 >
+                  {hex && (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "size-3.5 shrink-0 rounded-full border",
+                        active ? "border-brand" : "border-border"
+                      )}
+                      style={{ backgroundColor: hex }}
+                    />
+                  )}
                   {option}
                 </button>
               )
@@ -267,7 +289,15 @@ function VariantSwitcher({
   )
 }
 
-export default function Checkout() {
+/** Saved profile fields for the checkout quick-fill (signed-in customers). */
+interface CheckoutProfile {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export default function Checkout({ profile = null }: { profile?: CheckoutProfile | null }) {
   const items = useCartStore((s) => s.items)
   const subtotal = useCartStore((s) => s.subtotal)
   const clearCart = useCartStore((s) => s.clearCart)
@@ -288,6 +318,11 @@ export default function Checkout() {
     upazila: "",
     notes: "",
   })
+  // Quick-fill ("ship to my saved details") — remembers what was typed so
+  // turning the toggle OFF restores the customer's own entries exactly.
+  const [profileFill, setProfileFill] = useState(false)
+  const beforeProfileFill = useRef<typeof form | null>(null)
+
   // References the customer submits for manual payments (bKash / bank) so
   // the admin can verify and mark the order paid.
   const [manualPayment, setManualPayment] = useState({
@@ -305,6 +340,41 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null)
   const [couponBusy, setCouponBusy] = useState(false)
   const [brandCurrency, setBrandCurrency] = useState<string | null>(null)
+
+  /** Toggle-based profile fill: ON fills the identity fields from the
+   *  customer's saved profile; OFF restores whatever they had typed. */
+  const toggleProfileFill = (on: boolean) => {
+    if (on) {
+      beforeProfileFill.current = { ...form }
+      const next: typeof form = { ...form }
+      if (profile?.name) next.name = profile.name
+      if (profile?.phone)
+        next.phone = profile.phone.startsWith("+")
+          ? profile.phone
+          : mergePhoneNumber("+880", profile.phone)
+      if (profile?.email) next.email = profile.email
+      if (profile?.address) next.address = profile.address
+      setForm(next)
+      const filled = [
+        profile?.name && "name",
+        profile?.phone && "mobile",
+        profile?.email && "email",
+        profile?.address && "address",
+      ].filter(Boolean)
+      toast.success(
+        filled.length
+          ? `Filled your ${filled.join(", ")} from your profile , edit anything below if this order ships elsewhere.`
+          : "Your profile has no saved details to fill yet.",
+      )
+    } else {
+      if (beforeProfileFill.current) {
+        setForm(beforeProfileFill.current)
+        beforeProfileFill.current = null
+      }
+      toast.info("Cleared the profile fill , your previous entries are back.")
+    }
+    setProfileFill(on)
+  }
 
   // Load delivery options + the live display currency from the brand settings.
   useEffect(() => {
@@ -416,7 +486,8 @@ export default function Checkout() {
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Invalid email format"
     if (!form.phone.trim()) errs.phone = "Phone is required"
-    else if (!PHONE_REGEX.test(form.phone)) errs.phone = PHONE_ERROR_MESSAGE
+    else if (!isValidFullPhone(form.phone))
+      errs.phone = "Enter a valid mobile number , pick the country code and type the rest (BD: 01XXXXXXXXX)."
     // Delivery address is only required when shipping (not store pickup).
     if (!isPickup) {
       if (!form.address.trim()) errs.address = "Address is required"
@@ -425,7 +496,10 @@ export default function Checkout() {
     }
     // Manual payments need their verification references.
     if (paymentMethod === "bkash-manual") {
-      if (!manualPayment.bkashSender.trim()) errs.bkashSender = "Your bKash sender number is required"
+      if (!manualPayment.bkashSender.trim())
+        errs.bkashSender = "Your bKash sender number is required"
+      else if (!isValidFullPhone(manualPayment.bkashSender))
+        errs.bkashSender = "Enter a valid bKash number (BD: 01XXXXXXXXX)."
       if (!manualPayment.bkashTrxId.trim()) errs.bkashTrxId = "The bKash Transaction ID is required"
     }
     if (paymentMethod === "bank-manual" && !manualPayment.bankRef.trim()) {
@@ -667,9 +741,12 @@ export default function Checkout() {
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-xs font-bold text-foreground">
+              <Link
+                href={`/products/${item.product.slug}`}
+                className="line-clamp-1 text-xs font-bold text-foreground underline-offset-4 transition-colors hover:text-brand hover:underline"
+              >
                 {item.product.title}
-              </p>
+              </Link>
               <p className="text-[11px] text-muted-foreground">
                 {item.variant &&
                   `${Object.entries(item.variant)
@@ -981,9 +1058,45 @@ export default function Checkout() {
               {/* Customer information */}
               <section className="space-y-5 rounded-2xl bg-card p-6 shadow-sm sm:p-8">
                 <SectionTitle>01 · Customer Information</SectionTitle>
-                <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                {profile && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">
+                        Ship to my saved details
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Fills your name, mobile, email and saved address from
+                        your profile ,{" "}
+                        {profile.name ? `hi ${profile.name.split(" ")[0]}!` : "one tap, fully editable."}{" "}
+                        Turn it off any time to go back to what you typed.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={profileFill}
+                      onCheckedChange={toggleProfileFill}
+                      aria-label="Fill customer details from my profile"
+                    />
+                  </div>
+                )}
+                <div className="space-y-5">
                   {field("name", "Customer Name", false, "text", "Your Full Name")}
-                  {field("phone", "Mobile Number", false, "tel", "01XXXXXXXXX")}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Mobile Number
+                    </Label>
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(full) => setForm({ ...form, phone: full })}
+                      invalid={!!errors.phone}
+                    />
+                    {errors.phone ? (
+                      <p className="text-xs text-destructive">{errors.phone}</p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Enter a valid number.
+                      </p>
+                    )}
+                  </div>
                   {field("email", "Email", true, "email", "rahimuddin@example.com")}
                 </div>
               </section>
@@ -999,6 +1112,7 @@ export default function Checkout() {
                       </Label>
                       <DistrictCombobox
                         value={form.district}
+                        clearable
                         onChange={(district) =>
                           // Switching the district invalidates the upazila —
                           // reset it so a stale choice can never ship.
@@ -1017,6 +1131,7 @@ export default function Checkout() {
                       <UpazilaCombobox
                         district={form.district}
                         value={form.upazila}
+                        clearable
                         onChange={(upazila) => setForm({ ...form, upazila })}
                         invalid={!!errors.upazila}
                       />
@@ -1138,7 +1253,11 @@ export default function Checkout() {
                       </p>
                     </div>
                   </Label>
-                  {/* Stripe — hosted card checkout (gateway redirect + invoice flow) */}
+                  {/* ── Stripe PARKED (user decision, 31/10/2026): the store runs
+                   * COD + manual bKash/Bank only for now. Restore this radio
+                   * (plus the stripe-init branch in handlePlaceOrder and the
+                   * SSLCommerz/bKash gateway radios further below) when the
+                   * gateways come back.
                   <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
                     <RadioGroupItem value="stripe" />
                     <div className="flex items-center gap-3">
@@ -1156,6 +1275,7 @@ export default function Checkout() {
                       </div>
                     </div>
                   </Label>
+                  ────────────────────────────────────────────────────────── */}
 
                   {/* bKash — manual send-money with reference verification */}
                   <Label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors has-data-[state=checked]:border-brand has-data-[state=checked]:bg-brand/5">
@@ -1225,12 +1345,27 @@ export default function Checkout() {
                     </p>
                     <CopyRow label="bKash Number" value={BKASH_NUMBER} highlight />
                     <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                      {manualField(
-                        "bkashSender",
-                        "Your bKash Number",
-                        "01XXXXXXXXX",
-                        "tel"
-                      )}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold text-foreground">
+                          Your bKash Number
+                        </Label>
+                        <PhoneInput
+                          value={manualPayment.bkashSender}
+                          onChange={(full) =>
+                            setManualPayment({
+                              ...manualPayment,
+                              bkashSender: full,
+                            })
+                          }
+                          invalid={!!errors.bkashSender}
+                          aria-label="Your bKash number"
+                        />
+                        {errors.bkashSender && (
+                          <p className="text-xs text-destructive">
+                            {errors.bkashSender}
+                          </p>
+                        )}
+                      </div>
                       {manualField(
                         "bkashTrxId",
                         "Transaction ID",
